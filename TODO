@@ -1,0 +1,18 @@
+Bugs
+====
+* Invalid .mli files created when no attributes are used
+
+Requested
+=========
+* Better reporting of syntax errors in parsing grammar
+* Wide chars / unicode / character classes
+* Canonify is not idempotent
+
+Granted
+=======
+* Implicit concatenation of tokens with a space operator ; method for escaping this default (e.g. concatenated(..))
+* Namespaces / prefixes
+* Better error reporting (backtrace) - error_position()
+
+Rejected
+========

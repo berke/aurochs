@@ -1,0 +1,9 @@
+word ::=
+  <Word>
+    { [^ ]+ }
+  </Word>
+;
+
+space ::= ' '+;
+
+start ::= <Phrase> word ( space word )* </Phrase>;

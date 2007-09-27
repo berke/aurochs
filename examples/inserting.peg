@@ -1,0 +1,8 @@
+space ::= " "*;
+token ::= <Token>value:([a-z]+)</Token>;
+outfixing space do
+  appending ',' do
+    list ::= token+;
+  done;
+done;
+start ::= <List>list</List>;

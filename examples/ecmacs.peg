@@ -1,0 +1,570 @@
+(* Ecmascript grammar *)
+
+space ::=
+   [ \n\r\t]+
+ | "<!--"
+ | "//" <Comment>[ \t]*<Line>body:[^\n]*</Line>[ \t]*</Comment> '\n'
+ | "/*" <Comment>commentline*</Comment> "*/"
+;
+
+commentline ::= [ \t]*<Line>body:((~ "*/") sigma)*[ \t]*</Line>;
+
+integer ::= ('0' | [1-9][0-9]*);
+float ::= (('0' | [1-9][0-9]* )? '.' [0-9]+);
+
+alphanum ::= [A-Za-z_0-9$]; (* Check lexical rules for identifiers *)
+alpha ::= [A-Za-z_$];
+
+quote_string_escape ::= '\\' [bfnrtv'\\];
+quote_string ::= ('\'' (((~ '\'') (quote_string_escape | [^'])))* '\'');
+
+double_quote_string_escape ::= '\\' [bfnrtv"\\];
+double_quote_string ::= ('"' (((~ '"') (double_quote_string_escape | [^"])))* '"');
+
+string ::= quote_string | double_quote_string;
+
+regexp ::= '/'body:(regexp_inner*)'/'(options:regexp_option+)?;
+
+regexp_option ::= [giwm];
+regexp_escape ::= '\\' [bfnrtv/\\];
+regexp_inner ::= ((~ '/') (regexp_escape | [^/]));
+
+numeric ::= float | integer;
+
+sp ::= space+ | ~alpha | BOF;
+
+LBRACE ::= "{";
+RBRACE ::= "}";
+LPAR ::= "(";
+RPAR ::= ")";
+LBRACK ::= "[";
+RBRACK ::= "]";
+DOT ::= ".";
+DOTCOM ::= ";";
+COMMA ::= ",";
+L ::= "<";
+R ::= ">";
+LEQ ::= "<=";
+REQ ::= ">=";
+EQEQ ::= "==";
+NOTEQ ::= "!=";
+EQEQEQ ::= "===";
+NOTEQEQ ::= "!==";
+PLUS ::= "+";
+MINUS ::= "-";
+TIMES ::= "*";
+MOD ::= "%";
+PLUSPLUS ::= "++";
+MINUSMINUS ::= "--";
+LL ::= "<<";
+RR ::= ">>";
+RRR ::= ">>>";
+AND ::= "&";
+OR ::= "|";
+HAT ::= "^";
+BANG ::= "!";
+TILDE ::= "~";
+ANDAND ::= "&&";
+OROR ::= "||";
+QUESTION ::= "?";
+DOTDOT ::= ":";
+EQ ::= "=";
+PLUSEQ ::= "+=";
+MINUSEQ ::= "-=";
+TIMESEQ ::= "*=";
+MODEQ ::= "%=";
+LLEQ ::= "<<=";
+RREQ ::= ">>=";
+RRREQ ::= ">>>=";
+ANDEQ ::= "&=";
+OREQ ::= "|=";
+HATEQ ::= "^=";
+DIV ::= "/";
+DIVEQ ::= "/=";
+
+suffixing sp do
+  ABSTRACT ::= "abstract";
+  BOOLEAN ::= "boolean";
+  BREAK ::= "break";
+  BYTE ::= "byte";
+  CASE ::= "case";
+  CATCH ::= "catch";
+  CHAR ::= "char";
+  CLASS ::= "class";
+  CONST ::= "const";
+  CONTINUE ::= "continue";
+  DEBUGGER ::= "debugger";
+  DEFAULT ::= "default";
+  DELETE ::= "delete";
+  DO ::= "do";
+  DOUBLE ::= "double";
+  ELSE ::= "else";
+  ENUM ::= "enum";
+  EXPORT ::= "export";
+  EXTENDS ::= "extends";
+  FALSE ::= "false";
+  FINAL ::= "final";
+  FINALLY ::= "finally";
+  FLOAT ::= "float";
+  FOR ::= "for";
+  FUNCTION ::= "function";
+  GOTO ::= "goto";
+  IF ::= "if";
+  IMPLEMENTS ::= "implements";
+  IMPORT ::= "import";
+  IN ::= "in";
+  INSTANCEOF ::= "instanceof";
+  INTERFACE ::= "interface";
+  INT ::= "int";
+  LONG ::= "long";
+  NATIVE ::= "native";
+  NEW ::= "new";
+  NULL ::= "null";
+  PACKAGE ::= "package";
+  PRIVATE ::= "private";
+  PROTECTED ::= "protected";
+  PUBLIC ::= "public";
+  RETURN ::= "return";
+  SHORT ::= "short";
+  STATIC ::= "static";
+  SUPER ::= "super";
+  SWITCH ::= "switch";
+  SYNCHRONIZED ::= "synchronized";
+  THIS ::= "this";
+  THROWS ::= "throws";
+  THROW ::= "throw";
+  TRANSIENT ::= "transient";
+  TRUE ::= "true";
+  TRY ::= "try";
+  TYPEOF ::= "typeof";
+  UNDEFINED ::= "undefined";
+  VAR ::= "var";
+  VOID ::= "void";
+  VOLATILE ::= "volatile";
+  WHILE ::= "while";
+  WITH ::= "with";
+done;
+
+keyword ::=
+  "abstract"
+| "break"
+| "boolean"
+| "byte"
+| "case"
+| "catch"
+| "char"
+| "class"
+| "const"
+| "continue"
+| "debugger"
+| "default"
+| "delete"
+| "do"
+| "double"
+| "else"
+| "enum"
+| "export"
+| "extends"
+| "false"
+| "final"
+| "finally"
+| "float"
+| "for"
+| "function"
+| "goto"
+| "if"
+| "implements"
+| "import"
+| "in"
+| "instanceof"
+| "int"
+| "interface"
+| "long"
+| "native"
+| "new"
+| "null"
+| "package"
+| "private"
+| "protected"
+| "public"
+| "return"
+| "short"
+| "static"
+| "super"
+| "switch"
+| "synchronized"
+| "this"
+| "throw"
+| "throws"
+| "transient"
+| "true"
+| "try"
+| "typeof"
+| "undefined"
+| "var"
+| "void"
+| "volatile"
+| "while"
+| "with"
+;
+
+IDENTIFIER ::= ~(keyword sp) alpha alphanum*;
+
+optional_space ::= space*;
+
+outfixing optional_space do
+  appending optional_space do
+    program ::= <Program> source_elements </Program>;
+    source_elements ::= source_element*;
+    source_element ::= function_declaration | statement DOTCOM?;
+
+    statement ::= inner_statement;
+
+    inner_statement ::=
+      block
+    | variable_statement
+    | expression_statement
+    | if_statement
+    | iteration_statement
+    | continue_statement
+    | break_statement
+    | return_statement
+    | with_statement
+    | labeled_statement
+    | switch_statement
+    | throw_statement
+    | try_statement
+    | empty_statement
+    ;
+
+    block ::=
+      LBRACE statement_list RBRACE
+    | LBRACE  RBRACE
+    ;
+
+    statement_list ::= statement (DOTCOM? statement)* DOTCOM?;
+
+    variable_statement ::= VAR  variable_declaration_list ;
+
+    variable_declaration_list ::= variable_declaration (COMMA variable_declaration_list)*;
+
+    variable_declaration ::=
+        <VarDef>start:position name:IDENTIFIER end:position</VarDef> initializer?
+      ;
+
+    initializer ::= EQ assignment_expression;
+
+    empty_statement ::= epsilon;
+
+    expression_statement ::= expression;
+
+    if_statement ::=
+        IF LPAR expression RPAR statement DOTCOM? ELSE statement
+      | IF LPAR expression RPAR statement DOTCOM? 
+      ;
+
+    iteration_statement ::=
+         DO statement WHILE LPAR expression RPAR 
+      |  WHILE LPAR expression RPAR statement 
+      | 
+          FOR
+            LPAR
+              
+                (left_hand_side_expression | VAR variable_declaration_list)
+              
+              IN
+              expression
+            RPAR
+            statement
+          
+      |  FOR LPAR
+                (statement)? DOTCOM
+                (statement)? DOTCOM
+                (statement)? RPAR
+              statement
+        
+      ;
+
+    continue_statement ::=
+        CONTINUE <Label>start:position label:IDENTIFIER end:position</Label>
+      | CONTINUE
+      ;
+
+    break_statement ::=
+        BREAK <Label>start:position label:IDENTIFIER end:position</Label>
+      | BREAK 
+      ;
+
+    return_statement ::=
+        RETURN expression 
+      | RETURN 
+      ;
+
+    with_statement ::=
+        WITH LPAR expression RPAR statement
+       ;
+
+    switch_statement ::=
+        SWITCH LPAR expression RPAR LBRACE case* RBRACE
+      ;
+
+    case ::=
+        case_clause+statement_list
+       ;
+
+    case_clause ::=
+        DEFAULT DOTDOT
+      | CASE expression DOTDOT
+      ;
+
+    labeled_statement ::= <LabelDef>start:position name:IDENTIFIER end:position</LabelDef> DOTDOT statement;
+
+    throw_statement ::= THROW expression;
+
+    try_statement ::=
+        TRY block (catch)? FINALLY block
+      | TRY block catch
+      ;
+
+    catch ::= CATCH LPAR <Ident>start:position name:IDENTIFIER end:position</Ident> RPAR block;
+
+    numeric_litteral ::=
+      float
+    | integer
+    ;
+
+    litteral ::=
+      numeric_litteral
+    | <String>string</String>
+    | regexp
+    | TRUE
+    | FALSE
+    | NULL
+    | UNDEFINED
+    ;
+
+    primary_expression ::=
+        THIS
+      | <Variable>start:position name:IDENTIFIER end:position</Variable>
+      | object_litteral
+      | array_litteral
+      | LPAR expression RPAR
+      | litteral
+      ;
+
+    array_litteral ::=
+         LBRACK element_list dangling_comma? RBRACK 
+      |  LBRACK dangling_comma? RBRACK 
+      |  LBRACK RBRACK
+      ;
+
+    dangling_comma ::= start:position COMMA+ end:position;
+
+    elision ::= COMMA+;
+
+    element_list ::=
+        assignment_expression COMMA elision? element_list
+      | elision? assignment_expression
+      ;
+
+    object_litteral ::=
+      LBRACE (property_name_and_value (COMMA property_name_and_value)*)? dangling_comma? RBRACE;
+
+    property_name_and_value ::= property_name DOTDOT assignment_expression;
+
+    property_name ::=
+        <Ident>start:position name:IDENTIFIER end:position</Ident>
+      | <String>string</String>
+      | numeric_litteral
+      ;
+
+    member_final ::=
+        NEW member_expression arguments
+      | function_expression
+      | primary_expression
+      ;
+
+    member_expression ::=
+        member_final member_rest+
+      | NEW member_expression (* XXX *)
+      | member_final
+      ;
+
+    new_expression ::=
+        NEW new_expression
+      | access_expression
+      ;
+
+    access_expression ::=
+        member_final (call_rest | member_rest) +
+      | member_final
+      ;
+
+    call_rest ::= arguments;
+
+    member_rest ::=
+        LBRACK expression RBRACK
+      | DOT <Ident>name:IDENTIFIER</Ident>
+      ;
+
+
+    arguments ::=
+        LPAR argument (COMMA argument)* RPAR
+      | LPAR RPAR
+      ;
+
+    argument ::= assignment_expression; (* Arg *)
+
+    left_hand_side_expression ::=
+        access_expression
+      | new_expression
+      ;
+
+    postfix_expression ::=
+        left_hand_side_expression PLUSPLUS
+      | left_hand_side_expression MINUSMINUS
+      | left_hand_side_expression
+      ;
+
+    unary_expression ::=
+        DELETE unary_expression
+      | VOID unary_expression
+      | TYPEOF unary_expression
+      | PLUSPLUS unary_expression
+      | MINUSMINUS unary_expression
+      | PLUS unary_expression
+      | MINUS unary_expression
+      | TILDE unary_expression
+      | BANG unary_expression
+      | postfix_expression
+      ;
+
+    multiplicative_expression ::=
+        unary_expression TIMES multiplicative_expression
+      | unary_expression DIV multiplicative_expression
+      | unary_expression MOD multiplicative_expression
+      | unary_expression
+      ;
+
+    additive_expression ::=
+        multiplicative_expression PLUS additive_expression
+      | multiplicative_expression MINUS additive_expression
+      | multiplicative_expression
+      ;
+
+    shift_expression ::=
+        additive_expression shift_op additive_expression
+      | additive_expression
+      ;
+
+    shift_op ::=
+        LL
+      | RR
+      | RRR
+      ;
+
+    relational_expression ::=
+        shift_expression relation relational_expression
+      | shift_expression
+      ;
+
+    relation ::=
+        LEQ
+      | REQ
+      | L
+      | R
+      | INSTANCEOF
+      | IN
+      ;
+
+    equality_expression ::=
+        relational_expression equality_operator equality_expression
+      | relational_expression
+      ;
+
+    equality_operator ::=
+        EQEQEQ
+      | NOTEQEQ
+      | EQEQ
+      | NOTEQ
+      ;
+
+    bitwise_and_expression ::=
+        equality_expression AND bitwise_and_expression
+      | equality_expression
+      ;
+
+    bitwise_xor_expression ::=
+        equality_expression HAT bitwise_and_expression
+      | bitwise_and_expression
+      ;
+
+    bitwise_or_expression ::=
+        equality_expression OR bitwise_and_expression
+      | bitwise_xor_expression
+      ;
+
+    logical_and_expresssion ::=
+        bitwise_or_expression ANDAND logical_and_expresssion
+      | bitwise_or_expression
+      ;
+
+    logical_or_expression ::=
+        logical_and_expresssion OROR logical_or_expression
+      | logical_and_expresssion
+      ;
+
+    conditional_expression ::=
+        logical_or_expression QUESTION assignment_expression DOTDOT assignment_expression
+      | logical_or_expression
+      ;
+
+    assignment_expression ::=
+        left_hand_side_expression assignment_operator assignment_expression
+      | conditional_expression
+      ;
+
+    assignment_operator ::=
+        EQ
+      | TIMESEQ
+      | DIVEQ
+      | MODEQ
+      | PLUSEQ
+      | MINUSEQ
+      | LLEQ
+      | RREQ
+      | RRREQ
+      | ANDEQ
+      | HATEQ
+      | OREQ
+      ;
+
+    expression ::=
+        assignment_expression COMMA expression
+      | assignment_expression
+      ;
+
+    expression_no_in ::= expression;
+    variable_declaration_no_in ::= variable_declaration;
+
+    function_expression ::=
+        FUNCTION (name:IDENTIFIER)? LPAR formal_parameter_list? RPAR LBRACE function_body RBRACE
+      | <FunDef>start:position FUNCTION name:IDENTIFIER? LPAR <Args>formal_parameter_list?</Args> RPAR LBRACE <Body>function_body</Body> RBRACE end:position</FunDef>
+      ;
+
+    function_declaration ::=
+        <FunDef>start:position FUNCTION name:IDENTIFIER LPAR <Args>formal_parameter_list?</Args> RPAR LBRACE end:position</FunDef>
+        function_body
+        RBRACE
+      ;
+
+    function_body ::= source_elements;
+
+    arg ::= <Arg>name:IDENTIFIER</Arg>;
+
+    formal_parameter_list ::= arg (COMMA arg)*;
+        
+  done;
+done;
+
+start ::= program space* EOF;

@@ -1,0 +1,4 @@
+foo ::= [0-9a-fA-F];
+integer ::= { foo+ };
+space ::= ' ';
+start ::= integer +space* integer (space+ integer)* space* EOF;

@@ -1,0 +1,6 @@
+date ::= [0-9][0-9][0-9][0-9] '-' [0-9][0-9] '-' [0-9][0-9];
+integer ::= [0-9]+;
+space ::= ' '+;
+thing ::= date | integer;
+thinglist ::= thing (space thing)*;
+start ::= '[' space* thinglist space* ']';

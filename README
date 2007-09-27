@@ -1,0 +1,10 @@
+Aurochs 0.1
+===========
+
+To compile it, you need Ocaml 3.<something>.
+
+If you have Ocamlbuild (bundled with Ocaml 3.10) type ./build.sh
+The executable is aurochs.native (in the __build) directory.
+
+Otherwise type ./construct.sh
+The executable will be _build/aurochs.native.

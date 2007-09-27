@@ -1,0 +1,7 @@
+document ::= foo | foo document | sigmax foo document;
+sigmax ::= "bar";
+foo ::= "foo";
+start ::= foo | document;
+outfixing " " do
+  gogol ::= foo foo;
+done;

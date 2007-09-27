@@ -1,0 +1,119 @@
+(* Exaquery *)
+
+start ::= <Expr> disjunction EOF </Expr>;
+
+disjunction ::=
+    <Or>      conjunction op_or   disjunction </Or>
+  | <Near>    conjunction op_near disjunction </Near>
+  | <Next>    conjunction op_next disjunction </Next>
+  | <Compare> {ident} op_comparison date_or_value  </Compare>
+  | conjunction
+;
+
+conjunction ::=
+    conjunction1
+;
+
+conjunction1 ::=
+    <And> simple op_and conjunction </And>
+  | <Not> op_not simple </Not>
+  | <Seq> simple conjunction </Seq>
+  | simple
+;
+
+simple ::=
+    <FieldNode> field simple2 </FieldNode>
+  | simple2
+;
+
+simple2 ::=
+    atom
+  | group
+  (*| <Unrecognized> { (~conjunction1 [^ \n\t\r]+) } </Unrecognized>*)
+;
+
+ident ::= alpha alphanum+;
+
+alpha ::= [a-zA-Z];
+
+alphanum ::= [a-zA-Z0-9_];
+
+group ::= <Group> op_lparen disjunction op_rparen </Group>;
+
+field ::= (name : ident) op_colon;
+
+year ::= ([12][0-9])?[0-9][0-9];
+
+month ::= ('0'? [0-9] | '1'[0-2]);
+
+day ::= ([0-2][0-9] | '3'[0-1]);
+
+date ::=
+    year '-' month '-' day
+  | day '/' month '/' year
+  | day '.' month '.' year
+  | month '/' day '/' year
+;
+
+float ::= '-'? decimal+ ('.' decimal+)? ('e' ('-'|'+')? decimal+)?;
+
+integer ::= '-'? decimal+;
+
+decimal ::= [0-9]; 
+
+value ::=
+    <Float> { float } </Float>
+  | <Int> { integer } </Int>
+;
+
+date_or_value ::=
+    <Date> { date } </Date>
+  | value
+;
+
+oper ::=
+    op_and
+  | op_or
+  | op_not
+  | op_near
+  | op_next
+  | op_comparison
+;
+
+atom ::=
+  ~oper (* XXX *)
+  (space?
+    (regexp | word | string)
+   space?)
+;
+
+word ::=
+     <ExactWord>     '+' {alphanum+} </ExactWord>
+   | <Synonym>       '~' {alphanum+} </Synonym>
+   | <SharpPrefixed> '#' {alphanum+} </SharpPrefixed>
+   | <SharpSuffixed> {alphanum+} '#' </SharpSuffixed>
+   | <StarPrefixed>  '*' {alphanum+} </StarPrefixed>
+   | <StarSuffixed>  {alphanum+} '*' </StarSuffixed>
+   | <Word>          {alphanum+}     </Word>
+;
+
+regexp ::= <Regexp> '/' { regexp_chars* } '/' options:([iwb]) </Regexp>;
+
+regexp_chars ::= [a-zA-Z0-9_ .,;:+\-@=];
+
+op_and         ::= space? ("and"|"AND"|"And")    ~alpha space?;
+op_or          ::= space? ("or"|"OR"|"Or")       ~alpha space?;
+op_next        ::= space? ("next"|"NEXT"|"Next") ~alpha space?;
+op_near        ::= space? ("near"|"NEAR"|"Near") ~alpha ("/" space? depth:integer)? space?;
+op_not         ::= 
+    space? ("not"|"NOT"|"Not")    ~alpha space?
+  | space? "-" space?
+;
+op_comparison  ::= space? operator:("<" | "<=" | "==" | ">=" | ">" | "!=") space?;
+op_lparen      ::= space? '(' space?;
+op_rparen      ::= space? ')' space?;
+op_colon       ::= space? ':' space?;
+
+string ::= <Quoted> '"' { ( (* (~ '"') *) [^"] )* } '"' </Quoted>;
+
+space ::= [ \n\r\t]+;

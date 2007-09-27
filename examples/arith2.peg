@@ -1,0 +1,4 @@
+start ::= <Gogol><Foo>foo</Foo> <Fii>fii</Fii></Gogol>;
+a :(bo):= go;
+foo ::= value:("fo" 'o'+);
+fii ::= value:("fi" 'i'+);

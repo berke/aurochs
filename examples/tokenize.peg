@@ -1,0 +1,31 @@
+(* PEG grammar *)
+
+space ::= [ \t\r\n]+;
+
+alphanum ::= [A-Za-z_0-9];
+alpha ::= [A-Za-z_];
+
+token_space ::= space space;
+
+keyword ::= "v"|"e";
+
+token ::= ~keyword alpha alphanum*;
+
+pre_spacer ::= space+ | BOF | ~alpha;
+post_spacer ::= space+ | EOF | ~alpha;
+spacer ::= space+ | ~alpha;
+
+name ::= name:token;
+
+(*prefixing pre_spacer do
+  suffixing post_spacer do
+    appending spacer do
+      start ::= arg+;
+    done;
+  done;
+done;*)
+
+surrounding space* do
+  arg ::= <Arg>name</Arg> | '(' <Meta> arg+ </Meta> ')';
+  start ::= <Program>BOF.space?.arg+.space?.EOF</Program>;
+done;

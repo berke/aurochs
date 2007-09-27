@@ -1,0 +1,101 @@
+start ::=
+    <Definitions> definition+ </Definitions>
+    partial_order
+    <Ecus> ecu+ </Ecus>
+    EOF
+  ;
+
+line ::= "*" ' '*;
+
+definition ::=
+  <Definition>
+    line "symbol " symbol '\n'
+    pattern
+    definition_parameters
+    line "end\n"
+  </Definition>
+  ;
+
+symbol ::= <Symbol>name:(ident ('.'ident)*) params? </Symbol>;
+
+params ::= <Params>'(' (arg (',' arg)*)? ')'</Params>;
+
+inner_ident ::= [^ \n\t,().{}]+;
+ident ::= '(' inner_ident ')' | inner_ident;
+class_ident ::= [^ \n\t,().\[\]<>{}]+;
+class_name ::= (class_ident ('.'class_ident)*) ;
+
+arg ::= <Param>name:[^ \n\t,().=]+ '='</Param> ;
+
+pattern ::= line "pattern\n" line <Pattern>(pattern_component',')*</Pattern> "\n";
+
+pattern_component ::=
+    <Any/>'_'
+  | <At>'@'class:class_name</At>
+  | <Sharp>'#'class:class_name</Sharp>
+  ;
+
+definition_parameters ::=
+  line "parameters\n"
+  <DefParams>
+    defparam *
+  </DefParams>
+  ;
+
+defparam ::= 
+  <DefParam> line number:([0-9]+) " " name:ident " " constraint "\n" </DefParam>
+  ;
+
+constraint ::=
+    inner_constraint
+;
+
+inner_constraint ::=
+    <Attribute>attribute " " constraint</Attribute>
+  | <Fun>simpler_constraint " fun(" (constraint (", " constraint)*)?  ")"</Fun>
+  | <Apply>simpler_constraint "<"constraint (", " constraint)*">"</Apply>
+  | <Array>simpler_constraint "[]"</Array>
+  | simpler_constraint
+;
+
+simpler_constraint ::=
+    <Constraint>'#' id:[0-9]+ '{' inner_constraint '}'</Constraint>
+  | <TypeVariable>"(typevariable #" id:[0-9]+ ' ' var:ident " of " symbol ")"</TypeVariable>
+  | <Class>class:class_name</Class>
+;
+
+attribute ::=
+  <Const/> "const"
+;
+
+partial_order ::=
+  <PartialOrder>
+    line "partialorder " size:[0-9]+ "\n"
+    partial_order_row*
+    line "end" "\n"
+  </PartialOrder>
+  ;
+
+partial_order_row ::=
+  <Row>line "row " id:[0-9]+ " " data:[01]* "\n"</Row>
+  ;
+
+ecu ::=
+  <Ecu>
+    line "ecu " id:[0-9]+ " " name:[^\n]+ "\n"
+    ecu_symbol*
+    line "end\n"
+  </Ecu>
+;
+
+ecu_symbol ::=
+  <EcuSymbol>
+    line "symbol "  '"' name:[^"]+ '"' " " id:[0-9]+ " " ecu_symbol_type "\n"
+  </EcuSymbol>
+;
+
+ecu_symbol_type ::=
+    <TD/> "TD"
+  | <TC/> "TC"
+  | <Other/> "?"
+;

@@ -1,0 +1,6 @@
+space ::=
+   '\n'
+ | "/*" ((~ "*/") sigma)* "*/"
+;
+
+start ::= space* EOF;

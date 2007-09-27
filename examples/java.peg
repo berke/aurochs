@@ -1,0 +1,455 @@
+(* Java grammar *)
+
+line_terminator ::= "\r\n" | "\n";
+input_character ::= ~line_terminator sigma;
+spacing ::= space*;
+space ::= white_space | comment;
+white_space ::= [ \t\012]+ | line_terminator;
+comment ::= traditional_comment | end_of_line_comment;
+traditional_comment ::= "/*" (~ "*/" sigma)* "*/";
+end_of_line_comment ::= "//" (~ line_terminator sigma)* line_terminator;
+
+word ::= java_letter java_letter_or_digit*;
+
+(* identifier ::= ~keyword ~boolean_literal ~null_literal name:word spacing; *)
+identifier ::= ~((keyword | boolean_literal | null_literal) space) name:word spacing;
+
+x ::= expression EOF;
+
+keyword ::= keywords; (*  &word;*)
+
+keywords ::=
+  "abstract"
+| "assert"
+| "boolean"
+| "break"
+| "byte"
+| "case"
+| "catch"
+| "char"
+| "class"
+| "const"
+| "continue"
+| "default"
+| "do"
+| "double"
+| "else"
+| "extends"
+| "final"
+| "finally"
+| "float"
+| "for"
+| "goto"
+| "if"
+| "implements"
+| "import"
+| "instanceof"
+| "int"
+| "interface"
+| "long"
+| "native"
+| "new"
+| "package"
+| "private"
+| "protected"
+| "public"
+| "return"
+| "short"
+| "static"
+| "strictfp"
+| "super"
+| "switch"
+| "synchronized"
+| "this"
+| "throw"
+| "throws"
+| "transient"
+| "try"
+| "void"
+| "volatile"
+| "while"
+;
+
+is_alpha ::= [a-zA-Z];
+
+is_alpha_num ::= [a-zA-Z0-9];
+
+java_letter ::= is_alpha | '_' | '$';
+
+java_letter_or_digit ::= is_alpha_num | '_' | '$';
+
+sym ::= symchars spacing;
+
+symchars ::=
+  ">>>=" 
+| ">>=" 
+| "<<=" 
+| ">>>" 
+| ">>" 
+| "<<" 
+| "+=" 
+| "-=" 
+| "*=" 
+| "|=" 
+| "%=" 
+| "&=" 
+| "^=" 
+| "|=" 
+| "++" 
+| "--" 
+| "&&" 
+| "||" 
+| "<=" 
+| ">=" 
+| "==" 
+| "!=" 
+| ";" 
+| ":" 
+| "," 
+| "." 
+| "{" 
+| "}" 
+| "(" 
+| ")" 
+| "[" 
+| "]" 
+| "!" 
+| "~" 
+| "+" 
+| "-" 
+| "*" 
+| "|" 
+| "%" 
+| "<" 
+| ">" 
+| "=" 
+| "&" 
+| "^" 
+| "|" 
+| "?"
+;
+
+integer_literal ::= <Integer> numeral integer_type_suffix spacing </Integer>;
+
+numeral ::= <Hex>hex_numeral</Hex>
+	  | <Octal>octal_numeral</Octal>
+          | <Decimal>decimal_numeral</Decimal>
+          ;
+
+integer_type_suffix ::= (<Long/>('l'|'L')) | epsilon;
+
+hex_numeral ::= '0' [xX] value:hex_digit+;
+hex_digit ::= [0-9a-fA-F];
+octal_numeral ::= '0' value:octal_digit+;
+octal_digit ::= [0-7];
+decimal_numeral ::= value:[0-9]+;
+
+floating_point_literal ::=
+  <Float>
+      m:digit+ '.' (f:fraction_part)? (exponent_part)? (t:float_type_suffix)? spacing
+    | '.' f:fraction_part (exponent_part)? (t:float_type_suffix)? spacing
+    | m:digit+ exponent_part (t:float_type_suffix)? spacing
+    | m:digit+ (exponent_part)? t:float_type_suffix spacing
+  </Float>
+;
+
+fraction_part ::= digit+;
+exponent_part ::= [eE]e:([+\-]? digit+);
+float_type_suffix ::= [fF]|[dD];
+
+digit ::= [0-9];
+
+boolean_literal ::= <True/>"true"|<False/>"false";
+
+character_literal ::=
+    "'" c:single_character "'" spacing
+  | "'" c:escape_sequence "'" spacing
+;
+
+single_character ::= ~"'" ~"\\" input_character;
+
+string_literal ::= '"' value:string_character* '"' spacing;
+
+string_character ::= ~'"' ~'\\' input_character | escape_sequence;
+
+escape_sequence ::= octal_escape | unicode_escape | '\\' [0bfnrtv\\"'];
+
+unicode_escape ::= '\\' 'u' [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F];
+
+octal_escape ::= '\\' [0-3]?[0-7]?[0-7];
+
+null_literal ::= "null";
+
+qualified_ident ::= <Component>identifier</Component>;
+
+qualified_name ::= <Qualified>qualified_ident ("." qualified_ident)*</Qualified>;
+
+outfixing spacing do
+  appending spacing do
+
+    type_parameter ::=
+        <Extends>core_type_parameter "extends" type_name</Extends>
+      | core_type_parameter
+      ;
+
+    core_type_parameter ::=
+        <Any/> "?"
+      | type_spec
+      ;
+
+    type_spec ::= core_type_spec "<" type_parameter ("," type_parameter)* ">" | core_type_spec;
+              
+    core_type_spec ::= <Array>type_name <Dims>dims</Dims></Array> | <Type>type_name</Type>;
+
+    type_name ::= primitive_type | qualified_name;
+
+    primitive_type ::= <Byte/>"byte" | <Short/>"short" | <Char/>"char" | <Int/>"int" | <Long/>"long" | <Float/>"float" |
+                   <Double/>"double" | <Boolean/>"boolean";
+
+    literal ::=
+              floating_point_literal
+            | integer_literal
+            | character_literal
+            | spacy_literal
+            ;
+
+  spacy_literal ::= (boolean_literal | string_literal | null_literal) ~[a-zA-Z0-9_];
+
+    dims ::= ("[" "]") +;
+
+    expression ::=
+      <ConditionalAssignment> cond_expr assignment_operator expression </ConditionalAssignment>
+    | cond_expr;
+
+
+    assignment_operator ::=
+       "="
+      |"+="
+      |"-="
+      |"*="
+      |"/="
+      |"%="
+      |"&="
+      |"|="
+      |"^="
+      |"<<="
+      |">>="
+      |">>>="
+    ;
+
+    cond_expr ::=   <Conditional>
+                       <Condition>cond_or_expr</Condition>
+                       "?"
+                       <True>expression</True>
+                       ":"
+                       <False>cond_expr</False>
+                    </Conditional>
+                  | cond_or_expr;
+
+    cond_or_expr ::= <Or>cond_and_expr "||" cond_or_expr</Or> | cond_and_expr;
+
+    cond_and_expr ::= <And>or_expr "&&" cond_and_expr</And> | or_expr;
+
+    or_expr ::= <BitOr>xor_expr "|" or_expr</BitOr> | xor_expr;
+
+    xor_expr ::= <BitXor>and_expr "^" xor_expr</BitXor> | and_expr;
+
+    and_expr ::= <BitAnd>eq_expr "&" and_expr</BitAnd> | eq_expr;
+
+    eq_expr ::= <Compare>rel_expr (<Eq/>"=="|<Ne/>"!=") eq_expr</Compare> | rel_expr;
+
+    rel_expr ::=
+        <Compare>shift_expr rel_op rel_expr</Compare>
+      | shift_expr
+    ;
+
+    rel_op ::=
+        <Le/>"<="
+      | <Ge/>">="
+      | <Lt/>"<"
+      | <Gt/>">"
+      | <InstanceOf/>"instanceof"
+    ;
+
+    shift_expr ::=
+        <Shift>add_expr shift_op shift_expr</Shift>
+      | add_expr
+    ;
+
+    shift_op ::=
+        <Lsl/>"<<"
+      | <Lsr/>">>>"
+      | <Asr/>">>"
+    ;
+
+    add_expr ::=
+        <Add>mult_expr "+" add_expr</Add>
+      | <Sub>mult_expr "-" add_expr</Sub>
+      | mult_expr
+    ;
+
+    mult_expr ::=
+        <Mul>unary_expr "*" mult_expr</Mul>
+      | <Div>unary_expr "/" mult_expr</Div>
+      | <Mod>unary_expr "%" mult_expr</Mod>
+      | unary_expr
+    ;
+
+    unary_expr ::= unop unary_expr_not_plus_minus | unary_expr_not_plus_minus;
+
+    unop ::= "++"|"--"|"+"|"-";
+
+    unary_expr_not_plus_minus ::=
+        <BitNot>"~" unary_expr</BitNot>
+      | <Not>"!" unary_expr</Not>
+      | <Cast> "(" type_name dims ")" unary_expr</Cast>
+      | <Cast>"(" primitive_type ")" unary_expr</Cast>
+      | <Cast>"(" type_name ")" unary_expr_not_plus_minus</Cast>
+      | post_fix_expr
+    ;
+
+    post_fix_expr ::= 
+        prim_expr post_fix_expr_rest+
+      | prim_expr
+    ;
+
+    post_fix_expr_rest ::=
+        <Index>"[" expression? "]"</Index>
+      | <Call><Args>arguments</Args></Call>
+      | <Dot>"." post_fix_expr</Dot>
+      | <DotClass>"." "class"</DotClass>
+      | <PostIncrement>"++"</PostIncrement>
+      | <PostDecrement>"--"</PostDecrement>
+    ;
+
+    prim_expr ::=
+        literal
+      | <Var>identifier</Var>
+      | "(" expression ")"
+      | <This/>"this"
+      | <Super/>"super"
+      | <New>"new" type_spec <Args>arguments</Args>(<Body>class_body</Body>)?</New>
+      | <New>"new" type_name dim_expr+ dims?</New>
+      | <New>"new" type_name dims array_initializer</New>
+      | <VoidDotClass/>"void" "." "class"
+    ;
+
+      (*| <New>"new" qualified_name <Args>arguments</Args>(<Body>class_body</Body>)?</New>*)
+
+    arguments ::=
+        "(" expression ("," expression) * ")"
+      | "(" ")"
+    ;
+
+    dim_expr ::= "[" expression "]";
+
+    array_initializer ::=
+        "{" (initializer ",")* "}"
+      | "{" initializer ("," initializer)* "}"
+    ;
+
+    initializer ::=
+        <ArrayInitializer>array_initializer</ArrayInitializer>
+      | expression
+    ;
+
+    block ::= "{" block_statement* "}";
+
+    block_statement ::= declaration | statement;
+
+    statement ::=
+        block
+      | <If>"if" par_expr statement ("else" <Else>statement</Else>)?</If>
+      | <ForIn>"for" "(" <Iterator>final_opt type_spec identifier</Iterator> ":" <Range>expression</Range> ")" <Body>statement</Body></ForIn>
+      | <For>"for" "(" for_init_opt ";"
+                  expression? ";"
+                  expressions? ")" statement</For>
+      | <While>"while" par_expr statement</While>
+      | <Do>"do" statement "while" par_expr ";"</Do>
+      | <Try>"try" block catch_clause* "finally" <Finally>block</Finally></Try>
+      | <Try>"try" block catch_clause+</Try>
+      | <Switch>"switch" par_expr "{" switch_group* "}"</Switch>
+      | <Synchronized>"synchronized" par_expr block</Synchronized>
+      | <Return>"return" expression? ";"</Return>
+      | <Assert>"assert" expression (":" expression)? ";"</Assert>
+      | <Throw>"throw" expression ";"</Throw>
+      | <Break>"break" identifier? ";"</Break>
+      | <Continue>"continue" identifier? ";"</Continue>
+      | <Label>identifier ":" statement</Label>
+      | expression ";"
+      | ";"
+    ;
+
+    par_expr ::= "(" expression ")";
+
+    for_init_opt ::= final_opt type_spec declarators | expressions?;
+
+    final_opt ::= "final"?;
+
+    expressions ::= expression ("," expression)*;
+
+    catch_clause ::= "catch" "(" formal_param ")" block;
+
+    switch_group ::=
+        "case" expression ":" block_statement*
+      | "default" ":" block_statement*
+    ;
+
+    modifier ::=
+      <Modifier>
+      kind:(
+              "public"
+            | "protected"
+            | "private"
+            | "static"
+            | "abstract"
+            | "final"
+            | "native"
+            | "synchronized"
+            | "transient"
+            | "volatile"
+            | "strictfp"
+            | "@Deprecated"
+        )
+      </Modifier>
+    ;
+
+    formal_param ::= final_opt type_spec identifier dims_opt;
+
+    formal_params ::= "(" formal_param ("," formal_param)* ")" | "(" ")";
+
+    declarators ::= declarator ("," declarator)*;
+
+    declarator ::= <Declare>identifier dims_opt ("=" <Initializer>initializer</Initializer>)?</Declare>;
+
+    class_body ::= "{" declaration* "}" | "{" "}";
+
+    declaration ::=
+        <Variable>modifier* type_spec declarators ";"</Variable>
+      | <Method>modifier* (type_spec | "void") identifier formal_params dims_opt throws? block? ";"? </Method>
+      | <Constructor>modifier* identifier formal_params throws? block ";"?</Constructor>
+      | <Class>modifier* "class" identifier ("extends" type_spec)? ("implements" type_spec ("," type_spec)*)?  class_body ";"?</Class>
+      | <Interface>modifier* "interface" identifier ("extends" type_spec ("," type_spec)*)? class_body ";"?</Interface>
+      | <Block>(<Modifier>kind:"static"</Modifier>)? block ";"? </Block>
+    ;
+
+    dims_opt ::= dims?;
+
+    throws ::= "throws" qualified_name ("," qualified_name)*;
+
+    compilation_unit ::=
+      <CompilationUnit>
+        spacing
+        ("package" package:qualified_name ";")?
+        <Imports>import_decl*</Imports>
+        declaration*
+        ";"?
+      </CompilationUnit>
+    ;
+
+    import_decl ::= "import" qualified_name ".*"? ";";
+
+  done;
+done;
+
+start ::= spacing compilation_unit EOF;

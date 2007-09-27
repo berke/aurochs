@@ -1,0 +1,39 @@
+start ::= url EOF;
+url ::= <Http>httpurl</Http>;
+httpurl      ::= "http://" login ("/" <Path>hpath</Path> ("?" <Search>search</Search>)?)?;
+hpath        ::= hsegment ("/" hsegment)*;
+hsegment     ::= <Segment>value:(uchar | ";" | ":" | "@" | "&" | "=")*</Segment>;
+search       ::= <Search>value:(uchar | ";" | ":" | "@" | "&" | "=")*</Search>;
+ip_schemepart  ::= "//" login ("/" urlpath)?;
+login          ::= (<Login>user:user (":" password:password)? "@"</Login>)? <Host>hostport</Host>;
+hostport       ::= host (":" port)?;
+host           ::= <Ip>number:hostnumber</Ip> | <Name>name:hostname</Name>;
+hostname       ::= (domainlabel ".")* toplabel;
+domainlabel    ::= alphadigit domainlabel2?;
+domainlabel2   ::= (alphadigit | "-") domainlabel2 | alphadigit;
+toplabel       ::= alpha toplabel2?;
+toplabel2      ::= (alphadigit | '-') toplabel2 | alphadigit;
+alphadigit     ::= alpha | digit;
+hostnumber     ::= digits "." digits "." digits "." digits;
+port           ::= digits;
+user           ::= (uchar | ";" | "?" | "&" | "=")*;
+password       ::= (uchar | ";" | "?" | "&" | "=")*;
+urlpath        ::= xchar*;
+digit          ::= [0-9];
+digits         ::= digit+;
+
+lowalpha       ::= [a-z];
+hialpha        ::= [A-Z];
+alpha          ::= lowalpha | hialpha;
+safe           ::= [$\-_.+];
+extra          ::= [!*'(),];
+national       ::= [{}|\\^~\[\]`];
+punctuation    ::= [<>#%"];
+
+reserved       ::= [;/?:@&=];
+hex            ::= digit | [A-Fa-f];
+escape         ::= '%' hex hex;
+
+unreserved     ::= alpha | digit | safe | extra;
+uchar          ::= unreserved | escape;
+xchar          ::= unreserved | reserved | escape;
