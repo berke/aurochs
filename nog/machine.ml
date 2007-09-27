@@ -54,10 +54,10 @@ type ('br,'nd,'at) unlabelable_instruction =
   (* %opcode{38} *)   | PCN                        (** Push current construction and create a new one *)
   (* %opcode{39n} *)  | NODE of 'nd                (** Build a new node using the current construction and append it to the previous
                                                        construction, making the previous construction current. *)
-  (* %opcode{39a} *)  | ATTR of 'at                (** Add an attribute of the given name whose value is the input between the saved position
+  (* %opcode{40a} *)  | ATTR of 'at                (** Add an attribute of the given name whose value is the input between the saved position
                                                        and the head position to the current construction *)
-  (* %opcode{40a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
-  (* %opcode{41} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
+  (* %opcode{41a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
+  (* %opcode{42} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
 ;;
 
 type ('br,'nd,'at,'label) instruction =

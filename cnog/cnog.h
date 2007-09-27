@@ -56,7 +56,10 @@ typedef enum {
 
 typedef union {
   int na_int;
-  char *na_string;
+  struct {
+    char *ns_chars;
+    int ns_length;
+  } na_string;
 } nog_arg_t;
 
 #define NI_MAX_ARGS 2

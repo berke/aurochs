@@ -34,5 +34,6 @@ bool pack_read_bytes(packer_t *pk, uint8_t *result, size_t count);
 bool pack_read_string(packer_t *pk, uint8_t **result, size_t *length);
 bool pack_read_int64(packer_t *pk, int64_t *result);
 bool pack_read_uint64(packer_t *pk, uint64_t *result);
+bool pack_read_int(packer_t *pk, int *result);
 
 #endif

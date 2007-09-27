@@ -124,3 +124,13 @@ bool pack_read_uint64(packer_t *pk, uint64_t *result)/*{{{*/
   *result = x;
   return true;
 }/*}}}*/
+bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
+  int64_t x;
+
+  if(pack_read_int64(pk, &x)) {
+    *result = x;
+    return true;
+  } else {
+    return false;
+  }
+}/*}}}*/
