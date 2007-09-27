@@ -41,4 +41,46 @@ let load_opcodes =
   !result
 ;;
 
-let _ = load_opcodes();;
+let gen_ocaml_packer ops fn =
+  let string_of_arg i = sf "a%d" i in
+  Util.with_file_output fn (fun oc ->
+    fp oc "(* %s *)\n" fn;
+    fp oc "(* Auto-generated; do not edit. *)\n";
+    fp oc "\n";
+    fp oc "open Machine;\n";
+    fp oc "\n";
+    fp oc "let pack_instruction ~resolve pk = function\n";
+    List.iter
+      begin fun (name, opcode, args) ->
+        fp oc "  | %s" name;
+        let args = Array.to_list args in
+        begin match args with
+          | [] -> fp oc " "
+          | _ ->
+              let i = ref 0 in
+              fp oc "(%s) " (String.concat ", " (List.map (fun _ -> incr i; string_of_arg !i) args))
+        end;
+        fp oc "->\n";
+        fp oc "      Pack.write_uint pk 0x%02x;\n" opcode;
+        let i = ref 0 in
+        List.iter
+          begin fun x ->
+            incr i;
+            match x with
+            | Int ->            fp oc "      Pack.write_uint pk %s;\n" (string_of_arg !i)
+            | Char ->           fp oc "      Pack.write_uint pk (Char.code %s);\n" (string_of_arg !i)
+            | Node|Attribute -> fp oc "      Pack.write_string pk %s;\n" (string_of_arg !i)
+            | Label ->          fp oc "      Pack.write_uint pk (resolve %s);\n" (string_of_arg !i)
+          end
+          args;
+        fp oc "      ()\n"
+      end
+      ops;
+    fp oc "  | _ -> ()\n";
+    fp oc ";;\n")
+;;
+
+let _ =
+  let ops = load_opcodes() in
+  gen_ocaml_packer ops "packer.ml"
+;;
