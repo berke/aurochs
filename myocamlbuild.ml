@@ -109,7 +109,7 @@ let clibdep ld =
 let aurochs_lib_description = {
   od_path = "";
   od_name = "aurochs";
-  od_headers = [ "cnog/cnog.h"; "cnog/peg.h"; "cnog/peg_tree.h"; "cpack/pack.h"; "cpeglib/peg_prelude.h"; "include/base_types.h" ];
+  od_headers = [ "cnog/cnog.h"; "cnog/peg.h"; "cnog/peg_tree.h"; "cpack/pack.h"; "cpeglib/parse_tree.h"; "include/base_types.h" ];
   od_incdirs = [ "cnog"; "cpack"; "cpeglib"; "include" ];
 }
 

@@ -4,15 +4,16 @@
 #include <stdio.h>
 
 #include <peg.h>
+#include <cnog.h>
 
-void *xmalloc(size_t p)/*{{{*/
+static void *xmalloc(size_t p)/*{{{*/
 {
   void *r;
   r = malloc(p);
   if(!r) abort();
   return r;
 }/*}}}*/
-void peg_dump_context(FILE *f, context *cx)/*{{{*/
+void peg_dump_context(FILE *f, peg_context_t *cx)/*{{{*/
 {
   int i,j;
   int m;
@@ -58,15 +59,16 @@ void peg_dump_context(FILE *f, context *cx)/*{{{*/
     }
   }
 }/*}}}*/
-context *peg_create_context(nog_program_t *pg, peg_builter_t *pb, letter *input, int input_length)/*{{{*/
+peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t *input, int input_length)/*{{{*/
 {
   int i;
-  context *cx;
-  choice *alternatives;
-  result *results;
+  peg_context_t *cx;
+  choice_t *alternatives;
+  result_t *results;
   int num_alternatives;
+  int num_productions;
 
-  cx = xmalloc(sizeof(context));
+  cx = xmalloc(sizeof(peg_context_t));
 
   cx->cx_input = input + input_length;
   cx->cx_input_length = input_length;
@@ -74,8 +76,11 @@ context *peg_create_context(nog_program_t *pg, peg_builter_t *pb, letter *input,
   num_alternatives = pg->np_num_choices;
   num_productions = pg->np_num_productions;
 
-  cx->cx_alternatives = xmalloc(sizeof(choice *) * num_alternatives);
-  alternatives = xmalloc(sizeof(choice) * (input_length + 1) * num_alternatives);
+  cx->cx_num_alternatives = num_alternatives;
+  cx->cx_num_productions = num_productions;
+
+  cx->cx_alternatives = xmalloc(sizeof(choice_t *) * num_alternatives);
+  alternatives = xmalloc(sizeof(choice_t) * (input_length + 1) * num_alternatives);
   for(i = 0; i < num_alternatives * (input_length + 1); i ++) {
     alternatives[i] = A_UNDEFINED;
   }
@@ -83,8 +88,8 @@ context *peg_create_context(nog_program_t *pg, peg_builter_t *pb, letter *input,
     cx->cx_alternatives[i] = alternatives + i * (input_length + 1) + input_length;
   }
 
-  cx->cx_results = xmalloc(sizeof(result *) * num_productions);
-  results = xmalloc(sizeof(result) * (input_length + 1) * num_productions);
+  cx->cx_results = xmalloc(sizeof(result_t *) * num_productions);
+  results = xmalloc(sizeof(result_t) * (input_length + 1) * num_productions);
   for(i = 0; i < num_productions * (input_length + 1); i ++) {
     results[i] = R_UNKNOWN;
   }
@@ -96,7 +101,7 @@ context *peg_create_context(nog_program_t *pg, peg_builter_t *pb, letter *input,
 
   return cx;
 }/*}}}*/
-void peg_delete_context(context *cx)/*{{{*/
+void peg_delete_context(peg_context_t *cx)/*{{{*/
 {
   if(cx->cx_num_alternatives) free(*cx->cx_alternatives - cx->cx_input_length);
   free(*cx->cx_results - cx->cx_input_length);

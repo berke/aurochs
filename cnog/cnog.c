@@ -5,13 +5,6 @@
 #include <cnog.h>
 #include <peg.h>
 
-typedef enum {
-  R_EOF = 0,
-  R_UNKNOWN = 1,
-  R_FAIL = 2,
-  R_BUSY = 3
-} memo_t;
-
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 {
   int i, j, k;
