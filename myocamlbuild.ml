@@ -125,6 +125,9 @@ let ocamllib old =
        S(List.map(fun x -> S[A"-ccopt";A("-I"^x)]) old.od_incdirs);
      ];
 
+   flag ["compile"; "c"; "cstuff"; "debug"] & S[A"-ccopt";A"-g"];
+   flag ["compile"; "c"; "cstuff"] & S[A"-ccopt";A"-O3"];
+
    flag ["link"; "library"; "ocaml"; "byte"; "use_"^u]
    (S[A"-dllpath";A(old.od_path);A"-dllib";A("-l"^u); A"-cclib";A("-L"^old.od_path);A"-cclib";A("-l"^u)]);
 

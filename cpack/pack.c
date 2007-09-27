@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "pack.h"
+#include <pack.h>
 
 bool pack_init(packer_t *pk, size_t block_size, void *extra, pack_resplenisher_t resplenish, void *(*malloc)(size_t), void (*free)(void *))/*{{{*/
 {
