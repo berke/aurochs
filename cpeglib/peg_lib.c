@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "peg_prelude.h"
+#include <peg.h>
 
 void *xmalloc(size_t p)/*{{{*/
 {
@@ -58,18 +58,21 @@ void peg_dump_context(FILE *f, context *cx)/*{{{*/
     }
   }
 }/*}}}*/
-context *peg_create_context(letter *input, int input_length, int num_productions, int num_alternatives)/*{{{*/
+context *peg_create_context(nog_program_t *pg, peg_builter_t *pb, letter *input, int input_length)/*{{{*/
 {
   int i;
   context *cx;
-  cx = xmalloc(sizeof(context));
   choice *alternatives;
   result *results;
+  int num_alternatives;
+
+  cx = xmalloc(sizeof(context));
 
   cx->cx_input = input + input_length;
   cx->cx_input_length = input_length;
-  cx->cx_num_productions = num_productions;
-  cx->cx_num_alternatives = num_alternatives;
+
+  num_alternatives = pg->np_num_choices;
+  num_productions = pg->np_num_productions;
 
   cx->cx_alternatives = xmalloc(sizeof(choice *) * num_alternatives);
   alternatives = xmalloc(sizeof(choice) * (input_length + 1) * num_alternatives);
@@ -88,6 +91,8 @@ context *peg_create_context(letter *input, int input_length, int num_productions
   for(i = 0; i < num_productions; i ++) {
     cx->cx_results[i] = results + i * (input_length + 1) + input_length;
   }
+
+  cx->cx_builder = pb;
 
   return cx;
 }/*}}}*/

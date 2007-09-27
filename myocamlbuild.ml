@@ -6,6 +6,8 @@ open Command;;
 open Ocaml_specific;;
 open Outcome;;
 
+let ( & ) f x = f x;;
+
 module Config_common =
   struct
     let ocamldir_default = "/udir/durak/lib/ocaml";;
@@ -50,7 +52,8 @@ type libdep_description = {
 type ocaml_lib_description = {
   od_path : string;
   od_name : string;
-  od_headers : string list
+  od_headers : string list;
+  od_incdirs : string list
 };;
 
 let system_lib_dir =
@@ -64,6 +67,16 @@ let zlib_description = {
   ld_name = "zlib";
   ld_have_lib = Some"-DHAVE_ZLIB";
   ld_lib = "-lz";
+  ld_dir = "-L"^system_lib_dir;
+  ld_include = "-L/usr/include";
+  ld_c_headers = [];
+  ld_static = true
+}
+
+let aurochslib_description = {
+  ld_name = "aurochslib";
+  ld_have_lib = Some"-DHAVE_AUROCHSLIB";
+  ld_lib = "-l";
   ld_dir = "-L"^system_lib_dir;
   ld_include = "-L/usr/include";
   ld_c_headers = [];
@@ -93,18 +106,11 @@ let clibdep ld =
 ;;
 (* ***)
 
-let cryptokit_lib_description = {
+let aurochs_lib_description = {
   od_path = "";
-  od_name = "cryptokit";
-  od_headers = 
-    ["arcfour.h"; "d3des.h"; "rijndael-alg-fst.h";
-      "ripemd160.h"; "sha1.h"; "sha256.h"]
-};;
-
-let float32_lib_description = {
-  od_path = "float32/";
-  od_name = "float32";
-  od_headers = []
+  od_name = "aurochs";
+  od_headers = [ "cnog/cnog.h"; "cnog/peg.h"; "cnog/peg_tree.h"; "cpack/pack.h"; "cpeglib/peg_prelude.h"; "include/base_types.h" ];
+  od_incdirs = [ "cnog"; "cpack"; "cpeglib"; "include" ];
 }
 
 (*** ocamllib *)
@@ -113,6 +119,11 @@ let ocamllib old =
    (* X is an ocaml library.
       This will declare use_X and include_X *)
    ocaml_lib u;
+
+   flag ["compile"; "c"; "cstuff"] &
+     S[A"-ccopt";A"-Wall";
+       S(List.map(fun x -> S[A"-ccopt";A("-I"^x)]) old.od_incdirs);
+     ];
 
    flag ["link"; "library"; "ocaml"; "byte"; "use_"^u]
    (S[A"-dllpath";A(old.od_path);A"-dllib";A("-l"^u); A"-cclib";A("-L"^old.od_path);A"-cclib";A("-l"^u)]);
@@ -169,7 +180,7 @@ dispatch
 
         Log.dprintf 5 "Ready";
 
-        (*ocamllib float32_lib_description;*)
+        ocamllib aurochs_lib_description;
         (*flag ["ocaml"; "byte"; "library"; "float32"] (S[A"-Lfloat32";A"-lfloat32"]);*)
         (*flag ["ocaml"; "native"; "program"; "float32"] (S[A"-cclib"; A"float32/dllfloat32.so"]); WORKS *)
         (*flag ["ocaml"; "native"; "program"; "float32"] (S[A"-verbose";A"-ccopt";A"-Lfloat32";A"-cclib"; A"float32/dllfloat32.so"]);*)
