@@ -191,6 +191,14 @@ dispatch
         flag ["ocaml"; "link"; "byte"; "use_float32"] (S[A"-dllpath";A"float32";A"-dllib"; A"-lfloat32"]);*)
         (*dep ["use_float32"] ["float32/libfloat32.so"];*)
         (*dep ["file:astivore/astivore.native"] ["float32/dllfloat32.so"];*)
+
+
+        rule "LaTeX to PDF conversion rule"
+          ~prods:["cnog/cnog_unpack.c";"cnog/cnog_unpack.h";"nog/nog_packer.ml"]
+          ~deps:["genmachine.byte";"nog/machine.ml"]
+          begin fun env _build ->
+            Cmd(S[A"./genmachine.byte"])
+          end;
       end
   | _ -> ()
   end

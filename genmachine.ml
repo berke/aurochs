@@ -34,8 +34,8 @@ let load_opcodes =
         in
         let m = String.length flags in
         let flags' = Array.init m (fun i -> arg_of_char flags.[i]) in
-        result += (name, opcode, flags');
-        Printf.printf ">> 0x%02x %S %S\n" opcode flags name
+        result += (name, opcode, flags')
+        (*Printf.printf ">> 0x%02x %S %S\n" opcode flags name*)
       end
   ));
   !result
@@ -151,6 +151,6 @@ let gen_ocaml_packer ops fn =
 
 let _ =
   let ops = load_opcodes() in
-  gen_ocaml_packer ops "nog_packer.ml";
-  gen_c_unpacker ops "cnog_unpack"
+  gen_ocaml_packer ops "backends/nog_packer.ml";
+  gen_c_unpacker ops "cnog/cnog_unpack"
 ;;
