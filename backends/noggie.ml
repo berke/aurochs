@@ -404,7 +404,27 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
 ;;
 (* ***)
 (*** save_program *)
-let save_program fn pg =
+let save_program fn pg peg =
+  let number iterator =
+    let h = Hashtbl.create 100 in
+    iterator
+      begin fun u ->
+        if not (Hashtbl.mem h u) then
+          Hashtbl.add h u & Hashtbl.length h
+      end;
+    let m = Hashtbl.length h in
+    let a = Array.make m "" in
+    Hashtbl.iter (fun u i -> a.(i) <- u) h;
+    a
+  in
+
+  let attribute_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_attributes f pe) peg)
+  and node_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_builds f pe) peg)
+  in
+
+  (*let node_map =
+    build_names !Opt.node_prefix (fun f p -> Peg.iter_over_builds f p; f root_node) in*)
+
   Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in
     (*let sk = Bytes.logger stdout sk in*)
     Pack.write_uint64 sk nog_signature;
@@ -413,6 +433,22 @@ let save_program fn pg =
     Pack.write_uint sk pg.pg_build_pc;
     Pack.write_uint sk & Array.length pg.pg_productions;
     Pack.write_uint sk & Array.length pg.pg_choices;
+
+    let dump_array a =
+      Pack.write_uint sk & Array.length a;
+      Array.iteri
+        begin fun i u ->
+          info `Debug "  #%d: %s" i u;
+          Pack.write_string sk u
+        end
+        a
+    in
+
+    info `Debug "Nodes:";
+    dump_array node_numbers;
+    info `Debug "Attributes:";
+    dump_array attribute_numbers;
+
     Pack.write_uint sk & Array.length pg.pg_code;
     let resolve (x, _) = x in
     Array.iter (Nog_packer.pack_instruction ~resolve sk) pg.pg_code

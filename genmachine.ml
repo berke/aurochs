@@ -174,7 +174,7 @@ let gen_c_unpacker ops fn =
                   fp occ "      ins->ni_arg[%d].na_int = arg;\n" i
               | Node|Attribute ->
                   fp occ "      if(!pack_read_string(pk, &string, &length)) return false;\n";
-                  fp occ "      ins->ni_arg[%d].na_string.ns_chars = (char *) string;\n" i;
+                  fp occ "      ins->ni_arg[%d].na_string.ns_chars = string;\n" i;
                   fp occ "      ins->ni_arg[%d].na_string.ns_length = length;\n" i
             end
             args;

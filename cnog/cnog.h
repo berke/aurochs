@@ -57,12 +57,14 @@ typedef enum {
   NOG_SWCH,
 } nog_opcode_t;
 
+typedef struct {
+  unsigned char *ns_chars;
+  int ns_length;
+} nog_string_t;
+
 typedef union {
   int na_int;
-  struct {
-    char *ns_chars;
-    int ns_length;
-  } na_string;
+  nog_string_t na_string;
   struct {
     int *nt_elements;
     int nt_length;
@@ -82,6 +84,10 @@ typedef struct {
   int np_build_pc;
   int np_num_productions;
   int np_num_choices;
+  int np_num_constructors;
+  nog_string_t *np_constructors;
+  int np_num_attributes;
+  nog_string_t *np_attributes;
   nog_instruction_t *np_program;
 } nog_program_t;
 

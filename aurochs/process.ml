@@ -404,9 +404,7 @@ let process fno =
           Camelus.generate fn' !Opt.start (Lazy.force peg) pg
       | `c ->
           Ritchie.generate fn' ~start:!Opt.start (Lazy.force peg_canonified)
-      | `nog ->
-          let pg = Lazy.force nog in
-          Noggie.save_program (fn'^".nog") pg
+      | `nog -> Noggie.save_program (fn'^".nog") (Lazy.force nog) (Lazy.force peg)
       | `amd64 ->
           let pg = Lazy.force nog in
           with_file_output (fn'^".s")

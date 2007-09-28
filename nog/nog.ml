@@ -17,6 +17,7 @@ let print_stack_symbol oc = function
   | Accept -> fp oc "#"
 ;;
 
+(*** print_stack *)
 let print_stack printer oc s =
   let first = ref true in
   Stack.iter
@@ -26,6 +27,7 @@ let print_stack printer oc s =
     end
     s
 ;;
+(* ***)
 
 type ('nd,'at) code = ('nd, 'at, (int * string)) instruction array;;
 
@@ -151,15 +153,18 @@ let ceol = "\027[K"
 let home = "\r"
 ;;
 
+(*** print_memo *)
 let print_memo oc = function
 | Jump j -> fp oc "J(%d)" j
 | Failure -> fp oc "F"
 | Busy -> fp oc "B"
 | Unknown -> fp oc "U"
 ;;
+(* ***)
 
 let print_boolean oc b = fp oc "%b" b;;
 
+(*** print_boolean_array *)
 let print_boolean_array oc a =
   Array.iter 
     begin fun b ->
@@ -167,7 +172,7 @@ let print_boolean_array oc a =
     end
     a
 ;;
-
+(* ***)
 (*** execute_positioned_quick *)
 let execute_positioned_quick program
   ~print_node
@@ -346,7 +351,6 @@ let execute_positioned_quick program
     end
 ;;
 (* ***)
-
 (*** execute_positioned *)
 let execute_positioned program
   ?(quick=false)

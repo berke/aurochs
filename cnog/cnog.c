@@ -7,6 +7,7 @@
 #include <peg.h>
 #include <pack.h>
 #include <assert.h>
+#include <stdlib.h>
 
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 {
@@ -298,56 +299,77 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
 nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
+  uint64_t size;
+  int i;
+
+  void fail(void) { abort(); }
 
   result = 0;
   
   pg = pk->p_malloc(sizeof(nog_program_t));
       
-  if(pg) for(;;) {
-    printf("Allocated program\n");
-    if(!pack_read_uint64(pk, &signature)) break;
-    printf("Read signature %lx\n", signature);
-    if(signature != NOG_SIGNATURE) break;
-    printf("Signature OK\n");
-    if(!pack_read_uint64(pk, &version)) break;
-    printf("Version OK\n");
 
-    if(!pack_read_int(pk, &pg->np_start_pc)) break;
-    printf("Start pc is %d\n", pg->np_start_pc);
+  /* Welcome to C allocation hell! */
+  if(!pg) fail();
+  printf("Allocated program\n");
 
-    if(!pack_read_int(pk, &pg->np_build_pc)) break;
-    printf("Build pc is %d\n", pg->np_build_pc);
+  if(!pack_read_uint64(pk, &signature)) fail();
+  printf("Read signature %lx\n", signature);
 
-    if(!pack_read_int(pk, &pg->np_num_productions)) break;
-    printf("Num_productions is %d\n", pg->np_num_productions);
+  if(signature != NOG_SIGNATURE) fail();
+  printf("Signature OK\n");
 
-    if(!pack_read_int(pk, &pg->np_num_choices)) break;
-    printf("Num_choices is %d\n", pg->np_num_choices);
+  if(!pack_read_uint64(pk, &version)) fail();
+  printf("Version OK\n");
 
-    if(!pack_read_int(pk, &pg->np_count)) break;
-    printf("Program size is %d\n", pg->np_count);
+  if(!pack_read_int(pk, &pg->np_start_pc)) fail();
+  printf("Start pc is %d\n", pg->np_start_pc);
 
-    pg->np_program = pk->p_malloc(sizeof(nog_instruction_t) * pg->np_count);
-    if(pg->np_program) {
-      int i;
+  if(!pack_read_int(pk, &pg->np_build_pc)) fail();
+  printf("Build pc is %d\n", pg->np_build_pc);
 
-      for(i = 0; i < pg->np_count; i ++) {
-        if(!cnog_unpack_instruction(pk, pg->np_program + i)) {
-          fprintf(stderr, "Unpack error at instruction %d\n", i);
-          break;
-        }
-      }
+  if(!pack_read_int(pk, &pg->np_num_productions)) fail();
+  printf("Num_productions is %d\n", pg->np_num_productions);
 
-      result = pg;
-      pg = 0;
+  if(!pack_read_int(pk, &pg->np_num_choices)) fail();
+  printf("Num_choices is %d\n", pg->np_num_choices);
+
+  if(!pack_read_int(pk, &pg->np_num_constructors)) fail();
+  printf("Num_constructors is %d\n", pg->np_num_constructors);
+
+  pg->np_constructors = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_constructors);
+  if(!pg->np_constructors) fail();
+
+  for(i = 0; i < pg->np_num_constructors; i ++) {
+    if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size)) fail();
+    pg->np_constructors[i].ns_length = size;
+  }
+
+  if(!pack_read_int(pk, &pg->np_num_attributes)) fail();
+
+  printf("Num_attributes is %d\n", pg->np_num_attributes);
+  pg->np_attributes = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_attributes);
+  if(!pg->np_attributes) fail();
+
+  for(i = 0; i < pg->np_num_attributes; i ++) {
+    if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size)) fail();
+    pg->np_attributes[i].ns_length = size;
+  }
+  
+  if(!pack_read_int(pk, &pg->np_count)) fail();
+  printf("Program size is %d\n", pg->np_count);
+
+  pg->np_program = pk->p_malloc(sizeof(nog_instruction_t) * pg->np_count);/*{{{*/
+  if(!pg->np_program) fail();
+
+  for(i = 0; i < pg->np_count; i ++) {
+    if(!cnog_unpack_instruction(pk, pg->np_program + i)) {
+      fprintf(stderr, "Unpack error at instruction %d\n", i);
+      fail();
     }
-    break;
   }
 
-  if(pg) {
-    if(pg->np_program) pk->p_free(pg->np_program);
-    pk->p_free(pg);
-  }
+  result = pg;
 
   return result;
 }/*}}}*/
