@@ -47,6 +47,7 @@ void ptree_attach_attribute(info *pti, tree *tr, int id, unsigned char *name, in
   node *nd;
   attribute *at;
 
+  nd = ptree_get_node(tr);
   at = xmalloc(sizeof(attribute));
   at->a_name = name;
   at->a_value.s_begin = v_begin;

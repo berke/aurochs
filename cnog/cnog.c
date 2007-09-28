@@ -94,8 +94,8 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
       ip = ip_next;
 
       assert(pg->np_program <= ip && ip < pg->np_program + pg->np_count);
-      //printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);
-      printf("%ld %ld %d\n", ip - pg->np_program, head - bof, fail);
+      /*printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);
+      printf("%ld %ld %d\n", ip - pg->np_program, head - bof, fail);*/
 
       ip_next = ip + 1;
 
@@ -293,7 +293,6 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
 
             id = arg0();
             name = pg->np_constructors[id].ns_chars;
-            printf("NODE %d, current=%p, name=%s\n", id, current, name);
             tr = bd->pb_create_node(bi, id, name);
             bd->pb_add_children(bi, current, tr);
             current = tr;
@@ -336,6 +335,9 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
 
   return !fail;
 }/*}}}*/
+
+#define DEBUGF(x,...)
+
 nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
@@ -351,31 +353,31 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
 
   /* Welcome to C allocation hell! */
   if(!pg) fail();
-  printf("Allocated program\n");
+  DEBUGF("Allocated program\n");
 
   if(!pack_read_uint64(pk, &signature)) fail();
-  printf("Read signature %lx\n", signature);
+  DEBUGF("Read signature %lx\n", signature);
 
   if(signature != NOG_SIGNATURE) fail();
-  printf("Signature OK\n");
+  DEBUGF("Signature OK\n");
 
   if(!pack_read_uint64(pk, &version)) fail();
-  printf("Version OK\n");
+  DEBUGF("Version OK\n");
 
   if(!pack_read_int(pk, &pg->np_start_pc)) fail();
-  printf("Start pc is %d\n", pg->np_start_pc);
+  DEBUGF("Start pc is %d\n", pg->np_start_pc);
 
   if(!pack_read_int(pk, &pg->np_build_pc)) fail();
-  printf("Build pc is %d\n", pg->np_build_pc);
+  DEBUGF("Build pc is %d\n", pg->np_build_pc);
 
   if(!pack_read_int(pk, &pg->np_num_productions)) fail();
-  printf("Num_productions is %d\n", pg->np_num_productions);
+  DEBUGF("Num_productions is %d\n", pg->np_num_productions);
 
   if(!pack_read_int(pk, &pg->np_num_choices)) fail();
-  printf("Num_choices is %d\n", pg->np_num_choices);
+  DEBUGF("Num_choices is %d\n", pg->np_num_choices);
 
   if(!pack_read_int(pk, &pg->np_num_constructors)) fail();
-  printf("Num_constructors is %d\n", pg->np_num_constructors);
+  DEBUGF("Num_constructors is %d\n", pg->np_num_constructors);
 
   pg->np_constructors = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_constructors);
   if(!pg->np_constructors) fail();
@@ -383,23 +385,23 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   for(i = 0; i < pg->np_num_constructors; i ++) {
     if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size)) fail();
     pg->np_constructors[i].ns_length = size;
-    printf("  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
+    DEBUGF("  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
   }
 
   if(!pack_read_int(pk, &pg->np_num_attributes)) fail();
 
-  printf("Num_attributes is %d\n", pg->np_num_attributes);
+  DEBUGF("Num_attributes is %d\n", pg->np_num_attributes);
   pg->np_attributes = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_attributes);
   if(!pg->np_attributes) fail();
 
   for(i = 0; i < pg->np_num_attributes; i ++) {
     if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size)) fail();
     pg->np_attributes[i].ns_length = size;
-    printf("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
+    DEBUGF("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
   }
   
   if(!pack_read_int(pk, &pg->np_count)) fail();
-  printf("Program size is %d\n", pg->np_count);
+  DEBUGF("Program size is %d\n", pg->np_count);
 
   pg->np_program = pk->p_malloc(sizeof(nog_instruction_t) * pg->np_count);/*{{{*/
   if(!pg->np_program) fail();
