@@ -22,7 +22,7 @@ typedef int result_t;
 #if LONG_LETTERS
 typedef unsigned int letter_t;
 #else
-typedef char letter_t;
+typedef unsigned char letter_t;
 #endif
 typedef unsigned char choice_t;
 

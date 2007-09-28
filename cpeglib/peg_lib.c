@@ -85,7 +85,7 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t
     alternatives[i] = A_UNDEFINED;
   }
   for(i = 0; i < num_alternatives; i ++) {
-    cx->cx_alternatives[i] = alternatives + i * (input_length + 1) + input_length;
+    cx->cx_alternatives[i] = alternatives + i * (input_length + 1);
   }
 
   cx->cx_results = xmalloc(sizeof(result_t *) * num_productions);
@@ -94,18 +94,22 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t
     results[i] = R_UNKNOWN;
   }
   for(i = 0; i < num_productions; i ++) {
-    cx->cx_results[i] = results + i * (input_length + 1) + input_length;
+    cx->cx_results[i] = results + i * (input_length + 1);
   }
 
   cx->cx_builder = pb;
+
+  /* XXX: Give a reasonable upper bound on the stack size */
+  cx->cx_stack = xmalloc(sizeof(symbol_t) * input_length * num_productions);
 
   return cx;
 }/*}}}*/
 void peg_delete_context(peg_context_t *cx)/*{{{*/
 {
-  if(cx->cx_num_alternatives) free(*cx->cx_alternatives - cx->cx_input_length);
-  free(*cx->cx_results - cx->cx_input_length);
+  if(cx->cx_num_alternatives) free(*cx->cx_alternatives);
+  free(*cx->cx_results);
   free(cx->cx_alternatives);
   free(cx->cx_results);
+  free(cx->cx_stack);
   free(cx);
 }/*}}}*/

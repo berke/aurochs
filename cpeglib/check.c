@@ -48,6 +48,9 @@ int main(int argc, char **argv)
   size_t peg_data_size;
   nog_program_t *pg;
   packer_t pk;
+  int rc;
+
+  rc = 0;
 
   argv ++; argc --;
 
@@ -70,13 +73,73 @@ int main(int argc, char **argv)
     pg = cnog_unpack_program(&pk);
     printf("Unpacked to %p\n", pg);
     if(pg) {
+      peg_context_t *cx;
+      size_t m;
+      int i;
+      int error_pos;
+      char *fn;
+      unsigned char *buf;
+      int rc;
 
+      rc = 0;
+
+      for(i = 0; i < argc; i ++) {
+        fn = argv[i];
+
+        buf = load_file(fn, &m);
+        printf("Loaded file %s to %p\n", fn, buf);
+        if(buf) {
+          cx = peg_create_context(pg, &parse_tree_builder, buf, m);
+          printf("Created context %p\n", cx);
+          if(cx) {
+            if(cnog_execute(cx, pg, false)) {
+              printf("Does parse.\n");
+            } else {
+              printf("Doesn't parse.\n");
+              error_pos = cnog_error_position(cx, pg);
+              printf("Error at %d\n", error_pos);
+            }
+
+            peg_delete_context(cx);
+          }
+        }
+        free(buf);
+      }
+#if 0
+        i = foobar_parse_start(cx, - m);
+        if(getenv("DUMP_CONTEXT")) dump_context(stdout, cx);
+
+        if(!i) {
+          printf("%05d RESULT OK\n", count);
+          tree *tr0;
+
+          if(getenv("DUMP_TREE"))
+          {
+            tr0 = create_node("Root");
+            (void) foobar_build_start(cx, &tr0->t_element.t_node, -m);
+            reverse_tree(tr0);
+            dump_tree(stdout, cx->cx_input, tr0, 0);
+          }
+        } else {
+          error_pos = error_position(cx);
+          if(i > 0) {
+            printf("%05d RESULT NOPREFIX; ERROR AT %d\n", count, error_pos);
+            rc = 1;
+          } else {
+            printf("%05d RESULT PREFIX %d; ERROR AT %d\n", count, m + i, error_pos);
+          }
+        }
+        fflush(stdout);
+        delete_context(cx);
+        fclose(f);
+      }
+#endif
 
       cnog_free_program(pg, free);
     }
   }
 
-  return 0;
+  return rc;
 
 #if 0
   { peg_context_t *cx;

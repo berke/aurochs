@@ -65,5 +65,6 @@ void ptree_reverse_sibling(info *pti, node *nd);
 void ptree_reverse_tree(info *pti, tree *tr);
 void ptree_dump_tree(info *pti, FILE *f, char *input, tree *tr, int indent);
 void ptree_dump_context(info *pti, FILE *f, peg_context_t *cx);
+peg_builder_t parse_tree_builder;
 
 #endif

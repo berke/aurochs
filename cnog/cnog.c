@@ -6,6 +6,7 @@
 #include <cnog_unpack.h>
 #include <peg.h>
 #include <pack.h>
+#include <assert.h>
 
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 {
@@ -42,7 +43,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   boolean = 0;
   fail = false;
   choice = 0;
-  memo = 0;
+  memo = R_UNKNOWN;
   head = cx->cx_input;
   bof = head - 1;
   eof = cx->cx_input + cx->cx_input_length;
@@ -73,8 +74,8 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   }/*}}}*/
 
   /* Execution loop */
-  void run(nog_instruction_t *ip) {/*{{{*/
-    nog_instruction_t *ip_next;
+  void run(nog_instruction_t *ip_next) {/*{{{*/
+    nog_instruction_t *ip;
 
     int arg0() { return ip->ni_arg[0].na_int; }
     int arg1() { return ip->ni_arg[1].na_int; }
@@ -83,6 +84,11 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
 
     for(;;) {
       ip = ip_next;
+
+      assert(pg->np_program <= ip && ip < pg->np_program + pg->np_count);
+      printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);
+      fflush(stdout);
+
       ip_next = ip + 1;
 
       switch(ip->ni_opcode) {
@@ -139,14 +145,15 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
           break;
 
         case NOG_SBNS:
-          if(bof < head && head < eof && *head == arg0()) {
-            head ++;
+          printf("SBNS %c %d\n", *head, arg0());
+          if(bof < head && head < eof && *head == arg1()) {
             jump();
-          }
+          } else head ++;
           break;
 
         case NOG_BSLLT:
-          if(eof - head < ip->ni_arg[0].na_int) jump(); /* XXX */
+          printf("BSLLT\n");
+          if(eof - head < arg1()) jump(); /* XXX */
           break;
 
         case NOG_BNBOF:
@@ -194,6 +201,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
           break;
 
         case NOG_SETF:
+          printf("Setf");
           fail = true;
           break;
 
@@ -222,6 +230,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
           break;
 
         case NOG_LDMEM:
+          printf("bof=%p head=%p eof=%p i=%ld arg0=%d results=%p\n", bof, head, eof, head - bof, arg0(), cx->cx_results);
           memo = cx->cx_results[arg0()][head - bof];
           break;
 
@@ -253,6 +262,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
             position = stack_top();
             cx->cx_alternatives[arg0()][position] = arg1();
           }
+          break;
 
         case NOG_JMEM:
           head = bof + memo;
@@ -283,7 +293,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   sp = cx->cx_stack;
   run(pg->np_program + (build ? pg->np_build_pc : pg->np_start_pc));
 
-  return fail;
+  return !fail;
 }/*}}}*/
 nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
