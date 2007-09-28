@@ -9,6 +9,7 @@ type arg =
 | Node
 | Char
 | Label
+| Labels
 ;;
 
 type kind =
@@ -96,12 +97,35 @@ let gen_c_unpacker ops fn =
       fp occ "  switch(opcode) {\n";
 
       List.iter
-        begin fun (_kind, name, opcode, args) ->
+        begin fun (kind, name, opcode, args) ->
           fp occ "    case 0x%02x: /* %s */\n" opcode name;
+
+          let args = Array.to_list args in
+
+          let args = match kind with
+            | Labelable -> Label :: args
+            | Unlabelable -> args
+            | Multi_labelable -> Labels :: args
+          in
+
+          let args = Array.of_list args in
 
           Array.iteri
             begin fun i x ->
               match x with
+              | Labels ->
+                  fp occ "      if(!pack_read_uint64(pk, &arg)) return false;\n";
+                  fp occ "      ins->ni_arg[%d].nt_length = arg;\n" i;
+                  fp occ "      ins->ni_arg[%d].nt_elements = pk->p_malloc(sizeof(int) * arg);\n" i;
+                  fp occ "      if(!ins->ni_arg[%d].nt_elements) return false;\n" i;
+                  fp occ "      {\n";
+                  fp occ "        int i, m;\n";
+                  fp occ "        \n";
+                  fp occ "        m = arg;\n";
+                  fp occ "        for(i = 0; i < m; i ++) {\n";
+                  fp occ "          if(!pack_read_int(pk, ins->ni_arg[%d].nt_elements + i)) return false;\n" i;
+                  fp occ "        }\n";
+                  fp occ "      }\n"
               | Int|Char|Label ->
                   fp occ "      if(!pack_read_uint64(pk, &arg)) return false;\n";
                   fp occ "      ins->ni_arg[%d].na_int = arg;\n" i
@@ -171,6 +195,9 @@ let gen_ocaml_packer ops fn =
           begin fun x ->
             incr i;
             match x with
+            | Labels ->
+                fp oc "      Pack.write_uint pk (Array.length %s);\n" (string_of_arg !i);
+                fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve x)) %s);\n" (string_of_arg !i)
             | Int ->            fp oc "      Pack.write_uint pk %s;\n" (string_of_arg !i)
             | Char ->           fp oc "      Pack.write_uint pk (Char.code %s);\n" (string_of_arg !i)
             | Node|Attribute -> fp oc "      Pack.write_string pk %s;\n" (string_of_arg !i)

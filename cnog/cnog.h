@@ -60,6 +60,10 @@ typedef union {
     char *ns_chars;
     int ns_length;
   } na_string;
+  struct {
+    int *nt_elements;
+    int nt_length;
+  } na_table;
 } nog_arg_t;
 
 #define NI_MAX_ARGS 2
