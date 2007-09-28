@@ -147,3 +147,13 @@ bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
     return false;
   }
 }/*}}}*/
+bool pack_read_uint(packer_t *pk, unsigned int *result) {/*{{{*/
+  uint64_t x;
+
+  if(pack_read_uint64(pk, &x)) {
+    *result = x;
+    return true;
+  } else {
+    return false;
+  }
+}/*}}}*/

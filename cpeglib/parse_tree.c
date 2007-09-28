@@ -112,7 +112,7 @@ static void put_indent(info *pti, FILE *f, int indent)/*{{{*/
 static void put_substring(info *pti, FILE *f, unsigned char *input, substring *s)/*{{{*/
 {
   if(s->s_begin > s->s_end) {
-    fprintf(f,"***ILLEGAL(%d,%d)***", s->s_begin, s->s_end);
+    fprintf(f,"%d", s->s_begin);
   } else {
     fwrite(input + s->s_begin, s->s_end - s->s_begin, 1, f);
   }

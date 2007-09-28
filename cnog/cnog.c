@@ -9,6 +9,12 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#if 0
+#define DEBUGF(x, y...) printf(x, ##y);
+#else
+#define DEBUGF(x,...)
+#endif
+
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 {
   int i, j, k;
@@ -94,8 +100,8 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
       ip = ip_next;
 
       assert(pg->np_program <= ip && ip < pg->np_program + pg->np_count);
-      /*printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);
-      printf("%ld %ld %d\n", ip - pg->np_program, head - bof, fail);*/
+      /*printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);*/
+      DEBUGF("%ld %ld %d\n", ip - pg->np_program, head - bof, fail);
 
       ip_next = ip + 1;
 
@@ -278,6 +284,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
           return;
 
         case NOG_SWCH:
+          assert(choice < ip->ni_arg[0].na_table.nt_length);
           jump_to(ip->ni_arg[0].na_table.nt_elements[choice]);
           break;
 
@@ -316,7 +323,25 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
           break;
 
         case NOG_POSATTR:
+          {
+            int id;
+            unsigned char *name;
+
+            id = arg0();
+            name = pg->np_attributes[id].ns_chars;
+
+            bd->pb_attach_attribute(bi, current, id, name, head - bof, head - bof - 1);
+          }
+          break;
+
         case NOG_TOKEN:
+          {
+            tree *tr;
+
+            tr = bd->pb_create_token(bi, head - bof, memo);
+            bd->pb_add_children(bi, current, tr);
+            current = tr;
+          }
           break;
 
       }
@@ -335,8 +360,6 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
 
   return !fail;
 }/*}}}*/
-
-#define DEBUGF(x,...)
 
 nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
@@ -364,19 +387,19 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   if(!pack_read_uint64(pk, &version)) fail();
   DEBUGF("Version OK\n");
 
-  if(!pack_read_int(pk, &pg->np_start_pc)) fail();
+  if(!pack_read_uint(pk, &pg->np_start_pc)) fail();
   DEBUGF("Start pc is %d\n", pg->np_start_pc);
 
-  if(!pack_read_int(pk, &pg->np_build_pc)) fail();
+  if(!pack_read_uint(pk, &pg->np_build_pc)) fail();
   DEBUGF("Build pc is %d\n", pg->np_build_pc);
 
-  if(!pack_read_int(pk, &pg->np_num_productions)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_productions)) fail();
   DEBUGF("Num_productions is %d\n", pg->np_num_productions);
 
-  if(!pack_read_int(pk, &pg->np_num_choices)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_choices)) fail();
   DEBUGF("Num_choices is %d\n", pg->np_num_choices);
 
-  if(!pack_read_int(pk, &pg->np_num_constructors)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_constructors)) fail();
   DEBUGF("Num_constructors is %d\n", pg->np_num_constructors);
 
   pg->np_constructors = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_constructors);
@@ -388,7 +411,7 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
     DEBUGF("  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
   }
 
-  if(!pack_read_int(pk, &pg->np_num_attributes)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_attributes)) fail();
 
   DEBUGF("Num_attributes is %d\n", pg->np_num_attributes);
   pg->np_attributes = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_attributes);
@@ -400,7 +423,7 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
     DEBUGF("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
   }
   
-  if(!pack_read_int(pk, &pg->np_count)) fail();
+  if(!pack_read_uint(pk, &pg->np_count)) fail();
   DEBUGF("Program size is %d\n", pg->np_count);
 
   pg->np_program = pk->p_malloc(sizeof(nog_instruction_t) * pg->np_count);/*{{{*/

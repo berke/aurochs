@@ -163,7 +163,7 @@ let gen_c_unpacker ops fn =
                   fp occ "        \n";
                   fp occ "        m = arg;\n";
                   fp occ "        for(i = 0; i < m; i ++) {\n";
-                  fp occ "          if(!pack_read_int(pk, ins->ni_arg[%d].na_table.nt_elements + i)) return false;\n" i;
+                  fp occ "          if(!pack_read_uint(pk, ins->ni_arg[%d].na_table.nt_elements + i)) return false;\n" i;
                   fp occ "        }\n";
                   fp occ "      }\n"
               | Int|Char|Label|Node|Attribute ->
@@ -217,7 +217,7 @@ let gen_ocaml_packer ops fn =
               fp oc "(%s))" (String.concat ", " (List.map (fun _ -> incr i; string_of_arg (!i - 1)) args))
         end;
         fp oc " ->\n";
-        fp oc "      Pack.write_uint pk 0x%02x;\n" opcode;
+        fp oc "      Pack.write_int pk 0x%02x;\n" opcode;
         begin
           match kind with
           | Labelable ->

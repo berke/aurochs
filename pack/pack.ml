@@ -73,6 +73,7 @@ let write_string sk u =
 ;;
 (* ***)
 let write_uint sk x = write_uint64 sk (!!!! x);;
+let write_int sk x = write_int64 sk (!!!! x);;
 (*** test *)
 let test fn =
   let oc = open_out_bin fn in

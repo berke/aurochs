@@ -66,7 +66,7 @@ typedef union {
   int na_int;
   nog_string_t na_string;
   struct {
-    int *nt_elements;
+    unsigned int *nt_elements;
     int nt_length;
   } na_table;
 } nog_arg_t;
@@ -79,14 +79,14 @@ typedef struct {
 } nog_instruction_t;
 
 typedef struct {
-  int np_count;
-  int np_start_pc;
-  int np_build_pc;
-  int np_num_productions;
-  int np_num_choices;
-  int np_num_constructors;
+  unsigned int np_count;
+  unsigned int np_start_pc;
+  unsigned int np_build_pc;
+  unsigned int np_num_productions;
+  unsigned int np_num_choices;
+  unsigned int np_num_constructors;
   nog_string_t *np_constructors;
-  int np_num_attributes;
+  unsigned int np_num_attributes;
   nog_string_t *np_attributes;
   nog_instruction_t *np_program;
 } nog_program_t;
