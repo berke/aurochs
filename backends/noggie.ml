@@ -415,11 +415,11 @@ let save_program fn pg peg =
     let m = Hashtbl.length h in
     let a = Array.make m "" in
     Hashtbl.iter (fun u i -> a.(i) <- u) h;
-    a
+    h, a
   in
 
-  let attribute_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_attributes f pe) peg)
-  and node_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_builds f pe) peg)
+  let attributes, attribute_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_attributes f pe) peg)
+  and nodes, node_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_builds f pe) peg)
   in
 
   (*let node_map =
@@ -450,8 +450,10 @@ let save_program fn pg peg =
     dump_array attribute_numbers;
 
     Pack.write_uint sk & Array.length pg.pg_code;
-    let resolve (x, _) = x in
-    Array.iter (Nog_packer.pack_instruction ~resolve sk) pg.pg_code
+    let resolve_label (x, _) = x in
+    let resolve_node = Hashtbl.find nodes in
+    let resolve_attribute = Hashtbl.find attributes in
+    Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
   )
   (*let oc = open_out fn in
   fp oc "; Start at %s (%d)\n" pg.pg_start pg.pg_start_pc;

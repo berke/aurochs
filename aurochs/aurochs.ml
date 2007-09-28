@@ -117,6 +117,10 @@ module Spec =
           String(aor log_calls),
           "<file> When running Nog code, log encountered calls and labels to given file";
 
+        "-record",
+          String(aor record),
+          "<file> When running Nog code, record execution trace to given file";
+
         "-profile",
           String(aor profile),
           "<file> Dump Nog profiling information to file";

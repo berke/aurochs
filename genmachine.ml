@@ -111,8 +111,7 @@ let gen_c_unpacker ops fn =
             begin fun i x ->
               match x with
               | Labels ->         fp occ "      free(ins->ni_arg[%d].na_table.nt_elements);\n" i
-              | Int|Char|Label -> ()
-              | Node|Attribute -> fp occ "      free(ins->ni_arg[%d].na_string.ns_chars);\n" i
+              | Int|Char|Label|Node|Attribute -> ()
             end
             args;
 
@@ -131,8 +130,6 @@ let gen_c_unpacker ops fn =
       fp occ "{\n";
       fp occ "  int opcode;\n";
       fp occ "  u64 arg;\n";
-      fp occ "  size_t length;\n";
-      fp occ "  u8 *string;\n";
       fp occ "\n";
       fp occ "  if(!pack_read_int(pk, &opcode)) return false;\n";
       fp occ "  switch(opcode) {\n";
@@ -169,13 +166,9 @@ let gen_c_unpacker ops fn =
                   fp occ "          if(!pack_read_int(pk, ins->ni_arg[%d].na_table.nt_elements + i)) return false;\n" i;
                   fp occ "        }\n";
                   fp occ "      }\n"
-              | Int|Char|Label ->
+              | Int|Char|Label|Node|Attribute ->
                   fp occ "      if(!pack_read_uint64(pk, &arg)) return false;\n";
                   fp occ "      ins->ni_arg[%d].na_int = arg;\n" i
-              | Node|Attribute ->
-                  fp occ "      if(!pack_read_string(pk, &string, &length)) return false;\n";
-                  fp occ "      ins->ni_arg[%d].na_string.ns_chars = string;\n" i;
-                  fp occ "      ins->ni_arg[%d].na_string.ns_length = length;\n" i
             end
             args;
 
@@ -201,7 +194,7 @@ let gen_ocaml_packer ops fn =
     fp oc "\n";
     fp oc "open Machine;;\n";
     fp oc "\n";
-    fp oc "let pack_instruction ~resolve pk = function\n";
+    fp oc "let pack_instruction ~resolve_label ~resolve_node ~resolve_attribute pk = function\n";
     List.iter
       begin fun (kind, name, opcode, args) ->
         let arg_offset =
@@ -228,11 +221,11 @@ let gen_ocaml_packer ops fn =
         begin
           match kind with
           | Labelable ->
-              fp oc "      Pack.write_uint pk (resolve %s);\n" (string_of_arg 0)
+              fp oc "      Pack.write_uint pk (resolve_label %s);\n" (string_of_arg 0)
           | Unlabelable -> ()
           | Multi_labelable ->
               fp oc "      Pack.write_uint pk (Array.length %s);\n" (string_of_arg 0);
-              fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve x)) %s;\n" (string_of_arg 0)
+              fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve_label x)) %s;\n" (string_of_arg 0)
         end;
         let i = ref (arg_offset - 1) in
         List.iter
@@ -241,11 +234,12 @@ let gen_ocaml_packer ops fn =
             match x with
             | Labels ->
                 fp oc "      Pack.write_uint pk (Array.length %s);\n" (string_of_arg !i);
-                fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve x)) %s);\n" (string_of_arg !i)
+                fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve_label x)) %s);\n" (string_of_arg !i)
             | Int ->            fp oc "      Pack.write_uint pk %s;\n" (string_of_arg !i)
             | Char ->           fp oc "      Pack.write_uint pk (Char.code %s);\n" (string_of_arg !i)
-            | Node|Attribute -> fp oc "      Pack.write_string pk %s;\n" (string_of_arg !i)
-            | Label ->          fp oc "      Pack.write_uint pk (resolve %s);\n" (string_of_arg !i)
+            | Label ->          fp oc "      Pack.write_uint pk (resolve_label %s);\n" (string_of_arg !i)
+            | Node ->           fp oc "      Pack.write_uint pk (resolve_node %s);\n" (string_of_arg !i)
+            | Attribute ->      fp oc "      Pack.write_uint pk (resolve_attribute %s);\n" (string_of_arg !i)
           end
           args;
         fp oc "      ()\n"

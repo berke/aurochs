@@ -70,7 +70,7 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t
 
   cx = xmalloc(sizeof(peg_context_t));
 
-  cx->cx_input = input + input_length;
+  cx->cx_input = input;
   cx->cx_input_length = input_length;
 
   num_alternatives = pg->np_num_choices;
@@ -100,7 +100,8 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t
   cx->cx_builder = pb;
 
   /* XXX: Give a reasonable upper bound on the stack size */
-  cx->cx_stack = xmalloc(sizeof(symbol_t) * input_length * num_productions);
+  cx->cx_stack_size = input_length * num_productions;
+  cx->cx_stack = xmalloc(sizeof(symbol_t) * cx->cx_stack_size);
 
   return cx;
 }/*}}}*/

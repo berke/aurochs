@@ -167,6 +167,7 @@ let parse_file_with_nog pg fn =
         Nog.execute_positioned
           ~quick:!Opt.quick
           ?log_calls:!Opt.log_calls
+          ?record:!Opt.record
           ~show_memo:!Opt.show_memo
           ~root:!Opt.root_node
           ~trace

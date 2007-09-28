@@ -14,6 +14,7 @@ let tree = ref true;;
 let show_memo = ref false;;
 let build_only = ref false;;
 let log_calls : string option ref = ref None;;
+let record : string option ref = ref None;;
 let debug = ref false;;
 let trace = ref false;;
 let parse : string list ref = ref [];;

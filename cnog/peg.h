@@ -10,10 +10,10 @@
 #include <base_types.h>
 
 typedef enum {
-  R_EOF = 0,
-  R_UNKNOWN = 1,
-  R_FAIL = 2,
-  R_BUSY = 3
+  R_EOF = -1,
+  R_UNKNOWN = -2,
+  R_FAIL = -3,
+  R_BUSY = -4
 } memo_t;
 
 #define A_UNDEFINED 0xff

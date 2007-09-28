@@ -357,6 +357,7 @@ let execute_positioned program
   ?(show_memo=false)
   ?(trace=false)
   ?log_calls
+  ?record
   ?(interactive=false)
   ?(profiler=ignore)
   ~print_node
@@ -368,20 +369,6 @@ let execute_positioned program
     execute_positioned_quick program ~print_node ~print_attr ~root u
   else
     begin
-      let log_call =
-        match log_calls with
-        | None -> ignore
-        | Some fn ->
-            let oc = open_out fn in
-            let last_label = ref None in
-            fun x ->
-              if !last_label <> Some x then
-                begin
-                  last_label := Some x;
-                  fp oc "%s\n" x
-                end
-      in
-
       let m = String.length u in
       let n = Array.length program.pg_code in
       let num_productions = Array.length program.pg_productions in
@@ -403,8 +390,28 @@ let execute_positioned program
           cons = { cons_start = 0; cons_attributes = []; cons_children = [] };
           label = program.pg_start }
       in
+      let log_call =
+        match log_calls with
+        | None -> ignore
+        | Some fn ->
+            let oc = open_out fn in
+            let last_label = ref None in
+            fun x ->
+              if !last_label <> Some x then
+                begin
+                  last_label := Some x;
+                  fp oc "%s\n" x
+                end
+      in
+      let record =
+        match record with
+        | None -> ignore
+        | Some fn ->
+            let oc = open_out fn in
+            fun x -> fp oc "%d %d %d\n" c.pc c.head (if c.fail then 1 else 0)
+      in
+
       let profile = Array.make (Array.length program.pg_code) 0 in
-      log_call program.pg_start;
       let prompt () =
         pf "(ndb) %!";
         let cmd = input_line stdin in
@@ -428,6 +435,7 @@ let execute_positioned program
           raise (Error "PC out of bounds")
         else
           begin
+            record program.pg_start;
             let instr = program.pg_code.(c.pc) in
             profile.(c.pc) <- 1 + profile.(c.pc);
             c.pc <- 1 + c.pc;
