@@ -406,6 +406,7 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
 (*** save_program *)
 let save_program fn pg =
   Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in
+    let sk = Bytes.logger stdout sk in
     Pack.write_uint64 sk nog_signature;
     Pack.write_uint64 sk nog_version;
     Pack.write_uint sk pg.pg_start_pc;

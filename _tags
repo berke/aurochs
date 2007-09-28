@@ -1,2 +1,2 @@
 <*/*.c>: cstuff
-<genmachine.{byte,native}>: use_str
+<genmachine.{byte,native}>: use_str, use_unix

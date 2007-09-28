@@ -7,8 +7,10 @@
 
 #include <base_types.h>
 #include <peg.h>
+#include <pack.h>
 
 typedef enum {
+  NOG_LABEL,        /* Label (ignored, just for debugging) */
   NOG_BRA,          /* Unconditional branch */
   NOG_BEOF,         /* Branch if EOF */
   NOG_BNEOF,        /* Branch if not EOF */
@@ -52,6 +54,7 @@ typedef enum {
   NOG_ATTR,         /* Add an attribute of the given name whose value is the input between the saved position and, */
   NOG_POSATTR,      /* Add an attribute of the given name whose value is the current input position */
   NOG_TOKEN,        /* Build a token between the memo register and the head position and add it to the current construction */
+  NOG_SWCH,
 } nog_opcode_t;
 
 typedef union {
@@ -79,10 +82,13 @@ typedef struct {
   int np_build_pc;
   int np_num_productions;
   int np_num_choices;
-  nog_instruction_t np_program[];
+  nog_instruction_t *np_program;
 } nog_program_t;
 
 bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build);
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg);
+nog_program_t *cnog_unpack_program(packer_t *pk);
 
-#endif
+#define NOG_SIGNATURE 0xABBE55E5
+
+#endif 

@@ -142,6 +142,7 @@ bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
 
   if(pack_read_int64(pk, &x)) {
     *result = x;
+    printf("Read int 0x%lx\n", x);
     return true;
   } else {
     return false;

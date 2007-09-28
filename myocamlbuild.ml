@@ -109,7 +109,13 @@ let clibdep ld =
 let aurochs_lib_description = {
   od_path = "";
   od_name = "aurochs";
-  od_headers = [ "cnog/cnog.h"; "cnog/peg.h"; "cnog/peg_tree.h"; "cpack/pack.h"; "cpeglib/parse_tree.h"; "include/base_types.h" ];
+  od_headers = [ "cnog/cnog.h";
+                 "cnog/peg.h";
+                 "cpeglib/peg_lib.h";
+                 "cpeglib/parse_tree.h";
+                 "cpack/pack.h";
+                 "cpeglib/parse_tree.h";
+                 "include/base_types.h" ];
   od_incdirs = [ "cnog"; "cpack"; "cpeglib"; "include" ];
 }
 
@@ -122,6 +128,7 @@ let ocamllib old =
 
    flag ["compile"; "c"; "cstuff"] &
      S[A"-ccopt";A"-Wall";
+       A"-verbose";
        S(List.map(fun x -> S[A"-ccopt";A("-I"^x)]) old.od_incdirs);
      ];
 
@@ -199,6 +206,13 @@ dispatch
           ~deps:["genmachine.byte";"nog/machine.ml"]
           begin fun env _build ->
             Cmd(S[A"./genmachine.byte"])
+          end;
+          
+        rule "Program"
+          ~prods:["cpeglib/check"]
+          ~deps:["cpeglib/check.o"; "libaurochs.a"]
+          begin fun env _build ->
+            Cmd(S[A"gcc"; A"cpeglib/check.o"; A"-L."; A"-laurochs"; A"-o"; A"cpeglib/check"])
           end;
       end
   | _ -> ()

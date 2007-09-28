@@ -3,7 +3,9 @@
  */
 
 #include <cnog.h>
+#include <cnog_unpack.h>
 #include <peg.h>
+#include <pack.h>
 
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 {
@@ -273,6 +275,12 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
         case NOG_POSATTR:
         case NOG_TOKEN:
           break;
+
+        case NOG_SWCH:
+          break;
+
+        case NOG_LABEL:
+          break;
       }
     }
   }/*}}}*/
@@ -282,3 +290,59 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
 
   return fail;
 }/*}}}*/
+nog_program_t *cnog_unpack_program(packer_t *pk) {
+  nog_program_t *pg, *result;
+  uint64_t signature, version; 
+
+  result = 0;
+  
+  pg = pk->p_malloc(sizeof(nog_program_t));
+      
+  if(pg) for(;;) {
+    printf("Allocated program\n");
+    if(!pack_read_uint64(pk, &signature)) break;
+    printf("Read signature %lx\n", signature);
+    if(signature != NOG_SIGNATURE) break;
+    printf("Signature OK\n");
+    if(!pack_read_uint64(pk, &version)) break;
+    printf("Version OK\n");
+
+    if(!pack_read_int(pk, &pg->np_start_pc)) break;
+    printf("Start pc is %d\n", pg->np_start_pc);
+
+    if(!pack_read_int(pk, &pg->np_build_pc)) break;
+    printf("Build pc is %d\n", pg->np_build_pc);
+
+    if(!pack_read_int(pk, &pg->np_num_productions)) break;
+    printf("Num_productions is %d\n", pg->np_num_productions);
+
+    if(!pack_read_int(pk, &pg->np_num_choices)) break;
+    printf("Num_choices is %d\n", pg->np_num_choices);
+
+    if(!pack_read_int(pk, &pg->np_count)) break;
+    printf("Program size is %d\n", pg->np_count);
+
+    pg->np_program = pk->p_malloc(sizeof(nog_instruction_t) * pg->np_count);
+    if(pg->np_program) {
+      int i;
+
+      for(i = 0; i < pg->np_count; i ++) {
+        if(!cnog_unpack_instruction(pk, pg->np_program + i)) {
+          fprintf(stderr, "Unpack error at instruction %d\n", i);
+          break;
+        }
+      }
+
+      result = pg;
+      pg = 0;
+    }
+    break;
+  }
+
+  if(pg) {
+    if(pg->np_program) pk->p_free(pg->np_program);
+    pk->p_free(pg);
+  }
+
+  return result;
+}

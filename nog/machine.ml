@@ -12,7 +12,7 @@ type multilabelable_instruction =
 ;;
 
 type labelable_instruction =
-                      | LABEL        (** Label definition *)
+  (* %opcode{L44}  *) | LABEL        (** Label definition *)
   (* %opcode{L00}  *) | BRA          (** Unconditional branch *)
   (* %opcode{L01}  *) | BEOF         (** Branch if EOF *)
   (* %opcode{L02}  *) | BNEOF        (** Branch if not EOF *)

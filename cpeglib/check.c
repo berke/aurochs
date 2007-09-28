@@ -7,16 +7,76 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "peg_prelude.h"
-#include "pegfile.h"
+#include <parse_tree.h>
+#include <cnog.h>
+#include <peg_lib.h>
+#include <pack.h>
 
+static unsigned char *load_file(char *name, size_t *size)/*{{{*/
+{
+  size_t m;
+  struct stat st;
+  unsigned char *data;
+  FILE *f;
+  unsigned char *retval;
+
+  retval = 0;
+  
+  if(!stat(name, &st)) {
+    m = st.st_size;
+    *size = m;
+    data = malloc(m);
+    if(data) {
+      f = fopen(name, "rb");
+      if(f) {
+        if(1 == fread(data, m, 1, f)) {
+          retval = data;
+          data = 0;
+        }
+        fclose(f);
+      }
+      if(data) free(data);
+    }
+  }
+
+  return retval;
+}/*}}}*/
 int main(int argc, char **argv)
 {
   char *buf;
   int count;
+  unsigned char *peg_data;
+  char *peg_fn;
+  size_t peg_data_size;
+  nog_program_t *pg;
+  packer_t pk;
+
+  argv ++; argc --;
+
+  if(!argc) {
+    printf("No PEG data\n");
+    exit(EXIT_FAILURE);
+  }
+
+  peg_fn = *(argv ++); argc --;
+  printf("Loading peg_data from file %s\n", peg_fn);
+
+  peg_data = load_file(peg_fn, &peg_data_size);
+  if(!peg_data) {
+    printf("Can't load peg data.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  if(pack_init_from_string(&pk, peg_data, peg_data_size, malloc, free)) {
+    printf("peg_data[0] = %d\n", peg_data[0]);
+    pg = cnog_unpack_program(&pk);
+    printf("Unpacked to %p\n", pg);
+  }
+
+  return 0;
 
 #if 0
-  { context *cx;
+  { peg_context_t *cx;
     cx = 0;
 
     printf("cx_input @ %p\n", (char *)(&cx->cx_input));
@@ -26,9 +86,9 @@ int main(int argc, char **argv)
   }
 #endif
 
-#if 1
+#if 0
   {
-    context *cx;
+    peg_context_t *cx;
     int m;
     int i;
     int error_pos;
@@ -64,7 +124,7 @@ int main(int argc, char **argv)
         perror("fread");
         exit(EXIT_FAILURE);
       }
-      cx = create_context(buf, m, NUM_PRODUCTIONS, NUM_ALTERNATIVES);
+      cx = peg_create_context(buf, m, NUM_PRODUCTIONS, NUM_ALTERNATIVES);
       i = foobar_parse_start(cx, - m);
       if(getenv("DUMP_CONTEXT")) dump_context(stdout, cx);
 
@@ -95,8 +155,9 @@ int main(int argc, char **argv)
     return rc;
   }
 #else
+#if 0
   for(count = 1;; count ++) {
-    context *cx;
+    peg_context_t *cx;
     int m;
     int i;
     int error_pos;
@@ -130,6 +191,7 @@ int main(int argc, char **argv)
     fflush(stdout);
     delete_context(cx);
   }
+#endif
 #endif
   return 0;
 }

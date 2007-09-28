@@ -93,12 +93,13 @@ let gen_c_unpacker ops fn =
       fp occ "  u8 *string;\n";
       fp occ "\n";
       fp occ "  if(!pack_read_int(pk, &opcode)) return false;\n";
-      fp occ "  ins->ni_opcode = opcode;\n";
       fp occ "  switch(opcode) {\n";
 
       List.iter
         begin fun (kind, name, opcode, args) ->
           fp occ "    case 0x%02x: /* %s */\n" opcode name;
+
+          fp occ "      ins->ni_opcode = NOG_%s;\n" name;
 
           let args = Array.to_list args in
 
@@ -115,15 +116,15 @@ let gen_c_unpacker ops fn =
               match x with
               | Labels ->
                   fp occ "      if(!pack_read_uint64(pk, &arg)) return false;\n";
-                  fp occ "      ins->ni_arg[%d].nt_length = arg;\n" i;
-                  fp occ "      ins->ni_arg[%d].nt_elements = pk->p_malloc(sizeof(int) * arg);\n" i;
-                  fp occ "      if(!ins->ni_arg[%d].nt_elements) return false;\n" i;
+                  fp occ "      ins->ni_arg[%d].na_table.nt_length = arg;\n" i;
+                  fp occ "      ins->ni_arg[%d].na_table.nt_elements = pk->p_malloc(sizeof(int) * arg);\n" i;
+                  fp occ "      if(!ins->ni_arg[%d].na_table.nt_elements) return false;\n" i;
                   fp occ "      {\n";
                   fp occ "        int i, m;\n";
                   fp occ "        \n";
                   fp occ "        m = arg;\n";
                   fp occ "        for(i = 0; i < m; i ++) {\n";
-                  fp occ "          if(!pack_read_int(pk, ins->ni_arg[%d].nt_elements + i)) return false;\n" i;
+                  fp occ "          if(!pack_read_int(pk, ins->ni_arg[%d].na_table.nt_elements + i)) return false;\n" i;
                   fp occ "        }\n";
                   fp occ "      }\n"
               | Int|Char|Label ->
@@ -180,6 +181,7 @@ let gen_ocaml_packer ops fn =
               fp oc "(%s))" (String.concat ", " (List.map (fun _ -> incr i; string_of_arg (!i - 1)) args))
         end;
         fp oc " ->\n";
+        fp oc "      Pack.write_uint pk 0x%02x;\n" opcode;
         begin
           match kind with
           | Labelable ->
@@ -189,7 +191,6 @@ let gen_ocaml_packer ops fn =
               fp oc "      Pack.write_uint pk (Array.length %s);\n" (string_of_arg 0);
               fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve x)) %s;\n" (string_of_arg 0)
         end;
-        fp oc "      Pack.write_uint pk 0x%02x;\n" opcode;
         let i = ref (arg_offset - 1) in
         List.iter
           begin fun x ->
@@ -207,11 +208,12 @@ let gen_ocaml_packer ops fn =
         fp oc "      ()\n"
       end
       ops;
-    fp oc "  | _ -> ()\n";
+    (*fp oc "  | _ -> ()\n";*)
     fp oc ";;\n")
 ;;
 
 let _ =
+  List.iter Unix_util.mkdirhier ["nog"; "backends"; "cnog"];
   let ops = load_opcodes "nog/machine.ml" in
   gen_ocaml_packer ops "backends/nog_packer.ml";
   gen_c_unpacker ops "cnog/cnog_unpack"
