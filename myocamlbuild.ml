@@ -156,13 +156,14 @@ dispatch
         Options.ocamlopt := A"ocamlopt.opt";
         Options.ocamlc := A"ocamlc.opt";
         Options.ocamldep := A"ocamldep.opt";
-        Options.ocamlyacc := A "menhir";
+        Options.ocamlyacc := A"menhir";
         Options.include_dirs :=
           ["front";
            "backends";
            "aurochs";
            "syntax";
            "util";
+           "pack";
            "peg";
            "nog"] @ !Options.include_dirs
       end
@@ -193,7 +194,7 @@ dispatch
         (*dep ["file:astivore/astivore.native"] ["float32/dllfloat32.so"];*)
 
 
-        rule "LaTeX to PDF conversion rule"
+        rule "Generation"
           ~prods:["cnog/cnog_unpack.c";"cnog/cnog_unpack.h";"nog/nog_packer.ml"]
           ~deps:["genmachine.byte";"nog/machine.ml"]
           begin fun env _build ->

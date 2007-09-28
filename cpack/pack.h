@@ -27,6 +27,7 @@ typedef struct {
 #define PACK_NEGATIVE 0x40
 
 bool pack_init(packer_t *pk, size_t block_size, void *extra, pack_resplenisher_t resplenish, void *(*malloc)(size_t), void (*free)(void *));
+bool pack_init_from_string(packer_t *pk, u8 *data, size_t size, void *(*malloc)(size_t), void (*free)(void *));
 void pack_shutdown(packer_t *pk);
 bool pack_resplenish(packer_t *pk);
 bool pack_read_uint8(packer_t *pk, uint8_t *result);

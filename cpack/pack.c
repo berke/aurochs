@@ -10,6 +10,18 @@
 
 #include <pack.h>
 
+bool pack_init_from_string(packer_t *pk, u8 *data, size_t size, void *(*malloc)(size_t), void (*free)(void *))/*{{{*/
+{
+  pk->p_block_size = size;
+  pk->p_index = 0;
+  pk->p_length = size;
+  pk->p_extra = 0;
+  pk->p_resplenish = 0;
+  pk->p_malloc = malloc;
+  pk->p_free = free;
+  pk->p_data = data;
+  return true;
+}/*}}}*/
 bool pack_init(packer_t *pk, size_t block_size, void *extra, pack_resplenisher_t resplenish, void *(*malloc)(size_t), void (*free)(void *))/*{{{*/
 {
   pk->p_block_size = block_size;
@@ -30,7 +42,8 @@ void pack_shutdown(packer_t *pk)/*{{{*/
 bool pack_resplenish(packer_t *pk)/*{{{*/
 {
   size_t m;
-  m = pk->p_resplenish(pk->p_extra, pk->p_data, pk->p_block_size);
+
+  m = pk->p_resplenish ? pk->p_resplenish(pk->p_extra, pk->p_data, pk->p_block_size) : 0;
   if(m <= 0)
     return false;
   else {

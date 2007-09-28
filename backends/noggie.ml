@@ -403,10 +403,10 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
 (* ***)
 (*** save_program *)
 let save_program fn pg =
-  let oc = open_out fn in
+  (*let oc = open_out fn in
   fp oc "; Start at %s (%d)\n" pg.pg_start pg.pg_start_pc;
   print_code oc pg.pg_code;
-  close_out oc
+  close_out oc*)
 ;;
 (* ***)
 (*** generate *)
