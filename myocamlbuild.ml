@@ -195,7 +195,7 @@ dispatch
 
 
         rule "Generation"
-          ~prods:["cnog/cnog_unpack.c";"cnog/cnog_unpack.h";"nog/nog_packer.ml"]
+          ~prods:["cnog/cnog_unpack.c";"cnog/cnog_unpack.h";"backends/nog_packer.ml"]
           ~deps:["genmachine.byte";"nog/machine.ml"]
           begin fun env _build ->
             Cmd(S[A"./genmachine.byte"])

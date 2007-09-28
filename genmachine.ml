@@ -11,6 +11,11 @@ type arg =
 | Label
 ;;
 
+type kind =
+| Labelable
+| Multi_labelable
+| Unlabelable
+
 let arg_of_char = function
 | 'i' -> Int
 | 'a' -> Attribute
@@ -21,20 +26,28 @@ let arg_of_char = function
 ;;
 
 let load_opcodes =
-  let rex1 = Str.regexp "^.*%opcode{\\([0-9]+\\)\\([a-z]*\\)}.*| *\\([A-Z_]+\\) .*$" in
-  fun () ->
+  let rex1 = Str.regexp "^.*%opcode{\\([ULM]\\)\\([0-9]+\\)\\([a-z]*\\)}.*| *\\([A-Z_]+\\) .*$" in
+  fun fn ->
+  pf "Loading opcodes from %s\n" fn;
   let result = ref [] in
-  Util.with_file_input "nog/machine.ml" (fun ic -> Util.iter_over_lines ic (fun u ->
+  Util.with_file_input fn (fun ic -> Util.iter_over_lines ic (fun u ->
     if Str.string_match rex1 u 0 then
       begin
         let f i = Str.matched_group i u in
-        let opcode = int_of_string & f 1
-        and flags = f 2
-        and name = f 3
+        let kind =
+          match f 1 with
+          | "L" -> Labelable
+          | "M" -> Multi_labelable
+          | "U" -> Unlabelable
+          | k  -> failwith (sf "Unknown kind %S" k)
+        in
+        let opcode = int_of_string & f 2
+        and flags = f 3
+        and name = f 4
         in
         let m = String.length flags in
         let flags' = Array.init m (fun i -> arg_of_char flags.[i]) in
-        result += (name, opcode, flags')
+        result += (kind, name, opcode, flags')
         (*Printf.printf ">> 0x%02x %S %S\n" opcode flags name*)
       end
   ));
@@ -42,6 +55,7 @@ let load_opcodes =
 ;;
 
 let gen_c_unpacker ops fn =
+  pf "Generating C unpacker to %s\n" fn;
   Util.with_file_output (fn^".h") (fun och ->
     Util.with_file_output (fn^".c") (fun occ ->
       fp och "/* cnog_unpack.h\n";
@@ -82,7 +96,7 @@ let gen_c_unpacker ops fn =
       fp occ "  switch(opcode) {\n";
 
       List.iter
-        begin fun (name, opcode, args) ->
+        begin fun (_kind, name, opcode, args) ->
           fp occ "    case 0x%02x: /* %s */\n" opcode name;
 
           Array.iteri
@@ -111,27 +125,48 @@ let gen_c_unpacker ops fn =
 ;;
 
 let gen_ocaml_packer ops fn =
+  pf "Generating Ocaml packer to %s\n" fn;
   let string_of_arg i = sf "a%d" i in
   Util.with_file_output fn (fun oc ->
     fp oc "(* %s *)\n" fn;
     fp oc "(* Auto-generated; do not edit. *)\n";
     fp oc "\n";
-    fp oc "open Machine;\n";
+    fp oc "open Machine;;\n";
     fp oc "\n";
     fp oc "let pack_instruction ~resolve pk = function\n";
     List.iter
-      begin fun (name, opcode, args) ->
-        fp oc "  | %s" name;
+      begin fun (kind, name, opcode, args) ->
+        let arg_offset =
+          match kind with
+          | Labelable ->
+              fp oc "  | L(a0, %s" name;
+              1
+          | Unlabelable ->
+              fp oc "  | U(%s" name;
+              0
+          | Multi_labelable ->
+              fp oc "  | M(a0, %s" name;
+              1
+        in
         let args = Array.to_list args in
         begin match args with
-          | [] -> fp oc " "
+          | [] -> fp oc ")"
           | _ ->
-              let i = ref 0 in
-              fp oc "(%s) " (String.concat ", " (List.map (fun _ -> incr i; string_of_arg !i) args))
+              let i = ref arg_offset in
+              fp oc "(%s))" (String.concat ", " (List.map (fun _ -> incr i; string_of_arg (!i - 1)) args))
         end;
-        fp oc "->\n";
+        fp oc " ->\n";
+        begin
+          match kind with
+          | Labelable ->
+              fp oc "      Pack.write_uint pk (resolve %s);\n" (string_of_arg 0)
+          | Unlabelable -> ()
+          | Multi_labelable ->
+              fp oc "      Pack.write_uint pk (Array.length %s);\n" (string_of_arg 0);
+              fp oc "      Array.iter (fun x -> Pack.write_uint pk (resolve x)) %s;\n" (string_of_arg 0)
+        end;
         fp oc "      Pack.write_uint pk 0x%02x;\n" opcode;
-        let i = ref 0 in
+        let i = ref (arg_offset - 1) in
         List.iter
           begin fun x ->
             incr i;
@@ -150,7 +185,7 @@ let gen_ocaml_packer ops fn =
 ;;
 
 let _ =
-  let ops = load_opcodes() in
+  let ops = load_opcodes "nog/machine.ml" in
   gen_ocaml_packer ops "backends/nog_packer.ml";
   gen_c_unpacker ops "cnog/cnog_unpack"
 ;;

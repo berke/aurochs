@@ -27,7 +27,7 @@ let print_stack printer oc s =
     s
 ;;
 
-type ('nd,'at) code = (boolean_register, 'nd, 'at, (int * string)) instruction array;;
+type ('nd,'at) code = ('nd, 'at, (int * string)) instruction array;;
 
 module SM = Map.Make(String);;
 
@@ -129,7 +129,7 @@ type ('nd, 'at) configuration = {
   mutable choice_register : int option;
   mutable step_mode : [`step of int|`finish|`run|`stop|`trace];
   mutable breakpoints : IS.t;
-  trace_instructions : (boolean_register, 'nd, 'at, (int * string)) instruction list;
+  trace_instructions : ('nd, 'at, (int * string)) instruction list;
   saved_cons : ('nd, 'at) construction Stack.t;
   mutable cons : ('nd, 'at) construction;
   memo : Memo.t;

@@ -102,8 +102,7 @@ module Spec =
           "<file> Parse the given file using the grammar and dump the XML parse tree on stdout";
 
         "-parse-list",
-          String(fun fn ->
-            Util.iter_over_lines fn (fun u -> append parse u)),
+          String(fun fn -> Util.with_file_input fn (fun ic -> Util.iter_over_lines ic (fun u -> append parse u))),
           "<file> Add a -parse <fn> option for each line in given file";
 
         "-trace",

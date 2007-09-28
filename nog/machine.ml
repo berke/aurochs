@@ -1,73 +1,76 @@
 (* Machine *)
 
+let nog_signature = 0xABBE55E5L;;
+let nog_version   = 0x00010000L;;
+
 let fp = Printf.fprintf;;
 
 type boolean_register = int;;
 
-type 'br multilabelable_instruction =
-  | SWCH         (** Switch on choice register *)
+type multilabelable_instruction =
+  (* %opcode{M43}  *) | SWCH         (** Switch on choice register *)
 ;;
 
-type 'br labelable_instruction =
-                     | LABEL        (** Label definition *)
-  (* %opcode{00l} *) | BRA          (** Unconditional branch *)
-  (* %opcode{01l} *) | BEOF         (** Branch if EOF *)
-  (* %opcode{02l} *) | BNEOF        (** Branch if not EOF *)
-  (* %opcode{03l} *) | BFC          (** Branch if fail clear *)
-  (* %opcode{04l} *) | BFS          (** Branch if fail set *)
-  (* %opcode{05l} *) | BMB          (** Branch if memo busy *)
-  (* %opcode{06l} *) | BMBF         (** Branch if memo busy or failed *)
-  (* %opcode{07l} *) | BMK          (** Branch if memo known *)
-  (* %opcode{08l} *) | BMUK         (** Branch if memo unknown *)
-  (* %opcode{09l} *) | BMF          (** Branch if memo failed *)
-  (* %opcode{10l} *) | BBRC         (** Branch if boolean register is clear *)
-  (* %opcode{11l} *) | BBRS         (** Branch if boolean register is set *)
-  (* %opcode{12l} *) | JSR          (** Subroutine call *)
-  (* %opcode{13l} *) | SBNS of char (** Scan and branch to label if character does not match *)
-  (* %opcode{14l} *) | BSLLT of int (** Branch if suffix length is less than given integer *)
-  (* %opcode{15l} *) | BNBOF        (** Branch if not BOF *)
+type labelable_instruction =
+                      | LABEL        (** Label definition *)
+  (* %opcode{L00}  *) | BRA          (** Unconditional branch *)
+  (* %opcode{L01}  *) | BEOF         (** Branch if EOF *)
+  (* %opcode{L02}  *) | BNEOF        (** Branch if not EOF *)
+  (* %opcode{L03}  *) | BFC          (** Branch if fail clear *)
+  (* %opcode{L04}  *) | BFS          (** Branch if fail set *)
+  (* %opcode{L05}  *) | BMB          (** Branch if memo busy *)
+  (* %opcode{L06}  *) | BMBF         (** Branch if memo busy or failed *)
+  (* %opcode{L07}  *) | BMK          (** Branch if memo known *)
+  (* %opcode{L08}  *) | BMUK         (** Branch if memo unknown *)
+  (* %opcode{L09}  *) | BMF          (** Branch if memo failed *)
+  (* %opcode{L10}  *) | BBRC         (** Branch if boolean register is clear *)
+  (* %opcode{L11}  *) | BBRS         (** Branch if boolean register is set *)
+  (* %opcode{L12}  *) | JSR          (** Subroutine call *)
+  (* %opcode{L13c} *) | SBNS of char (** Scan and branch to label if character does not match *)
+  (* %opcode{L14i} *) | BSLLT of int (** Branch if suffix length is less than given integer *)
+  (* %opcode{L15}  *) | BNBOF        (** Branch if not BOF *)
 ;;
 
-type ('br,'nd,'at) unlabelable_instruction =
-  (* %opcode{16c} *)  | SSEQ of char               (** Scan and push true if not equal, false otherwise *)
-  (* %opcode{17cc} *) | SSIR of char * char        (** Scan and push true if char in range, false otherwise *)
-  (* %opcode{18} *)   | BTRUE                      (** Push true on boolean stack *)
-  (* %opcode{19} *)   | BFALSE                     (** Push false on boolean stack *)
-  (* %opcode{20} *)   | BAND                       (** Push conjunction of top two boolean values *)
-  (* %opcode{21} *)   | BOR                        (** Push disjunction of top two boolean values *)
-  (* %opcode{22} *)   | BNOT                       (** Push negation of the top boolean value *)
-  (* %opcode{23} *)   | SETF                       (** Set the fail flag *)
-  (* %opcode{24} *)   | CLRF                       (** Clear the fail flag *)
-  (* %opcode{25} *)   | RIGHT of int               (** Advance the head *)
-  (* %opcode{26} *)   | PUSHP                      (** Save the head position *)
-  (* %opcode{27} *)   | POPP                       (** Restore the head position and pop it from the stack*)
-  (* %opcode{28} *)   | RESTP                      (** Restore the head position *)
-  (* %opcode{29} *)   | DROPP                      (** Drop head position *)
-  (* %opcode{30i} *)  | LDMEM of int               (** Get the memo entry for the given line *)
-  (* %opcode{31i} *)  | LDCH of int                (** Get the choice entry for the given line *)
-  (* %opcode{32i} *)  | POPSTMEMJ of int           (** Store the position in the memo entry at the position popped from the stack *)
-  (* %opcode{33i} *)  | STMEMB of int              (** Mark the memo entry as busy *)
-  (* %opcode{34i} *)  | STMEMF of int              (** Mark the memo entry as failed *)
-  (* %opcode{35ii} *) | TOPSTCH of int * int       (** Store the value into the choice register *)
-  (* %opcode{36} *)   | JMEM                       (** Set head position to memo *)
-  (* %opcode{37} *)   | RTS                        (** Return from subroutine *)
-  (* %opcode{38} *)   | PCN                        (** Push current construction and create a new one *)
-  (* %opcode{39n} *)  | NODE of 'nd                (** Build a new node using the current construction and append it to the previous
+type ('nd,'at) unlabelable_instruction =
+  (* %opcode{U16c} *)  | SSEQ of char               (** Scan and push true if not equal, false otherwise *)
+  (* %opcode{U17cc} *) | SSIR of char * char        (** Scan and push true if char in range, false otherwise *)
+  (* %opcode{U18} *)   | BTRUE                      (** Push true on boolean stack *)
+  (* %opcode{U19} *)   | BFALSE                     (** Push false on boolean stack *)
+  (* %opcode{U20} *)   | BAND                       (** Push conjunction of top two boolean values *)
+  (* %opcode{U21} *)   | BOR                        (** Push disjunction of top two boolean values *)
+  (* %opcode{U22} *)   | BNOT                       (** Push negation of the top boolean value *)
+  (* %opcode{U23} *)   | SETF                       (** Set the fail flag *)
+  (* %opcode{U24} *)   | CLRF                       (** Clear the fail flag *)
+  (* %opcode{U25i} *)  | RIGHT of int               (** Advance the head *)
+  (* %opcode{U26} *)   | PUSHP                      (** Save the head position *)
+  (* %opcode{U27} *)   | POPP                       (** Restore the head position and pop it from the stack*)
+  (* %opcode{U28} *)   | RESTP                      (** Restore the head position *)
+  (* %opcode{U29} *)   | DROPP                      (** Drop head position *)
+  (* %opcode{U30i} *)  | LDMEM of int               (** Get the memo entry for the given line *)
+  (* %opcode{U31i} *)  | LDCH of int                (** Get the choice entry for the given line *)
+  (* %opcode{U32i} *)  | POPSTMEMJ of int           (** Store the position in the memo entry at the position popped from the stack *)
+  (* %opcode{U33i} *)  | STMEMB of int              (** Mark the memo entry as busy *)
+  (* %opcode{U34i} *)  | STMEMF of int              (** Mark the memo entry as failed *)
+  (* %opcode{U35ii} *) | TOPSTCH of int * int       (** Store the value into the choice register *)
+  (* %opcode{U36} *)   | JMEM                       (** Set head position to memo *)
+  (* %opcode{U37} *)   | RTS                        (** Return from subroutine *)
+  (* %opcode{U38} *)   | PCN                        (** Push current construction and create a new one *)
+  (* %opcode{U39n} *)  | NODE of 'nd                (** Build a new node using the current construction and append it to the previous
                                                        construction, making the previous construction current. *)
-  (* %opcode{40a} *)  | ATTR of 'at                (** Add an attribute of the given name whose value is the input between the saved position
+  (* %opcode{U40a} *)  | ATTR of 'at                (** Add an attribute of the given name whose value is the input between the saved position
                                                        and the head position to the current construction *)
-  (* %opcode{41a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
-  (* %opcode{42} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
+  (* %opcode{U41a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
+  (* %opcode{U42} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
 ;;
 
-type ('br,'nd,'at,'label) instruction =
-  | L of 'label * 'br labelable_instruction
-  | U of ('br,'nd,'at) unlabelable_instruction
-  | M of 'label array * 'br multilabelable_instruction
+type ('nd,'at,'label) instruction =
+  | L of 'label * labelable_instruction
+  | U of ('nd,'at) unlabelable_instruction
+  | M of 'label array * multilabelable_instruction
 ;;
 
-type ('br,'nd,'at,'label) basic_block = {
-    bb_body : ('br,'nd,'at,'label) instruction list;
+type ('nd,'at,'label) basic_block = {
+    bb_body : ('nd,'at,'label) instruction list;
     bb_next : 'label;
     bb_fail : 'label;
 };;
