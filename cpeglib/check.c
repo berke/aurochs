@@ -43,8 +43,6 @@ static unsigned char *load_file(char *name, size_t *size)/*{{{*/
 }/*}}}*/
 int main(int argc, char **argv)
 {
-  char *buf;
-  int count;
   unsigned char *peg_data;
   char *peg_fn;
   size_t peg_data_size;
@@ -71,6 +69,11 @@ int main(int argc, char **argv)
     printf("peg_data[0] = %d\n", peg_data[0]);
     pg = cnog_unpack_program(&pk);
     printf("Unpacked to %p\n", pg);
+    if(pg) {
+
+
+      cnog_free_program(pg, free);
+    }
   }
 
   return 0;

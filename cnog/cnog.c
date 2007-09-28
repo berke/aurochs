@@ -76,17 +76,10 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   void run(nog_instruction_t *ip) {/*{{{*/
     nog_instruction_t *ip_next;
 
-    int arg0() {
-      return ip->ni_arg[0].na_int;
-    }
-
-    int arg1() {
-      return ip->ni_arg[1].na_int;
-    }
-
-    void jump(void) {
-      ip_next = pg->np_program + arg0();
-    }
+    int arg0() { return ip->ni_arg[0].na_int; }
+    int arg1() { return ip->ni_arg[1].na_int; }
+    void jump_to(int pc) { ip_next = pg->np_program + pc; }
+    void jump(void) { jump_to(arg0()); } 
 
     for(;;) {
       ip = ip_next;
@@ -268,6 +261,13 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
         case NOG_RTS:
           return;
 
+        case NOG_SWCH:
+          jump_to(ip->ni_arg[0].na_table.nt_elements[choice]);
+          break;
+
+        case NOG_LABEL:
+          break;
+
         /* Construction */
         case NOG_PCN:
         case NOG_NODE:
@@ -276,11 +276,6 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
         case NOG_TOKEN:
           break;
 
-        case NOG_SWCH:
-          break;
-
-        case NOG_LABEL:
-          break;
       }
     }
   }/*}}}*/
@@ -290,7 +285,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
 
   return fail;
 }/*}}}*/
-nog_program_t *cnog_unpack_program(packer_t *pk) {
+nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
 
@@ -345,4 +340,19 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {
   }
 
   return result;
-}
+}/*}}}*/
+void cnog_free_program(nog_program_t *pg, void (*free)(void *))/*{{{*/
+{
+  int i;
+
+  if(pg) {
+    if(pg->np_program) {
+      for(i = 0; i < pg->np_count; i ++) {
+        cnog_free_instruction(pg->np_program + i, free);
+      }
+
+      free(pg->np_program);
+    }
+    free(pg);
+  }
+}/*}}}*/
