@@ -292,9 +292,9 @@ let generate_code ~start peg =
     | S xl -> Seq(List.map bexpr xl)
     | Build(n, xl) ->
         Seq[
-          It(U PCN);
+          It(U (SNODE n));
           Seq(List.map bexpr xl);
-          It(U (NODE n))
+          It(U FNODE)
         ]
     | Ascribe(n, Position) -> It(U(POSATTR n))
     | Ascribe(n, x) ->
@@ -451,7 +451,11 @@ let save_program fn pg peg =
 
     Pack.write_uint sk & Array.length pg.pg_code;
     let resolve_label (x, _) = x in
-    let resolve_node = Hashtbl.find nodes in
+    let resolve_node x =
+      let id = Hashtbl.find nodes x in
+      info `Debug "Resolving %s as %d" x id;
+      id
+    in
     let resolve_attribute = Hashtbl.find attributes in
     Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
   )

@@ -18,25 +18,33 @@ tree *ptree_create_token(info *pti, int t_begin, int t_end)/*{{{*/
   tr = xmalloc(sizeof(tree));
   tr->t_kind = TREE_TOKEN;
   tr->t_sibling = 0;
+  tr->t_parent = 0;
   tr->t_element.t_token.s_begin = t_begin;
   tr->t_element.t_token.s_end = t_end;
 
   return tr;
 }/*}}}*/
-tree *ptree_create_node(info *pti, char *name)/*{{{*/
+tree *ptree_create_node(info *pti, int id, unsigned char *name)/*{{{*/
 {
   tree *tr;
   tr = xmalloc(sizeof(tree));
   tr->t_kind = TREE_NODE;
   tr->t_sibling = 0;
+  tr->t_parent = 0;
   tr->t_element.t_node.n_name = name;
   tr->t_element.t_node.n_attributes = 0;
   tr->t_element.t_node.n_children = 0;
 
   return tr;
 }/*}}}*/
-void ptree_attach_attribute(info *pti, node *nd, char *name, int v_begin, int v_end)/*{{{*/
+node *ptree_get_node(tree *tr)/*{{{*/
 {
+  if(tr->t_kind == TREE_NODE) return &tr->t_element.t_node;
+  else abort();
+}/*}}}*/
+void ptree_attach_attribute(info *pti, tree *tr, int id, unsigned char *name, int v_begin, int v_end)/*{{{*/
+{
+  node *nd;
   attribute *at;
 
   at = xmalloc(sizeof(attribute));
@@ -46,16 +54,24 @@ void ptree_attach_attribute(info *pti, node *nd, char *name, int v_begin, int v_
   at->a_sibling = nd->n_attributes;
   nd->n_attributes = at;
 }/*}}}*/
-void ptree_attach_position_attribute(info *pti, node *nd, char *name, int v_begin, int v_end)/*{{{*/
+void ptree_attach_position_attribute(info *pti, tree *tr, int id, unsigned char *name, int v_begin, int v_end)/*{{{*/
 {
-  ptree_attach_attribute(pti, nd, name, v_begin, v_begin);
+  ptree_attach_attribute(pti, tr, id, name, v_begin, v_begin);
 }/*}}}*/
-void ptree_add_children(info *pti, node *nd, tree *tr)/*{{{*/
+void ptree_add_children(info *pti, tree *tr1, tree *tr2)/*{{{*/
 {
-  tr->t_sibling = nd->n_children;
-  nd->n_children = tr;
+  node *nd;
+  
+  nd = ptree_get_node(tr1);
+  tr2->t_sibling = nd->n_children;
+  tr2->t_parent = tr1;
+  nd->n_children = tr2;
 }/*}}}*/
-void ptree_reverse_sibling(info *pti, node *nd) {/*{{{*/
+void ptree_reverse_sibling(info *pti, tree *tr) {/*{{{*/
+  node *nd;
+
+  nd = ptree_get_node(tr);
+
   tree *loop(tree *tr_accu, tree *tr) {/*{{{*/
     if(tr) {
       tree *tr_rest;
@@ -73,7 +89,7 @@ void ptree_reverse_tree(info *pti, tree *tr) {/*{{{*/
     case TREE_TOKEN:
       break;
     case TREE_NODE:
-      ptree_reverse_sibling(pti, &tr->t_element.t_node);
+      ptree_reverse_sibling(pti, tr);
       {
         tree *tr2;
 
@@ -92,7 +108,7 @@ static void put_indent(info *pti, FILE *f, int indent)/*{{{*/
     fprintf(f, "  ");
   }
 }/*}}}*/
-static void put_substring(info *pti, FILE *f, char *input, substring *s)/*{{{*/
+static void put_substring(info *pti, FILE *f, unsigned char *input, substring *s)/*{{{*/
 {
   if(s->s_begin > s->s_end) {
     fprintf(f,"***ILLEGAL(%d,%d)***", s->s_begin, s->s_end);
@@ -100,7 +116,7 @@ static void put_substring(info *pti, FILE *f, char *input, substring *s)/*{{{*/
     fwrite(input + s->s_begin, s->s_end - s->s_begin, 1, f);
   }
 }/*}}}*/
-void ptree_dump_tree(info *pti, FILE *f, char *input, tree *tr, int indent)/*{{{*/
+void ptree_dump_tree(info *pti, FILE *f, unsigned char *input, tree *tr, int indent)/*{{{*/
 {
   node *nd;
   token *tk;
@@ -168,10 +184,16 @@ void ptree_delete_tree(info *pti, tree *tr)/*{{{*/
       break;
   }
 }/*}}}*/
+tree *ptree_get_parent(info *a, tree *t)/*{{{*/
+{
+  return t->t_parent;
+}/*}}}*/
+
 peg_builder_t parse_tree_builder = {/*{{{*/
   .pb_info = 0,
   .pb_create_token = ptree_create_token,
   .pb_create_node = ptree_create_node,
+  .pb_get_parent = ptree_get_parent,
   .pb_delete_attribute = ptree_delete_attribute,
   .pb_delete_tree = ptree_delete_tree,
   .pb_attach_attribute = ptree_attach_attribute,

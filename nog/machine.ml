@@ -54,8 +54,8 @@ type ('nd,'at) unlabelable_instruction =
   (* %opcode{U35ii} *) | TOPSTCH of int * int       (** Store the value into the choice register *)
   (* %opcode{U36} *)   | JMEM                       (** Set head position to memo *)
   (* %opcode{U37} *)   | RTS                        (** Return from subroutine *)
-  (* %opcode{U38} *)   | PCN                        (** Push current construction and create a new one *)
-  (* %opcode{U39n} *)  | NODE of 'nd                (** Build a new node using the current construction and append it to the previous
+  (* %opcode{U38n} *)  | SNODE of 'nd               (** Start a new node *)
+  (* %opcode{U39} *)   | FNODE                      (** Finish the node using and append it to the previous
                                                        construction, making the previous construction current. *)
   (* %opcode{U40a} *)  | ATTR of 'at                (** Add an attribute of the given name whose value is the input between the saved position
                                                        and the head position to the current construction *)
@@ -122,8 +122,8 @@ let print_unlabelable ~print_node ~print_attr oc = function
   | STMEMB k -> fp oc "STMEMB %d" k
   | TOPSTCH(k,l) -> fp oc "TOPSTCH(%d, %d)" k l
   | RTS -> fp oc "RTS"
-  | PCN -> fp oc "PCN"
-  | NODE n -> fp oc "NODE %a" print_node n
+  | FNODE -> fp oc "FNODE"
+  | SNODE n -> fp oc "SNODE %a" print_node n
   | ATTR a -> fp oc "ATTR %a" print_attr a
   | POSATTR a -> fp oc "POSATTR %a" print_attr a
   | TOKEN -> fp oc "TOKEN"

@@ -49,8 +49,8 @@ typedef enum {
   NOG_TOPSTCH,      /* Store the value into the choice register */
   NOG_JMEM,         /* Set head position to memo */
   NOG_RTS,          /* Return from subroutine */
-  NOG_PCN,          /* Push current construction and create a new one */
-  NOG_NODE,         /* Build a new node using the current construction and append it to the previous construction, */
+  NOG_SNODE,        /* Push current construction and create a new one */
+  NOG_FNODE,        /* Build a new node using the current construction and append it to the previous construction, */
   NOG_ATTR,         /* Add an attribute of the given name whose value is the input between the saved position and, */
   NOG_POSATTR,      /* Add an attribute of the given name whose value is the current input position */
   NOG_TOKEN,        /* Build a token between the memo register and the head position and add it to the current construction */
@@ -91,7 +91,7 @@ typedef struct {
   nog_instruction_t *np_program;
 } nog_program_t;
 
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build);
+bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result);
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg);
 nog_program_t *cnog_unpack_program(packer_t *pk);
 void cnog_free_program(nog_program_t *pg, void (*free)(void *));

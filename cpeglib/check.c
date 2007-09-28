@@ -92,8 +92,16 @@ int main(int argc, char **argv)
           cx = peg_create_context(pg, &parse_tree_builder, buf, m);
           printf("Created context %p\n", cx);
           if(cx) {
-            if(cnog_execute(cx, pg, false)) {
+            if(cnog_execute(cx, pg, 0)) {
+              tree *tr;
+
               printf("Does parse.\n");
+              if(cnog_execute(cx, pg, &tr)) {
+                printf("Built.\n");
+                cx->cx_builder->pb_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
+              } else {
+                printf("Can't build.\n");
+              }
             } else {
               printf("Doesn't parse.\n");
               error_pos = cnog_error_position(cx, pg);

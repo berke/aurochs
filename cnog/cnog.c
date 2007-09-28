@@ -31,7 +31,7 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 
   return max_j;
 }/*}}}*/
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
+bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{{*/
 {
   bool fail;                /* Failure register */
   unsigned int boolean;     /* Small stack for evaluating boolean formulas */
@@ -39,6 +39,9 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   choice_t choice;          /* Register for accessing the choice table */
   symbol_t *sp;             /* Symbol stack pointer (PC stack pointer is host machine stack) */
   letter_t *head, *bof, *eof; /* Pointers to current position, beginning and end. */
+  peg_builder_t *bd;
+  info *bi;
+  tree *root, *current;
 
   /* Initialize to defined values */
   boolean = 0;
@@ -48,6 +51,8 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   head = cx->cx_input;
   bof = head;
   eof = cx->cx_input + cx->cx_input_length;
+  bd = cx->cx_builder;
+  bi = cx->cx_builder_info;
 
   /* Boolean stack manipulation */
   void boolean_push(bool x) {/*{{{*/
@@ -280,9 +285,37 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
           break;
 
         /* Construction */
-        case NOG_PCN:
-        case NOG_NODE:
+        case NOG_SNODE:
+          {
+            tree *tr;
+            int id;
+            unsigned char *name;
+
+            id = arg0();
+            name = pg->np_constructors[id].ns_chars;
+            printf("NODE %d, current=%p, name=%s\n", id, current, name);
+            tr = bd->pb_create_node(bi, id, name);
+            bd->pb_add_children(bi, current, tr);
+            current = tr;
+          }
+          break;
+
+        case NOG_FNODE:
+          if(current != root) current = bd->pb_get_parent(bi, current);
+          break;
+
         case NOG_ATTR:
+          {
+            int id;
+            unsigned char *name;
+
+            id = arg0();
+            name = pg->np_attributes[id].ns_chars;
+
+            bd->pb_attach_attribute(bi, current, id, name, head - bof, memo);
+          }
+          break;
+
         case NOG_POSATTR:
         case NOG_TOKEN:
           break;
@@ -292,7 +325,14 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build)/*{{{*/
   }/*}}}*/
 
   sp = cx->cx_stack;
-  run(pg->np_program + (build ? pg->np_build_pc : pg->np_start_pc));
+
+  if(build_result) {
+    root = bd->pb_create_node(bi, ROOT_ID, (unsigned char *) ROOT_NAME);
+    current = root;
+    *build_result = root;
+  }
+
+  run(pg->np_program + (build_result ? pg->np_build_pc : pg->np_start_pc));
 
   return !fail;
 }/*}}}*/
@@ -343,6 +383,7 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   for(i = 0; i < pg->np_num_constructors; i ++) {
     if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size)) fail();
     pg->np_constructors[i].ns_length = size;
+    printf("  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
   }
 
   if(!pack_read_int(pk, &pg->np_num_attributes)) fail();
@@ -354,6 +395,7 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
   for(i = 0; i < pg->np_num_attributes; i ++) {
     if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size)) fail();
     pg->np_attributes[i].ns_length = size;
+    printf("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
   }
   
   if(!pack_read_int(pk, &pg->np_count)) fail();

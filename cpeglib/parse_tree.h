@@ -13,7 +13,7 @@ typedef enum {
   TREE_TOKEN,
 } tree_kind;
 
-typedef char *string;
+typedef unsigned char *string;
 
 struct _tree;
 
@@ -41,6 +41,7 @@ typedef substring token;
 typedef struct _tree {
   tree_kind t_kind;
   struct _tree *t_sibling;
+  struct _tree *t_parent;
   union {
     node t_node;
     token t_token;
@@ -56,15 +57,16 @@ typedef struct _info {
 #include <peg.h>
 
 tree *ptree_token(info *pti, int t_begin, int t_end);
-tree *ptree_create_node(info *pti, char *name);
+tree *ptree_create_node(info *pti, int id, unsigned char *name);
 void ptree_delete_attribute(info *pti, attribute *at);
 void ptree_delete_tree(info *pti, tree *tr);
-void ptree_attach_attribute(info *pti, node *nd, char *name, int v_begin, int v_end);
-void ptree_add_children(info *pti, node *nd, tree *tr);
-void ptree_reverse_sibling(info *pti, node *nd);
+void ptree_attach_attribute(info *pti, tree *tr, int id, unsigned char *name, int v_begin, int v_end);
+void ptree_add_children(info *pti, tree *tr1, tree *tr2);
+void ptree_reverse_sibling(info *pti, tree *tr);
 void ptree_reverse_tree(info *pti, tree *tr);
-void ptree_dump_tree(info *pti, FILE *f, char *input, tree *tr, int indent);
+void ptree_dump_tree(info *pti, FILE *f, unsigned char *input, tree *tr, int indent);
 void ptree_dump_context(info *pti, FILE *f, peg_context_t *cx);
+
 peg_builder_t parse_tree_builder;
 
 #endif

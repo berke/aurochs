@@ -53,6 +53,7 @@ type memo =
 module IS = Set.Make(struct type t = int let compare = compare end);;
 
 type ('nd, 'at) construction = {
+  cons_name : 'nd option;
   cons_start : int;
   mutable cons_attributes : (int * int * 'at) list;
   mutable cons_children : ('nd, 'at) Peg.poly_positioned_tree list;
@@ -197,7 +198,7 @@ let execute_positioned_quick program
       breakpoints = IS.empty;
       trace_instructions = [];
       saved_cons = Stack.create ();
-      cons = { cons_start = 0; cons_attributes = []; cons_children = [] };
+      cons = { cons_name = None; cons_start = 0; cons_attributes = []; cons_children = [] };
       label = program.pg_start }
   in
   let rec run pc =
@@ -291,11 +292,11 @@ let execute_positioned_quick program
                      | Pos head -> Choices.set c.choices j head k
                      | _ -> raise (Error "TOPSTCH without position on stack")
                    end
-               | PCN ->
+               | SNODE n ->
                    Stack.push c.cons c.saved_cons;
-                   c.cons <- { cons_start = c.head; cons_attributes = []; cons_children = [] }
-               | NODE n ->
-                   let nd = Peg.P_Node(c.cons.cons_start, c.head, n, List.rev c.cons.cons_attributes, List.rev c.cons.cons_children) in
+                   c.cons <- { cons_name = Some n; cons_start = c.head; cons_attributes = []; cons_children = [] }
+               | FNODE ->
+                   let nd = Peg.P_Node(c.cons.cons_start, c.head, Util.mandatory c.cons.cons_name, List.rev c.cons.cons_attributes, List.rev c.cons.cons_children) in
                    c.cons <- Stack.pop c.saved_cons;
                    c.cons.cons_children <- nd :: c.cons.cons_children
                | ATTR n ->
@@ -387,7 +388,7 @@ let execute_positioned program
           breakpoints = IS.empty;
           trace_instructions = [];
           saved_cons = Stack.create ();
-          cons = { cons_start = 0; cons_attributes = []; cons_children = [] };
+          cons = { cons_name = None; cons_start = 0; cons_attributes = []; cons_children = [] };
           label = program.pg_start }
       in
       let log_call =
@@ -531,11 +532,11 @@ let execute_positioned program
                       | Accept -> raise Finish
                       | _ -> raise (Error "RET without PC on stack")
                     end
-                 | PCN ->
+                 | SNODE n ->
                      Stack.push c.cons c.saved_cons;
-                     c.cons <- { cons_start = c.head; cons_attributes = []; cons_children = [] }
-                 | NODE n ->
-                     let nd = Peg.P_Node(c.cons.cons_start, c.head, n, List.rev c.cons.cons_attributes, List.rev c.cons.cons_children) in
+                     c.cons <- { cons_name = Some n; cons_start = c.head; cons_attributes = []; cons_children = [] }
+                 | FNODE ->
+                     let nd = Peg.P_Node(c.cons.cons_start, c.head, Util.mandatory c.cons.cons_name, List.rev c.cons.cons_attributes, List.rev c.cons.cons_children) in
                      c.cons <- Stack.pop c.saved_cons;
                      c.cons.cons_children <- nd :: c.cons.cons_children
                  | ATTR n ->

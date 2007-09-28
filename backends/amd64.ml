@@ -350,7 +350,7 @@ let emit oc pg =
                     pr64 r_tmp2
                     pr64 r_tmp1
                     choice_size
-          | LDCH _ | PCN | NODE _ | ATTR _ | POSATTR _ | TOKEN -> fp oc "\t/* Unimplemented construction opcode */\n"
+          | LDCH _ | SNODE _ | FNODE | ATTR _ | POSATTR _ | TOKEN -> fp oc "\t/* Unimplemented construction opcode */\n"
         end
   done;
 ;;

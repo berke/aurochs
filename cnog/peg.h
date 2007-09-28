@@ -32,23 +32,25 @@ typedef int symbol_t;
 #ifndef BUILDER_TYPES_DEFINED
 typedef void info;
 typedef void tree;
-typedef void node;
 typedef void attribute;
 #endif
+
+#define ROOT_NAME "root"
+#define ROOT_ID 0
 
 typedef struct {
   info *pb_info;
   tree *(*pb_create_token)(info *a, int t_begin, int t_end);
-  tree *(*pb_create_node)(info *a, char *name);
+  tree *(*pb_create_node)(info *a, int id, unsigned char *name);
+  tree *(*pb_get_parent)(info *a, tree *t);
   void (*pb_delete_attribute)(info *a, attribute *at);
   void (*pb_delete_tree)(info *a, tree *tr);
-  void (*pb_attach_attribute)(info *a, node *nd, char *name, int v_begin, int v_end);
-  void (*pb_add_children)(info *a, node *nd, tree *tr);
-  void (*pb_reverse_sibling)(info *a, node *nd);
+  void (*pb_attach_attribute)(info *a, tree *tr, int id, unsigned char *name, int v_begin, int v_end);
+  void (*pb_add_children)(info *a, tree *tr1, tree *tr2);
+  void (*pb_reverse_sibling)(info *a, tree *tr);
   void (*pb_reverse_tree)(info *a, tree *tr);
-  void (*pb_dump_tree)(info *a, FILE *f, char *input, tree *tr, int indent);
+  void (*pb_dump_tree)(info *a, FILE *f, unsigned char *input, tree *tr, int indent);
 } peg_builder_t;
-
 
 /* Execution context */
 typedef struct {
@@ -61,6 +63,7 @@ typedef struct {
   int cx_num_productions;
   int cx_num_alternatives;
   peg_builder_t *cx_builder;
+  info *cx_builder_info;
 } peg_context_t;
 
 #endif
