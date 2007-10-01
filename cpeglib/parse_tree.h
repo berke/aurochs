@@ -6,6 +6,7 @@
 #define PARSE_TREE_H
 
 #include <stdio.h>
+#include <alloc.h>
 #include <base_types.h>
 
 typedef enum {
@@ -48,9 +49,7 @@ typedef struct _tree {
   } t_element;
 } tree;
 
-typedef struct _info {
-  char tpi_nothing;
-} info;
+typedef alloc_t info;
 
 #define BUILDER_TYPES_DEFINED 1
 
@@ -66,7 +65,6 @@ void ptree_reverse_sibling(info *pti, tree *tr);
 void ptree_reverse_tree(info *pti, tree *tr);
 void ptree_dump_tree(info *pti, FILE *f, unsigned char *input, tree *tr, int indent);
 void ptree_dump_context(info *pti, FILE *f, peg_context_t *cx);
-
-peg_builder_t parse_tree_builder;
+void ptree_init(peg_builder_t *pb, alloc_t *alloc);
 
 #endif

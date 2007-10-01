@@ -189,18 +189,17 @@ tree *ptree_get_parent(info *a, tree *t)/*{{{*/
 {
   return t->t_parent;
 }/*}}}*/
-
-peg_builder_t parse_tree_builder = {/*{{{*/
-  .pb_info = 0,
-  .pb_create_token = ptree_create_token,
-  .pb_create_node = ptree_create_node,
-  .pb_get_parent = ptree_get_parent,
-  .pb_delete_attribute = ptree_delete_attribute,
-  .pb_delete_tree = ptree_delete_tree,
-  .pb_attach_attribute = ptree_attach_attribute,
-  .pb_add_children = ptree_add_children,
-  .pb_reverse_sibling = ptree_reverse_sibling,
-  .pb_reverse_tree = ptree_reverse_tree,
-  .pb_dump_tree = ptree_dump_tree,
-};
-/*}}}*/
+void ptree_init(peg_builder_t *pb, alloc_t *alloc)/*{{{*/
+{
+  pb->pb_info = alloc;
+  pb->pb_create_token = ptree_create_token;
+  pb->pb_create_node = ptree_create_node;
+  pb->pb_get_parent = ptree_get_parent;
+  pb->pb_delete_attribute = ptree_delete_attribute;
+  pb->pb_delete_tree = ptree_delete_tree;
+  pb->pb_attach_attribute = ptree_attach_attribute;
+  pb->pb_add_children = ptree_add_children;
+  pb->pb_reverse_sibling = ptree_reverse_sibling;
+  pb->pb_reverse_tree = ptree_reverse_tree;
+  pb->pb_dump_tree = ptree_dump_tree;
+}/*}}}*/

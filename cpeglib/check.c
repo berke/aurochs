@@ -74,6 +74,10 @@ int main(int argc, char **argv)
   /* Create a stack allocator */
 
   st = stack_create(&alloc_stdlib);
+  if(!st) {
+    printf("Can't create stack allocator.\n");
+    exit(EXIT_FAILURE);
+  }
 
   if(pack_init_from_string(&pk, peg_data, peg_data_size)) {
     printf("peg_data[0] = %d\n", peg_data[0]);
@@ -92,11 +96,16 @@ int main(int argc, char **argv)
 
       for(i = 0; i < argc; i ++) {
         fn = argv[i];
+        peg_builder_t pb;
+        stack_t *s2;
+
+        s2 = stack_create(&alloc_stdlib);
 
         buf = load_file(fn, &m);
         printf("Loaded file %s to %p\n", fn, buf);
         if(buf) {
-          cx = peg_create_context(pg, &parse_tree_builder, buf, m);
+          ptree_init(&pb, &s2->s_alloc);
+          cx = peg_create_context(pg, &pb, buf, m);
           printf("Created context %p\n", cx);
           if(cx) {
             if(cnog_execute(cx, pg, 0)) {
@@ -118,6 +127,7 @@ int main(int argc, char **argv)
             peg_delete_context(cx);
           }
         }
+        stack_dispose(s2);
         free(buf);
       }
 #if 0
@@ -150,7 +160,8 @@ int main(int argc, char **argv)
       }
 #endif
 
-      cnog_free_program(&st->s_alloc, pg);
+      /* cnog_free_program(&st->s_alloc, pg); */
+      stack_dispose(st);
     }
   }
 
