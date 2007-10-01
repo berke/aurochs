@@ -11,7 +11,7 @@
 #include <caml/alloc.h>
 #include <caml/custom.h>
 
-#include <nog.h>
+#include <cnog.h>
 #include <stack.h>
 
 typedef struct {
@@ -19,7 +19,9 @@ typedef struct {
   stack_t *p_stack;
 } program_t;
 
-#define program_val(v) (*((progran_t *) Data_custom_val(v)))
+#define program_val(v) (*((program_t *) Data_custom_val(v)))
+
+static void program_finalize(value pgv);
 
 static struct custom_operations program_ops = {
   "fr.aurochs.caml.aurochs.program",
@@ -32,15 +34,12 @@ static struct custom_operations program_ops = {
 
 static void program_finalize(value pgv)
 {
-  program_t *pg;
-
-  pg = program_val(pgv);
-  stack_dispose(pg->p_stack);
+  stack_dispose(program_val(pgv).p_stack);
 }
 
 static value program_alloc(nog_program_t *pg, stack_t *s)
 {
-  value v = alloc_custom(&program_ops, sizeof(program_t), length, 1048576);
+  value v = alloc_custom(&program_ops, sizeof(program_t), pg->np_count, 1000000);
   program_val(v).p_nog = pg;
   program_val(v).p_stack = s;
   return v;
@@ -48,34 +47,31 @@ static value program_alloc(nog_program_t *pg, stack_t *s)
 
 value caml_aurochs_program_of_binary(value binaryv)
 {
-  CAMLparam1(programv);
+  CAMLparam1(binaryv);
   CAMLlocal1(programv);
-
   uint8_t *binary;
   size_t length;
-  void *start;
-  value ecbv;
   packer_t pk;
-  stack_t *st;
+  stack_t *s;
   nog_program_t *pg;
   const char *error;
 
-  binary = (uint8_t *) String_val(uv);
-  length = string_length(uv);
+  binary = (uint8_t *) String_val(binaryv);
+  length = string_length(binaryv);
   error = 0;
 
   if(pack_init_from_string(&pk, binary, length)) {
-    st = stack_create(&alloc_stdlib);
-    if(st) {
-      pg = cnog_unpack_program(&st->s_alloc, &pk);
+    s = stack_create(&alloc_stdlib);
+    if(s) {
+      pg = cnog_unpack_program(&s->s_alloc, &pk);
       if(pg) {
         programv = program_alloc(pg, s);
-        return programv;
+        CAMLreturn(programv);
       } else error = "Can't initialize program";
-      stack_dispose(st);
-    } else error = "Can't initialize stack");
+      stack_dispose(s);
+    } else error = "Can't initialize stack";
     pack_shutdown(&pk);
-  } else error = "Can't initialize packer");
+  } else error = "Can't initialize packer";
 
   caml_failwith(error);
 }
