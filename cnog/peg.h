@@ -41,11 +41,11 @@ typedef struct { }* attribute;
 
 typedef struct {
   info pb_info;
-  construction (*pb_start_construction)(info a, int id, unsigned char *name);
+  construction (*pb_start_construction)(info a, int id, unsigned char *name, int n_begin);
   bool (*pb_add_children)(info a, construction c, tree tr2);
   bool (*pb_add_token)(info a, construction c, int t_begin, int t_end);
   bool (*pb_add_attribute)(info a, construction c, int id, unsigned char *name, int v_begin, int v_end);
-  tree (*pb_finish_construction)(info a, construction t);
+  tree (*pb_finish_construction)(info a, construction t, int n_end);
 } peg_builder_t;
 
 #if 0

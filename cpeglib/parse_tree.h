@@ -60,10 +60,11 @@ typedef token_t *token;
 
 #include <peg.h>
 
-construction ptree_start_construction(info pti, int id, unsigned char *name);
+construction ptree_start_construction(info pti, int id, unsigned char *name, int begin);
 bool ptree_add_attribute(info pti, construction tr, int id, unsigned char *name, int v_begin, int v_end);
 bool ptree_add_token(info pti, construction tr, int t_begin, int t_end);
 bool ptree_add_children(info pti, construction tr1, tree tr2);
+tree ptree_finish_construction(info pti, construction c, int end);
 
 void ptree_delete_attribute(info pti, attribute at);
 void ptree_delete_tree(info pti, tree tr);

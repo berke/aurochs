@@ -1,22 +1,30 @@
 (* Aurochs *)
 
+open Peg;;
+
 type binary = string
 type ('node, 'attribute) program
-type generic_program = (string, string) program
+type generic_program = (int, int) program
 
 exception Parse_error of int;;
 exception Compile_error of string;;
 
 external get_constructor_count : ('node, 'attribute) program -> int = "caml_aurochs_get_constructor_count" "caml_aurochs_get_constructor_count"
 external get_constructor_name : ('node, 'attribute) program -> int -> string = "caml_aurochs_get_constructor_name" "caml_aurochs_get_constructor_name"
+external get_attribute_count : ('node, 'attribute) program -> int = "caml_aurochs_get_attribute_count" "caml_aurochs_get_attribute_count"
+external get_attribute_name : ('node, 'attribute) program -> int -> string = "caml_aurochs_get_attribute_name" "caml_aurochs_get_attribute_name"
 external program_of_binary : binary -> ('node, 'attribute) program = "caml_aurochs_program_of_binary" "caml_aurochs_program_of_binary"
-external generic_program_of_binary : binary -> generic_program = "caml_aurochs_program_of_binary" "caml_aurochs_program_of_binary"
 external parse_internal : ('node, 'attribute) program -> string -> int ref -> ('node, 'attribute) Peg.poly_positioned_tree option =
    "caml_aurochs_parse" "caml_aurochs_parse"
 
 let constructors pg =
   let m = get_constructor_count pg in
   Array.init m (get_constructor_name pg)
+;;
+
+let attributes pg =
+  let m = get_attribute_count pg in
+  Array.init m (get_attribute_name pg)
 ;;
 
 let parse pg u =
@@ -26,9 +34,20 @@ let parse pg u =
   | Some t -> t
 ;;
 
-let parse_generic gp u =
-  let _t = parse gp u in
-  failwith "Not implemented"
+let parse_generic pg u =
+  let t = parse pg u in
+  let cons = constructors pg
+  and attrs = attributes pg 
+  in
+  let sub u i j = String.sub u i (j - i) in
+  let rec convert = function
+  | P_Node(_, _, n, al, xl) ->
+      Node(cons.(n),
+        List.map (fun (i, j, a) -> (attrs.(a), if j < i then string_of_int i else sub u i j)) al,
+        List.map convert xl)
+  | P_Token(i, j) -> Token(sub u i j)
+  in
+  convert t
 ;;
 
 let compile u = failwith "Not implemented";;
@@ -57,6 +76,6 @@ let easy ~program ~text =
     | `Binary b -> load b
     | `Source s -> compile (load s)
   in
-  let program = generic_program_of_binary binary in
+  let program = program_of_binary binary in
   parse_generic program (load text)
 ;;

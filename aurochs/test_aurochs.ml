@@ -11,12 +11,18 @@ let _ =
   pf "Unpacking automata\n%!";
   let program = Aurochs.program_of_binary binary in
   pf "Unpacked\n%!";
+  pf "Constructors:\n%!";
   let cons = Aurochs.constructors program in
   Array.iteri (fun i u -> pf "  #%d: %s\n" i u) cons;
+  pf "Attributes:\n%!";
+  let attrs = Aurochs.attributes program in
+  Array.iteri (fun i u -> pf "  #%d: %s\n" i u) attrs;
   let text = Aurochs.load (`File file) in
-  let t = Aurochs.parse program text in
+  pf "Text OK:\n%!";
+  let t = Aurochs.parse_generic program text in
   pf "Parsed:\n%!";
-  (*pf "Tree:\n%a\n%!" (Peg.print_tree ()) t;
+  pf "Tree:\n%a\n%!" (Peg.print_tree ()) t;
+  (*
   match t with
   | Peg.Node _ -> pf "  Node\n%!";
   | Peg.Token _ -> pf "  Token\n%!"*)

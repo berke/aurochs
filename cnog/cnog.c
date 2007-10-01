@@ -90,7 +90,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build, construction
   }/*}}}*/
 
   /* Execution loop */
-  nog_instruction_t *run(construction current, nog_instruction_t *ip_next) {/*{{{*/
+  nog_instruction_t *run(construction current, nog_instruction_t *ip_next, tree *result_tree) {/*{{{*/
     nog_instruction_t *ip;
 
     int arg0() { return ip->ni_arg[0].na_int; }
@@ -159,7 +159,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build, construction
           break;
 
         case NOG_JSR:
-          (void) run(current, pg->np_program + arg0());
+          (void) run(current, pg->np_program + arg0(), result_tree);
           break;
 
         case NOG_SBNS:
@@ -305,15 +305,16 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build, construction
 
             id = arg0();
             name = pg->np_constructors[id].ns_chars;
-            new_cons = bd->pb_start_construction(bi, id, name);
-            ip_next = run(new_cons, ip_next);
+            new_cons = bd->pb_start_construction(bi, id, name, head - bof);
+            ip_next = run(new_cons, ip_next, &new_tree);
             if(!ip_next) return 0; /* XXX: leak ? */
-            new_tree = bd->pb_finish_construction(bi, new_cons);
+            //new_tree = bd->pb_finish_construction(bi, new_cons);
             if(!bd->pb_add_children(bi, current, new_tree)) return 0;
           }
           break;
 
         case NOG_FNODE:
+          if(result_tree) *result_tree = bd->pb_finish_construction(bi, current, head - bof);
           return ip_next;
 
         case NOG_ATTR:
@@ -357,10 +358,10 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build, construction
 #endif
 
   init();
-  if(run(current, pg->np_program + pg->np_start_pc)) {
+  if(run(current, pg->np_program + pg->np_start_pc, 0)) {
     if(!fail) {
       init();
-      if(run(current, pg->np_program + pg->np_build_pc)) return !fail;
+      if(run(current, pg->np_program + pg->np_build_pc, 0)) return !fail;
     }
   }
   return false;

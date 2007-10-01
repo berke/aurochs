@@ -26,7 +26,7 @@ bool ptree_add_token(info pti, construction tr1, int t_begin, int t_end)/*{{{*/
   if(tr2) return ptree_add_children(pti, tr1, tr2);
   return false;
 }/*}}}*/
-construction ptree_start_construction(info pti, int id, unsigned char *name)/*{{{*/
+construction ptree_start_construction(info pti, int id, unsigned char *name, int begin)/*{{{*/
 {
   tree tr;
   tr = alloc_malloc((alloc_t *) pti, sizeof(tree));
@@ -39,7 +39,7 @@ construction ptree_start_construction(info pti, int id, unsigned char *name)/*{{
 
   return tr;
 }/*}}}*/
-tree ptree_finish_construction(info pti, construction c)/*{{{*/
+tree ptree_finish_construction(info pti, construction c, int end)/*{{{*/
 {
   return c;
 }/*}}}*/

@@ -12,18 +12,17 @@ exception Parse_error of int;;
     Actually, the program is malloc()'d and represented using C structures. *)
 type ('node, 'attribute) program
 
+(** A generic program *)
+type generic_program = (int, int) program
+
 (** Get a table giving the string representation of node constructors *)
 val constructors : ('node, 'attribute) program -> string array
 
-(** A generic program is a program whose node and label attributes are
-    actually strings. *)
-type generic_program
+(** Get a table giving the string representation of node attributes *)
+val attributes : ('node, 'attribute) program -> string array
 
 (** Unpack a binary string and create a program. *)
 val program_of_binary : binary -> ('node, 'attribute) program
-
-(** Unpack a string and create a generic program *)
-val generic_program_of_binary : binary -> generic_program
 
 (** Parse a given string *)
 val parse : ('node, 'attribute) program -> string -> ('node, 'attribute) Peg.poly_positioned_tree
