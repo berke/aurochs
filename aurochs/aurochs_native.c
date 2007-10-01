@@ -15,20 +15,19 @@
 #include <alloc.h>
 #include <stack.h>
 
+typedef value tree;
+typedef value attribute;
 typedef struct {
-  
-  
-} builder_t;
+  value cons_value;
+} construction_t;
+typedef alloc_t *info;
+typedef construction_t *construction;
 
 #define BUILDER_TYPES_DEFINED 1
 
-typedef struct { }* info;
-typedef struct { }* tree;
-typedef struct { }* construction;
-typedef struct { }* attribute;
-
 #include <peg.h>
 #include <cnog.h>
+#include <peg_lib.h>
 
 typedef struct {
   nog_program_t *p_nog;
@@ -92,61 +91,66 @@ value caml_aurochs_program_of_binary(value binaryv)
   caml_failwith(error);
 }
 
-value caml_aurochs_parse(value programv, value uv)
-{
-  CAMLparam2(programv, uv);
-
-  caml_failwith("Parse not implemented");
-
-  CAMLreturn(Val_unit);
-}
-
-#if 0
-static construction *(start_construction)(info *a, int id, unsigned char *name)
-{
-
-}
-
-static bool add_children(info *a, construction *c, tree *tr2)
-{
-
-}
-
-static bool add_token(info *a, construction *c, int t_begin, int t_end)
-{
-
-}
-
-static bool add_attribute(info *a, construction *c, int id, unsigned char *name, int v_begin, int v_end)
-{
-
-}
-
-static tree *finish_construction(info *a, construction *t)
-{
-
-}
-#endif
-
 #define AUROCHS_P_NODE_TAG 0
-#define AUROCHS_P_NODE_NAME_FIELD 2
+#define AUROCHS_P_TOKEN_TAG 0
 
-#define AUROCHS_NODE_TAG 0
-#define AUROCHS_NODE_NAME_FIELD 0
-#define AUROCHS_NODE_ATTRS_FIELD 1
-#define AUROCHS_NODE_CHILD_FIELD 2
+enum {
+  AUROCHS_P_NODE_START_FIELD,
+  AUROCHS_P_NODE_END_FIELD,
+  AUROCHS_P_NODE_NAME_FIELD,
+  AUROCHS_P_NODE_ATTRS_FIELD,
+  AUROCHS_P_NODE_CHILD_FIELD,
+  AUROCHS_P_NODE_COUNT
+};
 
-static value create_node(char *name)
+static value create_node(void)
 {
   CAMLparam0();
   CAMLlocal1(treev);
 
-  treev = caml_alloc(3, AUROCHS_NODE_TAG);
-  Store_field(treev, AUROCHS_NODE_NAME_FIELD, caml_copy_string(name));
-  Store_field(treev, AUROCHS_NODE_ATTRS_FIELD, Val_int(0));
-  Store_field(treev, AUROCHS_NODE_CHILD_FIELD, Val_int(0));
+  treev = caml_alloc(AUROCHS_P_NODE_COUNT, AUROCHS_P_NODE_TAG);
+  Store_field(treev, AUROCHS_P_NODE_START_FIELD, Val_int(0));
+  Store_field(treev, AUROCHS_P_NODE_END_FIELD, Val_int(-1));
+  Store_field(treev, AUROCHS_P_NODE_NAME_FIELD, Val_int(0)); /* ROOT */
+  Store_field(treev, AUROCHS_P_NODE_ATTRS_FIELD, Val_int(0));
+  Store_field(treev, AUROCHS_P_NODE_CHILD_FIELD, Val_int(0));
 
   CAMLreturn(treev);
+}
+
+static construction (start_construction)(info in, int id, unsigned char *name)
+{
+  construction_t *cons;
+
+  cons = alloc_malloc(in, sizeof(construction_t));
+  if(!cons) caml_failwith("Cannot start construction");
+  caml_register_global_root(&cons->cons_value);
+  cons->cons_value = create_node();
+  return cons;
+}
+
+static tree finish_construction(info in, construction cons)
+{
+  CAMLparam0();
+  CAMLlocal1(nodev);
+  nodev = cons->cons_value;
+  caml_remove_global_root(&cons->cons_value);
+  CAMLreturn(nodev);
+}
+
+static bool add_children(info a, construction c, tree tr2)
+{
+  return true;
+}
+
+static bool add_token(info a, construction c, int t_begin, int t_end)
+{
+  return true;
+}
+
+static bool add_attribute(info a, construction c, int id, unsigned char *name, int v_begin, int v_end)
+{
+  return true;
 }
 
 static value cons(value v1, value v2)
@@ -161,32 +165,77 @@ static value cons(value v1, value v2)
   CAMLreturn(consv);
 }
 
-value caml_aurochs_parse_generic(value programv, value uv)
-{
-  CAMLparam2(programv, uv);
-  CAMLlocal4(tree1v, tree2v, tree3v, tree4v);
+#define ROOT_NODE_ID 0
+#define ROOT_NODE_NAME "Foo"
 
-#if 0
+static value some(value x)/*{{{*/
+{
+  CAMLparam1(x);
+  CAMLlocal1(somev);
+
+  somev = caml_alloc(1, 0);
+  Store_field(somev, 0, x);
+
+  CAMLreturn(somev);
+}/*}}}*/
+
+#define none (Val_int(0))
+
+value caml_aurochs_get_constructor_count(value programv)
+{
+  CAMLparam1(programv);
+  nog_program_t *pg;
+
+  pg = program_val(programv).p_nog;
+  CAMLreturn(Val_int(pg->np_num_constructors));
+}
+
+value caml_aurochs_get_constructor_name(value programv, value iv)
+{
+  CAMLparam2(programv, iv);
+  nog_program_t *pg;
+  int i;
+
+  i = Int_val(iv);
+  pg = program_val(programv).p_nog;
+  if(i < 0 || i >= pg->np_num_constructors) caml_invalid_argument("Constructor index out of range");
+  CAMLreturn(caml_copy_string((char *) pg->np_constructors[i].ns_chars));
+}
+
+value caml_aurochs_parse(value programv, value uv, value errorv)
+{
+  CAMLparam3(programv, uv, errorv);
+  CAMLlocal1(treev);
+  construction construction;
   uint8_t *input;
   size_t input_length;
   nog_program_t *pg;
   peg_context_t *cx;
   stack_t *s;
+  peg_builder_t builder;
+  info builder_info;
 
-  pg = program_val(v).p_nog;
-  input = (uint8_t)* String_val(uv);
-  input_length = (uint8_t)* string_length(uv);
+  pg = program_val(programv).p_nog;
+  input = (uint8_t *) String_val(uv);
+  input_length = string_length(uv);
 
-  cx = peg_create_context(pg, builder, builder_info, input, input_length);
+  s = stack_create(&alloc_stdlib);
+  if(!s) caml_failwith("Can't allocate stack");
+  builder_info = &s->s_alloc;
+
+  builder.pb_info = builder_info;
+  builder.pb_start_construction = start_construction;
+  builder.pb_add_children = add_children;
+  builder.pb_add_attribute = add_attribute;
+  builder.pb_finish_construction = finish_construction;
+
+  cx = peg_create_context(pg, &builder, builder_info, input, input_length);
   if(!cx) caml_failwith("Can't allocate context");
-#endif
 
-  tree1v = create_node("Foo");
-  tree2v = create_node("Bar");
-  tree3v = create_node("Baz");
-  tree4v = create_node("Gogol");
-  Store_field(tree1v, AUROCHS_NODE_CHILD_FIELD,
-    cons(tree4v, cons(tree3v, cons(tree2v, Val_int(0)))));
-
-  CAMLreturn(tree1v);
+  construction = start_construction(builder_info, ROOT_ID, (uint8_t *) ROOT_NAME);
+  if(cnog_execute(cx, pg, true, construction)) {
+    CAMLreturn(some(treev));
+  } else {
+    CAMLreturn(none); /* None */
+  }
 }

@@ -29,45 +29,48 @@ typedef struct _attribute {
   struct _attribute *a_sibling;
   string a_name;
   substring a_value;
-} attribute;
+} attribute_t;
 
 typedef struct {
   string n_name;
-  attribute *n_attributes;
+  attribute_t *n_attributes;
   struct _tree *n_children;
-} node;
+} node_t;
 
-typedef substring token;
+typedef substring token_t;
 
 typedef struct _tree {
   tree_kind t_kind;
   struct _tree *t_sibling;
   struct _tree *t_parent;
   union {
-    node t_node;
-    token t_token;
+    node_t t_node;
+    token_t t_token;
   } t_element;
-} tree;
+} tree_t;
 
-typedef tree construction;
-
-typedef alloc_t info;
+typedef tree_t *construction;
+typedef tree_t *tree;
+typedef node_t *node;
+typedef attribute_t *attribute;
+typedef alloc_t *info;
+typedef token_t *token;
 
 #define BUILDER_TYPES_DEFINED 1
 
 #include <peg.h>
 
-construction *ptree_start_construction(info *pti, int id, unsigned char *name);
-bool ptree_add_attribute(info *pti, construction *tr, int id, unsigned char *name, int v_begin, int v_end);
-bool ptree_add_token(info *pti, construction *tr, int t_begin, int t_end);
-bool ptree_add_children(info *pti, construction *tr1, tree *tr2);
+construction ptree_start_construction(info pti, int id, unsigned char *name);
+bool ptree_add_attribute(info pti, construction tr, int id, unsigned char *name, int v_begin, int v_end);
+bool ptree_add_token(info pti, construction tr, int t_begin, int t_end);
+bool ptree_add_children(info pti, construction tr1, tree tr2);
 
-void ptree_delete_attribute(info *pti, attribute *at);
-void ptree_delete_tree(info *pti, tree *tr);
-void ptree_reverse_sibling(info *pti, tree *tr);
-void ptree_reverse_tree(info *pti, tree *tr);
-void ptree_dump_tree(info *pti, FILE *f, unsigned char *input, tree *tr, int indent);
-void ptree_dump_context(info *pti, FILE *f, peg_context_t *cx);
+void ptree_delete_attribute(info pti, attribute at);
+void ptree_delete_tree(info pti, tree tr);
+void ptree_reverse_sibling(info pti, tree tr);
+void ptree_reverse_tree(info pti, tree tr);
+void ptree_dump_tree(info pti, FILE *f, unsigned char *input, tree tr, int indent);
+void ptree_dump_context(info pti, FILE *f, peg_context_t *cx);
 void ptree_init(peg_builder_t *pb, alloc_t *alloc);
 
 #endif

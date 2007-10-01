@@ -37,7 +37,7 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 
   return max_j;
 }/*}}}*/
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree **build_result)/*{{{*/
+bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool build, construction current)/*{{{*/
 {
   bool fail;                /* Failure register */
   unsigned int boolean;     /* Small stack for evaluating boolean formulas */
@@ -46,19 +46,21 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
   symbol_t *sp;             /* Symbol stack pointer (PC stack pointer is host machine stack) */
   letter_t *head, *bof, *eof; /* Pointers to current position, beginning and end. */
   peg_builder_t *bd;
-  info *bi;
-  construction *root;
+  info bi;
 
   /* Initialize to defined values */
-  boolean = 0;
-  fail = false;
-  choice = 0;
-  memo = R_UNKNOWN;
-  head = cx->cx_input;
-  bof = head;
-  eof = cx->cx_input + cx->cx_input_length;
-  bd = cx->cx_builder;
-  bi = cx->cx_builder_info;
+  void init(void) {/*{{{*/
+    boolean = 0;
+    fail = false;
+    choice = 0;
+    memo = R_UNKNOWN;
+    head = cx->cx_input;
+    bof = head;
+    eof = cx->cx_input + cx->cx_input_length;
+    bd = cx->cx_builder;
+    bi = cx->cx_builder_info;
+    sp = cx->cx_stack;
+  }/*}}}*/
 
   /* Boolean stack manipulation */
   void boolean_push(bool x) {/*{{{*/
@@ -88,7 +90,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
   }/*}}}*/
 
   /* Execution loop */
-  nog_instruction_t *run(construction *current, nog_instruction_t *ip_next) {/*{{{*/
+  nog_instruction_t *run(construction current, nog_instruction_t *ip_next) {/*{{{*/
     nog_instruction_t *ip;
 
     int arg0() { return ip->ni_arg[0].na_int; }
@@ -298,17 +300,15 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
           {
             int id;
             unsigned char *name;
-            construction *new_cons;
-            tree *new_tree;
+            construction new_cons;
+            tree new_tree;
 
             id = arg0();
             name = pg->np_constructors[id].ns_chars;
             new_cons = bd->pb_start_construction(bi, id, name);
-            if(!new_cons) return 0;
             ip_next = run(new_cons, ip_next);
             if(!ip_next) return 0; /* XXX: leak ? */
             new_tree = bd->pb_finish_construction(bi, new_cons);
-            if(!new_tree) return 0;
             if(!bd->pb_add_children(bi, current, new_tree)) return 0;
           }
           break;
@@ -348,19 +348,22 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
     }
   }/*}}}*/
 
-  sp = cx->cx_stack;
-
+#if 0
   if(build_result) {
     root = bd->pb_start_construction(bi, ROOT_ID, (unsigned char *) ROOT_NAME);
   } else {
     root = 0;
   }
+#endif
 
-  if(run(root, pg->np_program + (build_result ? pg->np_build_pc : pg->np_start_pc))) {
-    if(parse_result) *parse_result = !fail;
-    if(build_result) *build_result = bd->pb_finish_construction(bi, root);
-    return true;
-  } else return false;
+  init();
+  if(run(current, pg->np_program + pg->np_start_pc)) {
+    if(!fail) {
+      init();
+      if(run(current, pg->np_program + pg->np_build_pc)) return !fail;
+    }
+  }
+  return false;
 }/*}}}*/
 nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;

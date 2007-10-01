@@ -109,24 +109,17 @@ int main(int argc, char **argv)
           printf("Created context %p\n", cx);
           if(cx) {
             bool parse_ok;
-            if(cnog_execute(cx, pg, &parse_ok, 0)) {
-              tree *tr;
-              if(parse_ok) {
-                printf("Does parse.\n");
-                if(cnog_execute(cx, pg, &parse_ok, &tr)) {
-                  printf("Built.\n");
-                  ptree_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
-                } else {
-                  printf("Can't build.\n");
-                }
-              } else {
-                printf("Doesn't parse.\n");
-                error_pos = cnog_error_position(cx, pg);
-                printf("Error at %d\n", error_pos);
-              }
+            tree *tr;
+
+            if(cnog_execute(cx, pg, true, &tr)) {
+              printf("Does parse.\n");
+              ptree_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
             } else {
-              printf("Cnog error.\n");
+              printf("Doesn't parse.\n");
+              error_pos = cnog_error_position(cx, pg);
+              printf("Error at %d\n", error_pos);
             }
+
             peg_delete_context(cx);
           }
         }

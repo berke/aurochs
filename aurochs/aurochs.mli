@@ -12,6 +12,9 @@ exception Parse_error of int;;
     Actually, the program is malloc()'d and represented using C structures. *)
 type ('node, 'attribute) program
 
+(** Get a table giving the string representation of node constructors *)
+val constructors : ('node, 'attribute) program -> string array
+
 (** A generic program is a program whose node and label attributes are
     actually strings. *)
 type generic_program

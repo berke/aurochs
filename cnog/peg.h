@@ -40,12 +40,12 @@ typedef struct { }* attribute;
 #define ROOT_ID 0
 
 typedef struct {
-  info *pb_info;
-  construction *(*pb_start_construction)(info *a, int id, unsigned char *name);
-  bool (*pb_add_children)(info *a, construction *c, tree *tr2);
-  bool (*pb_add_token)(info *a, construction *c, int t_begin, int t_end);
-  bool (*pb_add_attribute)(info *a, construction *c, int id, unsigned char *name, int v_begin, int v_end);
-  tree *(*pb_finish_construction)(info *a, construction *t);
+  info pb_info;
+  construction (*pb_start_construction)(info a, int id, unsigned char *name);
+  bool (*pb_add_children)(info a, construction c, tree tr2);
+  bool (*pb_add_token)(info a, construction c, int t_begin, int t_end);
+  bool (*pb_add_attribute)(info a, construction c, int id, unsigned char *name, int v_begin, int v_end);
+  tree (*pb_finish_construction)(info a, construction t);
 } peg_builder_t;
 
 #if 0
@@ -68,7 +68,7 @@ typedef struct {
   int cx_num_productions;
   int cx_num_alternatives;
   peg_builder_t *cx_builder;
-  info *cx_builder_info;
+  info cx_builder_info;
 } peg_context_t;
 
 #endif
