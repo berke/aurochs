@@ -32,6 +32,7 @@ typedef int symbol_t;
 #ifndef BUILDER_TYPES_DEFINED
 typedef void info;
 typedef void tree;
+typedef void construction;
 typedef void attribute;
 #endif
 
@@ -40,17 +41,21 @@ typedef void attribute;
 
 typedef struct {
   info *pb_info;
-  tree *(*pb_create_token)(info *a, int t_begin, int t_end);
-  tree *(*pb_create_node)(info *a, int id, unsigned char *name);
-  tree *(*pb_get_parent)(info *a, tree *t);
-  void (*pb_delete_attribute)(info *a, attribute *at);
-  void (*pb_delete_tree)(info *a, tree *tr);
-  void (*pb_attach_attribute)(info *a, tree *tr, int id, unsigned char *name, int v_begin, int v_end);
-  void (*pb_add_children)(info *a, tree *tr1, tree *tr2);
-  void (*pb_reverse_sibling)(info *a, tree *tr);
-  void (*pb_reverse_tree)(info *a, tree *tr);
-  void (*pb_dump_tree)(info *a, FILE *f, unsigned char *input, tree *tr, int indent);
+  construction *(*pb_start_construction)(info *a, int id, unsigned char *name);
+  bool (*pb_add_children)(info *a, construction *c, tree *tr2);
+  bool (*pb_add_token)(info *a, construction *c, int t_begin, int t_end);
+  bool (*pb_add_attribute)(info *a, construction *c, int id, unsigned char *name, int v_begin, int v_end);
+  tree *(*pb_finish_construction)(info *a, construction *t);
 } peg_builder_t;
+
+#if 0
+/* Specific */
+void (*pb_delete_attribute)(info *a, attribute *at);
+void (*pb_delete_tree)(info *a, tree *tr);
+void (*pb_reverse_sibling)(info *a, tree *tr);
+void (*pb_reverse_tree)(info *a, tree *tr);
+void (*pb_dump_tree)(info *a, FILE *f, unsigned char *input, tree *tr, int indent);
+#endif
 
 /* Execution context */
 typedef struct {

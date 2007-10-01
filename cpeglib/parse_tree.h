@@ -49,6 +49,8 @@ typedef struct _tree {
   } t_element;
 } tree;
 
+typedef tree construction;
+
 typedef alloc_t info;
 
 #define BUILDER_TYPES_DEFINED 1
@@ -60,7 +62,7 @@ tree *ptree_create_node(info *pti, int id, unsigned char *name);
 void ptree_delete_attribute(info *pti, attribute *at);
 void ptree_delete_tree(info *pti, tree *tr);
 void ptree_attach_attribute(info *pti, tree *tr, int id, unsigned char *name, int v_begin, int v_end);
-void ptree_add_children(info *pti, tree *tr1, tree *tr2);
+bool ptree_add_children(info *pti, tree *tr1, tree *tr2);
 void ptree_reverse_sibling(info *pti, tree *tr);
 void ptree_reverse_tree(info *pti, tree *tr);
 void ptree_dump_tree(info *pti, FILE *f, unsigned char *input, tree *tr, int indent);

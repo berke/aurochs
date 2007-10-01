@@ -33,7 +33,11 @@ let load = function
 let ( & ) f x = f x;;
 
 let easy ~program ~text =
-  let binary = load program in
+  let binary =
+    match program with
+    | `Binary b -> load b
+    | `Source s -> compile (load s)
+  in
   let program = generic_program_of_binary binary in
   parse_generic program (load text)
 ;;

@@ -5,29 +5,31 @@
 #include <stdlib.h>
 #include <parse_tree.h>
 
-void *xmalloc(size_t p)/*{{{*/
-{
-  void *r;
-  r = malloc(p);
-  if(!r) abort();
-  return r;
-}/*}}}*/
-tree *ptree_create_token(info *pti, int t_begin, int t_end)/*{{{*/
+static tree *ptree_create_token(info *pti, int t_begin, int t_end)/*{{{*/
 {
   tree *tr;
-  tr = xmalloc(sizeof(tree));
-  tr->t_kind = TREE_TOKEN;
-  tr->t_sibling = 0;
-  tr->t_parent = 0;
-  tr->t_element.t_token.s_begin = t_begin;
-  tr->t_element.t_token.s_end = t_end;
-
+  tr = alloc_malloc((alloc_t *) pti, sizeof(tree));
+  if(tr) {
+    tr->t_kind = TREE_TOKEN;
+    tr->t_sibling = 0;
+    tr->t_parent = 0;
+    tr->t_element.t_token.s_begin = t_begin;
+    tr->t_element.t_token.s_end = t_end;
+  }
   return tr;
 }/*}}}*/
-tree *ptree_create_node(info *pti, int id, unsigned char *name)/*{{{*/
+bool ptree_add_token(info *pti, construction *tr1, int t_begin, int t_end)/*{{{*/
+{
+  tree *tr2;
+
+  tr2 = ptree_create_token(pti, t_begin, t_end);
+  if(tr2) return ptree_add_children(pti, tr1, tr2);
+  return false;
+}/*}}}*/
+construction *ptree_start_construction(info *pti, int id, unsigned char *name)/*{{{*/
 {
   tree *tr;
-  tr = xmalloc(sizeof(tree));
+  tr = alloc_malloc((alloc_t *) pti, sizeof(tree));
   tr->t_kind = TREE_NODE;
   tr->t_sibling = 0;
   tr->t_parent = 0;
@@ -37,29 +39,37 @@ tree *ptree_create_node(info *pti, int id, unsigned char *name)/*{{{*/
 
   return tr;
 }/*}}}*/
+tree *ptree_finish_construction(info *pti, construction *c)/*{{{*/
+{
+  return c;
+}/*}}}*/
+
 node *ptree_get_node(tree *tr)/*{{{*/
 {
   if(tr->t_kind == TREE_NODE) return &tr->t_element.t_node;
   else abort();
 }/*}}}*/
-void ptree_attach_attribute(info *pti, tree *tr, int id, unsigned char *name, int v_begin, int v_end)/*{{{*/
+bool ptree_add_attribute(info *pti, construction *tr, int id, unsigned char *name, int v_begin, int v_end)/*{{{*/
 {
   node *nd;
   attribute *at;
 
   nd = ptree_get_node(tr);
-  at = xmalloc(sizeof(attribute));
-  at->a_name = name;
-  at->a_value.s_begin = v_begin;
-  at->a_value.s_end = v_end;
-  at->a_sibling = nd->n_attributes;
-  nd->n_attributes = at;
+  at = alloc_malloc((alloc_t *) pti, sizeof(attribute));
+  if(at) {
+    at->a_name = name;
+    at->a_value.s_begin = v_begin;
+    at->a_value.s_end = v_end;
+    at->a_sibling = nd->n_attributes;
+    nd->n_attributes = at;
+    return true;
+  } else return false;
 }/*}}}*/
-void ptree_attach_position_attribute(info *pti, tree *tr, int id, unsigned char *name, int v_begin, int v_end)/*{{{*/
+bool ptree_add_position_attribute(info *pti, construction *tr, int id, unsigned char *name, int v_begin, int v_end)/*{{{*/
 {
-  ptree_attach_attribute(pti, tr, id, name, v_begin, v_begin);
+  return ptree_add_attribute(pti, tr, id, name, v_begin, v_begin);
 }/*}}}*/
-void ptree_add_children(info *pti, tree *tr1, tree *tr2)/*{{{*/
+bool ptree_add_children(info *pti, tree *tr1, tree *tr2)/*{{{*/
 {
   node *nd;
   
@@ -67,6 +77,8 @@ void ptree_add_children(info *pti, tree *tr1, tree *tr2)/*{{{*/
   tr2->t_sibling = nd->n_children;
   tr2->t_parent = tr1;
   nd->n_children = tr2;
+
+  return true;
 }/*}}}*/
 void ptree_reverse_sibling(info *pti, tree *tr) {/*{{{*/
   node *nd;
@@ -192,14 +204,9 @@ tree *ptree_get_parent(info *a, tree *t)/*{{{*/
 void ptree_init(peg_builder_t *pb, alloc_t *alloc)/*{{{*/
 {
   pb->pb_info = alloc;
-  pb->pb_create_token = ptree_create_token;
-  pb->pb_create_node = ptree_create_node;
-  pb->pb_get_parent = ptree_get_parent;
-  pb->pb_delete_attribute = ptree_delete_attribute;
-  pb->pb_delete_tree = ptree_delete_tree;
-  pb->pb_attach_attribute = ptree_attach_attribute;
+  pb->pb_add_token = ptree_add_token;
+  pb->pb_finish_construction = ptree_finish_construction;
+  pb->pb_start_construction = ptree_start_construction;
+  pb->pb_add_attribute = ptree_add_attribute;
   pb->pb_add_children = ptree_add_children;
-  pb->pb_reverse_sibling = ptree_reverse_sibling;
-  pb->pb_reverse_tree = ptree_reverse_tree;
-  pb->pb_dump_tree = ptree_dump_tree;
 }/*}}}*/

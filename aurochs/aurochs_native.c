@@ -75,3 +75,13 @@ value caml_aurochs_program_of_binary(value binaryv)
 
   caml_failwith(error);
 }
+
+value caml_aurochs_parse_generic(value programv, value uv)
+{
+  caml_failwith("Parse not generic implemented");
+}
+
+value caml_aurochs_parse(value programv, value uv)
+{
+  caml_failwith("Parse not implemented");
+}
