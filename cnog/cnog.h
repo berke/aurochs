@@ -93,8 +93,8 @@ typedef struct {
 
 bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result);
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg);
-nog_program_t *cnog_unpack_program(packer_t *pk);
-void cnog_free_program(nog_program_t *pg, void (*free)(void *));
+nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk);
+void cnog_free_program(alloc_t *alloc, nog_program_t *pg);
 
 #define NOG_SIGNATURE 0xABBE55E5
 

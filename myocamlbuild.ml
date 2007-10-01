@@ -114,9 +114,11 @@ let aurochs_lib_description = {
                  "cpeglib/peg_lib.h";
                  "cpeglib/parse_tree.h";
                  "cpack/pack.h";
+                 "cutil/stack.h";
+                 "cutil/alloc.h";
                  "cpeglib/parse_tree.h";
                  "include/base_types.h" ];
-  od_incdirs = [ "cnog"; "cpack"; "cpeglib"; "include" ];
+  od_incdirs = [ "cnog"; "cpack"; "cpeglib"; "cutil"; "include" ];
 }
 
 (*** ocamllib *)

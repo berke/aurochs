@@ -2,6 +2,6 @@
 
 set -e
 
-ocamlbuild -tags debug -cflag -unsafe -cflags -w,P aurochs.native $@
+ocamlbuild -cflag -unsafe -cflags -w,P aurochs_tool.native $@
 
-cp aurochs.native bin/aurochs
+cp aurochs_tool.native bin/aurochs

@@ -11,6 +11,8 @@
 #include <cnog.h>
 #include <peg_lib.h>
 #include <pack.h>
+#include <alloc.h>
+#include <stack.h>
 
 static unsigned char *load_file(char *name, size_t *size)/*{{{*/
 {
@@ -48,6 +50,7 @@ int main(int argc, char **argv)
   size_t peg_data_size;
   nog_program_t *pg;
   packer_t pk;
+  stack_t *st;
   int rc;
 
   rc = 0;
@@ -68,9 +71,13 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  if(pack_init_from_string(&pk, peg_data, peg_data_size, malloc, free)) {
+  /* Create a stack allocator */
+
+  st = stack_create(&alloc_stdlib);
+
+  if(pack_init_from_string(&pk, peg_data, peg_data_size)) {
     printf("peg_data[0] = %d\n", peg_data[0]);
-    pg = cnog_unpack_program(&pk);
+    pg = cnog_unpack_program(&st->s_alloc, &pk);
     printf("Unpacked to %p\n", pg);
     if(pg) {
       peg_context_t *cx;
@@ -143,7 +150,7 @@ int main(int argc, char **argv)
       }
 #endif
 
-      cnog_free_program(pg, free);
+      cnog_free_program(&st->s_alloc, pg);
     }
   }
 

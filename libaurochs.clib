@@ -3,3 +3,5 @@ cpack/pack.o
 cpeglib/parse_tree.o
 cpeglib/peg_lib.o
 cnog/cnog_unpack.o
+cutil/alloc.o
+cutil/stack.o

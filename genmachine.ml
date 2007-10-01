@@ -69,11 +69,12 @@ let gen_c_unpacker ops fn =
       fp och "#ifndef CNOG_UNPACK_H\n";
       fp och "#define CNOG_UNPACK_H\n";
       fp och "\n";
+      fp och "#include <alloc.h>\n";
       fp och "#include <pack.h>\n";
       fp och "#include <cnog.h>\n";
       fp och "\n";
-      fp och "bool cnog_unpack_instruction(packer_t *pk, nog_instruction_t *ins);\n";
-      fp och "void cnog_free_instruction(nog_instruction_t *ins, void (*free)(void *));\n";
+      fp och "bool cnog_unpack_instruction(alloc_t *alloc, packer_t *pk, nog_instruction_t *ins);\n";
+      fp och "void cnog_free_instruction(alloc_t *alloc, nog_instruction_t *ins);\n";
       fp och "\n";
       fp och "#endif\n";
       (* ***)
@@ -89,7 +90,7 @@ let gen_c_unpacker ops fn =
       fp occ "\n";
 
       (*** Free *)
-      fp occ "void cnog_free_instruction(nog_instruction_t *ins, void (*free)(void *))\n";
+      fp occ "void cnog_free_instruction(alloc_t *alloc, nog_instruction_t *ins)\n";
       fp occ "{\n";
       fp occ "  switch(ins->ni_opcode) {\n";
 
@@ -110,7 +111,7 @@ let gen_c_unpacker ops fn =
           Array.iteri
             begin fun i x ->
               match x with
-              | Labels ->         fp occ "      free(ins->ni_arg[%d].na_table.nt_elements);\n" i
+              | Labels ->         fp occ "      alloc_free(alloc, ins->ni_arg[%d].na_table.nt_elements);\n" i
               | Int|Char|Label|Node|Attribute -> ()
             end
             args;
@@ -126,7 +127,7 @@ let gen_c_unpacker ops fn =
       fp occ "\n";
       (* ***)
       (*** Unpack *)
-      fp occ "bool cnog_unpack_instruction(packer_t *pk, nog_instruction_t *ins)\n";
+      fp occ "bool cnog_unpack_instruction(alloc_t *alloc, packer_t *pk, nog_instruction_t *ins)\n";
       fp occ "{\n";
       fp occ "  int opcode;\n";
       fp occ "  u64 arg;\n";
@@ -156,7 +157,7 @@ let gen_c_unpacker ops fn =
               | Labels ->
                   fp occ "      if(!pack_read_uint64(pk, &arg)) return false;\n";
                   fp occ "      ins->ni_arg[%d].na_table.nt_length = arg;\n" i;
-                  fp occ "      ins->ni_arg[%d].na_table.nt_elements = pk->p_malloc(sizeof(int) * arg);\n" i;
+                  fp occ "      ins->ni_arg[%d].na_table.nt_elements = alloc_malloc(alloc, sizeof(int) * arg);\n" i;
                   fp occ "      if(!ins->ni_arg[%d].na_table.nt_elements) return false;\n" i;
                   fp occ "      {\n";
                   fp occ "        int i, m;\n";

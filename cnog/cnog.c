@@ -7,7 +7,7 @@
 #include <peg.h>
 #include <pack.h>
 #include <assert.h>
-#include <stdlib.h>
+#include <alloc.h>
 
 #if 0
 #define DEBUGF(x, y...) printf(x, ##y);
@@ -360,79 +360,77 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree **build_result)/*{{
 
   return !fail;
 }/*}}}*/
-
-nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
+nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
   uint64_t size;
   int i;
 
-  void fail(void) { abort(); }
+  nog_program_t *fail(void) { return 0; }
 
   result = 0;
   
-  pg = pk->p_malloc(sizeof(nog_program_t));
-      
+  pg = alloc_malloc(alloc, sizeof(nog_program_t));
 
   /* Welcome to C allocation hell! */
-  if(!pg) fail();
+  if(!pg) return fail();
   DEBUGF("Allocated program\n");
 
-  if(!pack_read_uint64(pk, &signature)) fail();
+  if(!pack_read_uint64(pk, &signature)) return fail();
   DEBUGF("Read signature %lx\n", signature);
 
-  if(signature != NOG_SIGNATURE) fail();
+  if(signature != NOG_SIGNATURE) return fail();
   DEBUGF("Signature OK\n");
 
-  if(!pack_read_uint64(pk, &version)) fail();
+  if(!pack_read_uint64(pk, &version)) return fail();
   DEBUGF("Version OK\n");
 
-  if(!pack_read_uint(pk, &pg->np_start_pc)) fail();
+  if(!pack_read_uint(pk, &pg->np_start_pc)) return fail();
   DEBUGF("Start pc is %d\n", pg->np_start_pc);
 
-  if(!pack_read_uint(pk, &pg->np_build_pc)) fail();
+  if(!pack_read_uint(pk, &pg->np_build_pc)) return fail();
   DEBUGF("Build pc is %d\n", pg->np_build_pc);
 
-  if(!pack_read_uint(pk, &pg->np_num_productions)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_productions)) return fail();
   DEBUGF("Num_productions is %d\n", pg->np_num_productions);
 
-  if(!pack_read_uint(pk, &pg->np_num_choices)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_choices)) return fail();
   DEBUGF("Num_choices is %d\n", pg->np_num_choices);
 
-  if(!pack_read_uint(pk, &pg->np_num_constructors)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_constructors)) return fail();
   DEBUGF("Num_constructors is %d\n", pg->np_num_constructors);
 
-  pg->np_constructors = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_constructors);
-  if(!pg->np_constructors) fail();
+  pg->np_constructors = alloc_malloc(alloc, sizeof(nog_string_t) * pg->np_num_constructors);
+  if(!pg->np_constructors) return fail();
 
   for(i = 0; i < pg->np_num_constructors; i ++) {
-    if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size)) fail();
+    if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size, alloc)) return fail();
     pg->np_constructors[i].ns_length = size;
     DEBUGF("  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
   }
 
-  if(!pack_read_uint(pk, &pg->np_num_attributes)) fail();
+  if(!pack_read_uint(pk, &pg->np_num_attributes)) return fail();
 
   DEBUGF("Num_attributes is %d\n", pg->np_num_attributes);
-  pg->np_attributes = pk->p_malloc(sizeof(nog_string_t) * pg->np_num_attributes);
-  if(!pg->np_attributes) fail();
+  pg->np_attributes = alloc_malloc(alloc, sizeof(nog_string_t) * pg->np_num_attributes);
+  if(!pg->np_attributes) return fail();
 
   for(i = 0; i < pg->np_num_attributes; i ++) {
-    if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size)) fail();
+    if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size, alloc)) return fail();
     pg->np_attributes[i].ns_length = size;
     DEBUGF("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
   }
   
-  if(!pack_read_uint(pk, &pg->np_count)) fail();
+  if(!pack_read_uint(pk, &pg->np_count)) return fail();
   DEBUGF("Program size is %d\n", pg->np_count);
 
-  pg->np_program = pk->p_malloc(sizeof(nog_instruction_t) * pg->np_count);/*{{{*/
-  if(!pg->np_program) fail();
+  pg->np_program = alloc_malloc(alloc, sizeof(nog_instruction_t) * pg->np_count);
+  if(!pg->np_program) return fail();
 
   for(i = 0; i < pg->np_count; i ++) {
-    if(!cnog_unpack_instruction(pk, pg->np_program + i)) {
+    if(!cnog_unpack_instruction(alloc, pk, pg->np_program + i)) {
       fprintf(stderr, "Unpack error at instruction %d\n", i);
-      fail();
+      return fail();
     }
   }
 
@@ -440,18 +438,17 @@ nog_program_t *cnog_unpack_program(packer_t *pk) {/*{{{*/
 
   return result;
 }/*}}}*/
-void cnog_free_program(nog_program_t *pg, void (*free)(void *))/*{{{*/
+void cnog_free_program(alloc_t *alloc, nog_program_t *pg)/*{{{*/
 {
   int i;
 
   if(pg) {
     if(pg->np_program) {
       for(i = 0; i < pg->np_count; i ++) {
-        cnog_free_instruction(pg->np_program + i, free);
+        cnog_free_instruction(alloc, pg->np_program + i);
       }
-
-      free(pg->np_program);
+      alloc_free(alloc, pg->np_program);
     }
-    free(pg);
+    alloc_free(alloc, pg);
   }
 }/*}}}*/

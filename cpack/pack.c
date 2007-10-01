@@ -10,34 +10,28 @@
 
 #include <pack.h>
 
-bool pack_init_from_string(packer_t *pk, u8 *data, size_t size, void *(*malloc)(size_t), void (*free)(void *))/*{{{*/
+bool pack_init_from_string(packer_t *pk, u8 *data, size_t size)/*{{{*/
 {
   pk->p_block_size = size;
   pk->p_index = 0;
   pk->p_length = size;
   pk->p_extra = 0;
   pk->p_resplenish = 0;
-  pk->p_malloc = malloc;
-  pk->p_free = free;
   pk->p_data = data;
   return true;
 }/*}}}*/
-bool pack_init(packer_t *pk, size_t block_size, void *extra, pack_resplenisher_t resplenish, void *(*malloc)(size_t), void (*free)(void *))/*{{{*/
+bool pack_init(packer_t *pk, u8 *block_buffer, size_t block_size, void *extra, pack_resplenisher_t resplenish)/*{{{*/
 {
   pk->p_block_size = block_size;
   pk->p_index = 0;
   pk->p_length = 0;
   pk->p_extra = extra;
   pk->p_resplenish = resplenish;
-  pk->p_malloc = malloc;
-  pk->p_free = free;
-  pk->p_data = malloc(block_size);
-  if(!pk->p_data) return false;
+  pk->p_data = block_buffer;
   return true;
 }/*}}}*/
 void pack_shutdown(packer_t *pk)/*{{{*/
 {
-  pk->p_free(pk->p_data);
 }/*}}}*/
 bool pack_resplenish(packer_t *pk)/*{{{*/
 {
@@ -75,24 +69,23 @@ bool pack_read_bytes(packer_t *pk, uint8_t *result, size_t count)/*{{{*/
   }
   return true;
 }/*}}}*/
-bool pack_read_string(packer_t *pk, uint8_t **result, size_t *length)/*{{{*/
+bool pack_read_string(packer_t *pk, uint8_t **result, size_t *length, alloc_t *alloc)/*{{{*/
 {
   size_t m;
   
+  *result = 0;
+
   if(!pack_read_uint64(pk, &m)) return false;
   if(m < 0) return false;
   *length = m;
-  if(!m) {
-    *result = 0;
-    return true;
-  }
-  *result = pk->p_malloc(m + 1);
+  if(!m) return true;
+  *result = alloc_malloc(alloc, m + 1);
   if(!*result) return false;
   if(pack_read_bytes(pk, *result, m)) {
     (*result)[m] = 0;
     return true;
   } else {
-    pk->p_free(*result);
+    alloc_free(alloc, *result);
     return false;
   }
 }/*}}}*/
