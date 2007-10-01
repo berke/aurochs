@@ -105,25 +105,28 @@ int main(int argc, char **argv)
         printf("Loaded file %s to %p\n", fn, buf);
         if(buf) {
           ptree_init(&pb, &s2->s_alloc);
-          cx = peg_create_context(pg, &pb, buf, m);
+          cx = peg_create_context(pg, &pb, &s2->s_alloc, buf, m);
           printf("Created context %p\n", cx);
           if(cx) {
-            if(cnog_execute(cx, pg, 0)) {
+            bool parse_ok;
+            if(cnog_execute(cx, pg, &parse_ok, 0)) {
               tree *tr;
-
-              printf("Does parse.\n");
-              if(cnog_execute(cx, pg, &tr)) {
-                printf("Built.\n");
-                cx->cx_builder->pb_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
+              if(parse_ok) {
+                printf("Does parse.\n");
+                if(cnog_execute(cx, pg, &parse_ok, &tr)) {
+                  printf("Built.\n");
+                  ptree_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
+                } else {
+                  printf("Can't build.\n");
+                }
               } else {
-                printf("Can't build.\n");
+                printf("Doesn't parse.\n");
+                error_pos = cnog_error_position(cx, pg);
+                printf("Error at %d\n", error_pos);
               }
             } else {
-              printf("Doesn't parse.\n");
-              error_pos = cnog_error_position(cx, pg);
-              printf("Error at %d\n", error_pos);
+              printf("Cnog error.\n");
             }
-
             peg_delete_context(cx);
           }
         }

@@ -30,10 +30,10 @@ typedef int symbol_t;
 
 /* Builder callbacks */
 #ifndef BUILDER_TYPES_DEFINED
-typedef void info;
-typedef void tree;
-typedef void construction;
-typedef void attribute;
+typedef struct { }* info;
+typedef struct { }* tree;
+typedef struct { }* construction;
+typedef struct { }* attribute;
 #endif
 
 #define ROOT_NAME "root"

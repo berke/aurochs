@@ -157,7 +157,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
           break;
 
         case NOG_JSR:
-          (void) run(pg->np_program + arg0(), current);
+          (void) run(current, pg->np_program + arg0());
           break;
 
         case NOG_SBNS:
@@ -305,7 +305,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
             name = pg->np_constructors[id].ns_chars;
             new_cons = bd->pb_start_construction(bi, id, name);
             if(!new_cons) return 0;
-            ip_next = run(ip_next, new_cons);
+            ip_next = run(new_cons, ip_next);
             if(!ip_next) return 0; /* XXX: leak ? */
             new_tree = bd->pb_finish_construction(bi, new_cons);
             if(!new_tree) return 0;
@@ -356,9 +356,9 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, bool *parse_result, tree
     root = 0;
   }
 
-  if(run(pg->np_program + (build_result ? pg->np_build_pc : pg->np_start_pc), root)) {
-    *parse_result = !fail;
-    *build_result = bd->pb_finish_construction(bi, root);
+  if(run(root, pg->np_program + (build_result ? pg->np_build_pc : pg->np_start_pc))) {
+    if(parse_result) *parse_result = !fail;
+    if(build_result) *build_result = bd->pb_finish_construction(bi, root);
     return true;
   } else return false;
 }/*}}}*/

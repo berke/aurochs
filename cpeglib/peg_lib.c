@@ -59,7 +59,7 @@ void peg_dump_context(FILE *f, peg_context_t *cx)/*{{{*/
     }
   }
 }/*}}}*/
-peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t *input, int input_length)/*{{{*/
+peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info *bi, letter_t *input, int input_length)/*{{{*/
 {
   int i;
   peg_context_t *cx;
@@ -98,6 +98,7 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, letter_t
   }
 
   cx->cx_builder = pb;
+  cx->cx_builder_info = bi;
 
   /* XXX: Give a reasonable upper bound on the stack size */
   cx->cx_stack_size = input_length * num_productions;
