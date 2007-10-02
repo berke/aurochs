@@ -8,7 +8,7 @@
 static tree ptree_create_token(info pti, int t_begin, int t_end)/*{{{*/
 {
   tree tr;
-  tr = alloc_malloc((alloc_t *) pti, sizeof(tree));
+  tr = alloc_malloc((alloc_t *) pti, sizeof(tree_t));
   if(tr) {
     tr->t_kind = TREE_TOKEN;
     tr->t_sibling = 0;
@@ -29,7 +29,8 @@ bool ptree_add_token(info pti, construction tr1, int t_begin, int t_end)/*{{{*/
 construction ptree_start_construction(info pti, int id, unsigned char *name, int begin)/*{{{*/
 {
   tree tr;
-  tr = alloc_malloc((alloc_t *) pti, sizeof(tree));
+
+  tr = alloc_malloc((alloc_t *) pti, sizeof(tree_t));
   tr->t_kind = TREE_NODE;
   tr->t_sibling = 0;
   tr->t_parent = 0;
@@ -41,6 +42,16 @@ construction ptree_start_construction(info pti, int id, unsigned char *name, int
 }/*}}}*/
 tree ptree_finish_construction(info pti, construction c, int end)/*{{{*/
 {
+  tree tr;
+
+  tr = (tree) c;
+
+  switch(tr->t_kind) {
+    case TREE_TOKEN:
+      break;
+    case TREE_NODE:
+      ptree_reverse_sibling(pti, tr);
+  }
   return c;
 }/*}}}*/
 
@@ -55,7 +66,7 @@ bool ptree_add_attribute(info pti, construction tr, int id, unsigned char *name,
   attribute at;
 
   nd = ptree_get_node(tr);
-  at = alloc_malloc((alloc_t *) pti, sizeof(attribute));
+  at = alloc_malloc((alloc_t *) pti, sizeof(attribute_t));
   if(at) {
     at->a_name = name;
     at->a_value.s_begin = v_begin;

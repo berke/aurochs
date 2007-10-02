@@ -298,8 +298,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   if(!cx) caml_failwith("Can't allocate context");
 
   construction = start_construction(builder_info, ROOT_ID, (uint8_t *) ROOT_NAME, 0);
-  if(cnog_execute(cx, pg, true, construction)) {
-    treev = finish_construction(builder_info, construction, -1);
+  if(cnog_execute(cx, pg, &treev)) {
     CAMLreturn(some(treev));
   } else {
     CAMLreturn(none); /* None */

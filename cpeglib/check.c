@@ -85,6 +85,7 @@ int main(int argc, char **argv)
     printf("Unpacked to %p\n", pg);
     if(pg) {
       peg_context_t *cx;
+      construction c;
       size_t m;
       int i;
       int error_pos;
@@ -109,10 +110,10 @@ int main(int argc, char **argv)
           printf("Created context %p\n", cx);
           if(cx) {
             bool parse_ok;
-            tree *tr;
+            tree tr;
 
-            if(cnog_execute(cx, pg, true, &tr)) {
-              printf("Does parse.\n");
+            if(cnog_execute(cx, pg, &tr)) {
+              printf("Parsed as %p.\n", tr);
               ptree_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
             } else {
               printf("Doesn't parse.\n");
