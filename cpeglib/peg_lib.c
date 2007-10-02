@@ -3,16 +3,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <alloc.h>
 #include <peg.h>
+#include <peg_lib.h>
 #include <cnog.h>
 
-static void *xmalloc(size_t p)/*{{{*/
-{
-  void *r;
-  r = malloc(p);
-  if(!r) abort();
-  return r;
-}/*}}}*/
 void peg_dump_context(FILE *f, peg_context_t *cx)/*{{{*/
 {
   int i,j;
@@ -59,7 +54,7 @@ void peg_dump_context(FILE *f, peg_context_t *cx)/*{{{*/
     }
   }
 }/*}}}*/
-peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length)/*{{{*/
+peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length)/*{{{*/
 {
   int i;
   peg_context_t *cx;
@@ -68,7 +63,10 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info bi,
   int num_alternatives;
   int num_productions;
 
-  cx = xmalloc(sizeof(peg_context_t));
+  cx = alloc_malloc(alloc, sizeof(peg_context_t));
+  if(!cx) return 0;
+
+  cx->cx_alloc = alloc;
 
   cx->cx_input = input;
   cx->cx_input_length = input_length;
@@ -79,8 +77,9 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info bi,
   cx->cx_num_alternatives = num_alternatives;
   cx->cx_num_productions = num_productions;
 
-  cx->cx_alternatives = xmalloc(sizeof(choice_t *) * num_alternatives);
-  alternatives = xmalloc(sizeof(choice_t) * (input_length + 1) * num_alternatives);
+  cx->cx_alternatives = alloc_malloc(alloc, sizeof(choice_t *) * num_alternatives);
+  alternatives = alloc_malloc(alloc, sizeof(choice_t) * (input_length + 1) * num_alternatives);
+  if(!alternatives) return 0;
   for(i = 0; i < num_alternatives * (input_length + 1); i ++) {
     alternatives[i] = A_UNDEFINED;
   }
@@ -88,8 +87,9 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info bi,
     cx->cx_alternatives[i] = alternatives + i * (input_length + 1);
   }
 
-  cx->cx_results = xmalloc(sizeof(result_t *) * num_productions);
-  results = xmalloc(sizeof(result_t) * (input_length + 1) * num_productions);
+  cx->cx_results = alloc_malloc(alloc, sizeof(result_t *) * num_productions);
+  results = alloc_malloc(alloc, sizeof(result_t) * (input_length + 1) * num_productions);
+  if(!results) return 0;
   for(i = 0; i < num_productions * (input_length + 1); i ++) {
     results[i] = R_UNKNOWN;
   }
@@ -102,16 +102,18 @@ peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info bi,
 
   /* XXX: Give a reasonable upper bound on the stack size */
   cx->cx_stack_size = (input_length + 1) * num_productions;
-  cx->cx_stack = xmalloc(sizeof(symbol_t) * cx->cx_stack_size);
+  cx->cx_stack = alloc_malloc(alloc, sizeof(symbol_t) * cx->cx_stack_size);
 
   return cx;
 }/*}}}*/
 void peg_delete_context(peg_context_t *cx)/*{{{*/
 {
-  if(cx->cx_num_alternatives) free(*cx->cx_alternatives);
-  free(*cx->cx_results);
-  free(cx->cx_alternatives);
-  free(cx->cx_results);
-  free(cx->cx_stack);
-  free(cx);
+  if(cx) {
+    if(cx->cx_num_alternatives) alloc_free(cx->cx_alloc, (*cx->cx_alternatives));
+    alloc_free(cx->cx_alloc, (*cx->cx_results));
+    alloc_free(cx->cx_alloc, (cx->cx_alternatives));
+    alloc_free(cx->cx_alloc, (cx->cx_results));
+    alloc_free(cx->cx_alloc, (cx->cx_stack));
+    alloc_free(cx->cx_alloc, (cx));
+  }
 }/*}}}*/

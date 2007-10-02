@@ -6,7 +6,7 @@
 type binary = string;;
 
 (** This exception is raised on parse error.  The integer is the character position in the input. *)
-exception Parse_error of int;;
+exception Aurochs_parse_error of int;;
 
 (** Aurochs programs are represented using this abstract type.
     Actually, the program is malloc()'d and represented using C structures. *)
@@ -35,7 +35,7 @@ exception Compile_error of string;;
 
 (** Interface to the compiler.
     Takes PEG source code and returns a program string. *)
-val compile : string -> binary
+val compile : ?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary
 
 (** Convenience function *)
 

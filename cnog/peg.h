@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <base_types.h>
+#include <alloc.h>
 
 typedef enum {
   R_EOF = -1,
@@ -56,6 +57,7 @@ void (*pb_dump_tree)(info *a, FILE *f, unsigned char *input, tree *tr, int inden
 
 /* Execution context */
 typedef struct {
+  alloc_t *cx_alloc;
   letter_t *cx_input;        /* Change to wchar for Unicode */
   result_t **cx_results;
   choice_t **cx_alternatives;

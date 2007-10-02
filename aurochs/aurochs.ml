@@ -1,12 +1,14 @@
 (* Aurochs *)
 
 open Peg;;
+open Util.Syntax;;
+open Pffpsf;;
 
 type binary = string
 type ('node, 'attribute) program
 type generic_program = (int, int) program
 
-exception Parse_error of int;;
+exception Aurochs_parse_error of int;;
 exception Compile_error of string;;
 
 external get_constructor_count : ('node, 'attribute) program -> int = "caml_aurochs_get_constructor_count" "caml_aurochs_get_constructor_count"
@@ -30,7 +32,7 @@ let attributes pg =
 let parse pg u =
   let error_pos = ref 0 in
   match parse_internal pg u error_pos with
-  | None -> raise (Parse_error !error_pos)
+  | None -> raise (Aurochs_parse_error !error_pos)
   | Some t -> t
 ;;
 
@@ -50,7 +52,26 @@ let parse_generic pg u =
   convert t
 ;;
 
-let compile u = failwith "Not implemented";;
+exception Compile_error of string
+
+(*** compile *)
+let compile ?(start="start") ?(base="") ?(root="root") ?(check=true) u =
+  let peg = Convert_grammar.convert_grammar & Grammar.parse u in
+  if check then
+    begin
+      let results = Check.check_grammar start peg in
+      List.iter
+        begin function
+          | `Warning _|`Info _ -> ()
+          | `Error u   -> raise(Compile_error u)
+        end
+        results;
+    end;
+  let peg_canonified = Canonify.canonify_grammar ~start peg in
+  let pg = Noggie.generate_code ~start ~root peg_canonified in
+  Bytes.with_buffer_sink (Noggie.put_program pg peg)
+;;
+(* ***)
 
 type data = [`File of string | `String of string];;
 

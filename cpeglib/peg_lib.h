@@ -7,8 +7,9 @@
 
 #include <peg.h>
 #include <cnog.h>
+#include <alloc.h>
 
-peg_context_t *peg_create_context(nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length);
+peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length);
 void peg_delete_context(peg_context_t *cx);
 void peg_dump_context(FILE *f, peg_context_t *cx);
 int peg_error_position(peg_context_t *cx);

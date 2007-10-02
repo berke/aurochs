@@ -1,4 +1,4 @@
-<*/*.c>: cstuff, debug
+<*/*.c>: cstuff, opt
 <genmachine.{byte,native}>: use_str, use_unix
-<{aurochs/test_aurochs,tests/test_arith}.{byte,native}>: use_libaurochs
+<{aurochs/test_aurochs,tests/test_{arith,inline}}.{byte,native}>: use_libaurochs
 true: debug

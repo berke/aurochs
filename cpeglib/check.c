@@ -105,7 +105,7 @@ int main(int argc, char **argv)
         printf("Loaded file %s to %p\n", fn, buf);
         if(buf) {
           ptree_init(&pb, &s2->s_alloc);
-          cx = peg_create_context(pg, &pb, &s2->s_alloc, buf, m);
+          cx = peg_create_context(&alloc_stdlib, pg, &pb, &s2->s_alloc, buf, m);
           printf("Created context %p\n", cx);
           if(cx) {
             tree tr;

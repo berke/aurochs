@@ -311,10 +311,11 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   builder.pb_add_token = add_token;
   builder.pb_finish_construction = finish_construction;
 
-  cx = peg_create_context(pg, &builder, builder_info, input, input_length);
+  cx = peg_create_context(&alloc_stdlib, pg, &builder, builder_info, input, input_length);
   if(!cx) caml_failwith("Can't allocate context");
 
   if(cnog_execute(cx, pg, &treev)) {
+    peg_delete_context(cx);
     CAMLreturn(some(treev));
   } else {
     /* We've got a parse error, compute its position. */
@@ -322,6 +323,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
 
     pos = cnog_error_position(cx, pg);
     Store_field(errorv, 0, Int_val(pos));
+    peg_delete_context(cx);
     CAMLreturn(none); /* None */
   }
 }/*}}}*/

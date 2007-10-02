@@ -9,23 +9,20 @@ targets:
 	@./build.sh aurochs_tool.native aurochs/test_aurochs.native cpeglib/check
 
 clean:
-	rm __build/*
+	rm -rf _build/
 
 grammar.ml: aurochs grammar.peg
 	./aurochs.native -bootstrap -target ml -generate grammar.peg
 
 test_grammar:
-	ocamlbuild.native test_grammar.native
+	ocamlbuild test_grammar.native
 
 test_arith: aurochs
 	./aurochs.native -target ml -generate arith.peg
-	ocamlbuild.native test_arith.native
+	ocamlbuild test_arith.native
 
-lib:
-	./build.sh aurochs_lib.cmxa aurochs_lib.cma
-
-install: aurochs lib
-	cp aurochs.native bin/aurochs
-	cp aurochs.native ~/bin/aurochs
-	cp __build/*.{cmxa,cma,a,cmi} $(TARGET)
+install: targets
+	cp aurochs_tool.native bin/aurochs
+	cp aurochs_tool.native ~/bin/aurochs
+	cp _build/*.{cmxa,cma,a,cmi} $(TARGET)
 	rm $(TARGET)/process.cmi
