@@ -317,6 +317,11 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   if(cnog_execute(cx, pg, &treev)) {
     CAMLreturn(some(treev));
   } else {
+    /* We've got a parse error, compute its position. */
+    int pos;
+
+    pos = cnog_error_position(cx, pg);
+    Store_field(errorv, 0, Int_val(pos));
     CAMLreturn(none); /* None */
   }
 }/*}}}*/

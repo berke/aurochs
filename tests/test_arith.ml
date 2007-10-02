@@ -1,3 +1,5 @@
+(* Test_arith *)
+
 open Peg;;
 open Arith;;
 

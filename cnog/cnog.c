@@ -26,9 +26,8 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 
   for(j = 0; j < m; j ++) {
     for(k = 0; k < pg->np_num_productions; k ++) {
-      i = cx->cx_results[k][j - m];
+      i = cx->cx_results[k][j];
       if(i >= R_EOF) {
-        i += m;
         if(i > max_j)
           max_j = i;
       }

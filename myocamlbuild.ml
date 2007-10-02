@@ -174,6 +174,7 @@ dispatch
            "util";
            "pack";
            "peg";
+           "examples";
            "nog"] @ !Options.include_dirs
       end
   | After_rules ->
