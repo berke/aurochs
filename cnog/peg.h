@@ -36,9 +36,6 @@ typedef struct { }* construction;
 typedef struct { }* attribute;
 #endif
 
-#define ROOT_NAME "root"
-#define ROOT_ID 0
-
 typedef struct {
   info pb_info;
   construction (*pb_start_construction)(info a, int id, unsigned char *name, int n_begin);

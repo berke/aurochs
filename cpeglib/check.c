@@ -85,7 +85,6 @@ int main(int argc, char **argv)
     printf("Unpacked to %p\n", pg);
     if(pg) {
       peg_context_t *cx;
-      construction c;
       size_t m;
       int i;
       int error_pos;
@@ -109,7 +108,6 @@ int main(int argc, char **argv)
           cx = peg_create_context(pg, &pb, &s2->s_alloc, buf, m);
           printf("Created context %p\n", cx);
           if(cx) {
-            bool parse_ok;
             tree tr;
 
             if(cnog_execute(cx, pg, &tr)) {

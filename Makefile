@@ -3,10 +3,10 @@
 OCAML_DIR=$(shell ocamlc -where)
 TARGET=$(OCAML_DIR)/aurochs_lib
 
-all: aurochs
+all: targets
 
-aurochs:
-	@./build.sh cpeglib/check
+targets:
+	@./build.sh aurochs_tool.native aurochs/test_aurochs.native cpeglib/check
 
 clean:
 	rm __build/*

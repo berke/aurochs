@@ -31,7 +31,7 @@ let rec register_complexity = function
 ;;
 (* ***)
 (*** generate_code *)
-let generate_code ~start peg =
+let generate_code ~root ~start peg =
   (*let peg = Canonify.canonify_grammar peg in*)
   let m = List.length peg in
   let num_alternatives = ref 0 in
@@ -381,6 +381,7 @@ let generate_code ~start peg =
     pg_labels = lb;
     pg_productions = Array.of_list (List.rev !productions_array);
     pg_choices = Array.of_list (List.rev !choices_array);
+    pg_root = root;
     pg_code = cd }
 ;;
 (* ***)
@@ -406,16 +407,13 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
 (*** save_program *)
 let save_program fn pg peg =
   let number iterator =
-    let h = Hashtbl.create 100 in
-    iterator
-      begin fun u ->
-        if not (Hashtbl.mem h u) then
-          Hashtbl.add h u & Hashtbl.length h
-      end;
-    let m = Hashtbl.length h in
-    let a = Array.make m "" in
-    Hashtbl.iter (fun u i -> a.(i) <- u) h;
-    h, a
+    let module SS = Set.Make(String) in
+    let set = ref (SS.singleton pg.pg_root) in
+    iterator (fun u -> set := SS.add u !set);
+    let ua = Array.of_list (SS.elements !set) in
+    let h = Hashtbl.create (Array.length ua) in
+    Array.iteri (fun i u -> Hashtbl.add h u i) ua;
+    h, ua
   in
 
   let attributes, attribute_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_attributes f pe) peg)
@@ -427,12 +425,6 @@ let save_program fn pg peg =
 
   Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in
     (*let sk = Bytes.logger stdout sk in*)
-    Pack.write_uint64 sk nog_signature;
-    Pack.write_uint64 sk nog_version;
-    Pack.write_uint sk pg.pg_start_pc;
-    Pack.write_uint sk pg.pg_build_pc;
-    Pack.write_uint sk & Array.length pg.pg_productions;
-    Pack.write_uint sk & Array.length pg.pg_choices;
 
     let dump_array a =
       Pack.write_uint sk & Array.length a;
@@ -444,18 +436,29 @@ let save_program fn pg peg =
         a
     in
 
-    info `Debug "Nodes:";
-    dump_array node_numbers;
-    info `Debug "Attributes:";
-    dump_array attribute_numbers;
-
-    Pack.write_uint sk & Array.length pg.pg_code;
     let resolve_label (x, _) = x in
     let resolve_node x =
       let id = Hashtbl.find nodes x in
       info `Debug "Resolving %s as %d" x id;
       id
     in
+
+    Pack.write_uint64 sk nog_signature;
+    Pack.write_uint64 sk nog_version;
+    Pack.write_uint sk pg.pg_start_pc;
+    Pack.write_uint sk pg.pg_build_pc;
+    Pack.write_uint sk (resolve_node pg.pg_root);
+    Pack.write_uint sk & Array.length pg.pg_productions;
+    Pack.write_uint sk & Array.length pg.pg_choices;
+
+    info `Debug "Nodes:";
+    dump_array node_numbers;
+
+    info `Debug "Attributes:";
+    dump_array attribute_numbers;
+
+
+    Pack.write_uint sk & Array.length pg.pg_code;
     let resolve_attribute = Hashtbl.find attributes in
     Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
   )

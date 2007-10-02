@@ -353,7 +353,7 @@ let process fno =
       match !Opt.load_nog with
       | None ->
           info `Minor "Generating NOG code";
-          Noggie.generate (Lazy.force base_name) ~start:!Opt.start (Lazy.force peg_canonified)
+          Noggie.generate (Lazy.force base_name) ~root:!Opt.root_node ~start:!Opt.start (Lazy.force peg_canonified)
       | Some fn -> with_file_input fn (fun ic -> Marshal.from_channel ic)
     end
   in

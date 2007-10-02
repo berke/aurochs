@@ -107,6 +107,7 @@ let program = {
   pg_start = "start";
   pg_start_pc = 2923;
   pg_build_pc = 3690;
+  pg_root = N_Root;
   pg_labels = List.fold_left (fun sm (k, v) -> SM.add k v sm) SM.empty [
     ("__accept_1", 494);
     ("__accept_102", 2615);

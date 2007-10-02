@@ -363,7 +363,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
 
       if(result) {
         init();
-        root = bd->pb_start_construction(bi, ROOT_ID, (unsigned char *) ROOT_NAME, 0);
+        root = bd->pb_start_construction(bi, pg->np_root_constructor, pg->np_constructors[pg->np_root_constructor].ns_chars, 0);
         (void) run(root, pg->np_program + pg->np_build_pc, 0);
         *result = bd->pb_finish_construction(bi, root, head - bof);
       }
@@ -402,6 +402,9 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
 
   if(!pack_read_uint(pk, &pg->np_build_pc)) return fail();
   DEBUGF("Build pc is %d\n", pg->np_build_pc);
+
+  if(!pack_read_uint(pk, &pg->np_root_constructor)) return fail();
+  DEBUGF("Root constructor is %d\n", pg->np_root_constructor);
 
   if(!pack_read_uint(pk, &pg->np_num_productions)) return fail();
   DEBUGF("Num_productions is %d\n", pg->np_num_productions);

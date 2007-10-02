@@ -271,6 +271,7 @@ let generate fn start peg (pg : (string, string) program) =
   fp oc "  pg_start = %S;\n" pg.pg_start;
   fp oc "  pg_start_pc = %d;\n" pg.pg_start_pc;
   fp oc "  pg_build_pc = %d;\n" pg.pg_build_pc;
+  fp oc "  pg_root = %a;\n" print_node pg.pg_root;
   fp oc "  pg_labels = List.fold_left (fun sm (k, v) -> SM.add k v sm) SM.empty [\n";
   SM.iter (fun k v -> fp oc "    (%S, %d);\n" k v) pg.pg_labels;
   fp oc "    ];\n";

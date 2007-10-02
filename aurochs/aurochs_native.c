@@ -60,6 +60,33 @@ static value program_alloc(nog_program_t *pg, stack_t *s)
   return v;
 }
 
+static value cons(value v1, value v2)
+{
+  CAMLparam2(v1, v2);
+  CAMLlocal1(consv);
+
+  consv = caml_alloc(2, 0);
+  Store_field(consv, 0, v1);
+  Store_field(consv, 1, v2);
+
+  CAMLreturn(consv);
+}
+
+static value list_rev_append(value l1v, value l2v)
+{
+  CAMLparam2(l1v, l2v);
+  CAMLlocal2(headv, restv);
+
+  if(Is_long(l1v)) {
+    /* The empty list */
+    CAMLreturn(l2v);
+  } else {
+    headv = Field(l1v, 0);
+    restv = Field(l1v, 1);
+    CAMLreturn(list_rev_append(restv, cons(headv, l2v)));
+  }
+}
+
 value caml_aurochs_program_of_binary(value binaryv)
 {
   CAMLparam1(binaryv);
@@ -156,18 +183,6 @@ static value create_node(int id, int begin)
   CAMLreturn(treev);
 }
 
-static value cons(value v1, value v2)
-{
-  CAMLparam2(v1, v2);
-  CAMLlocal1(consv);
-
-  consv = caml_alloc(2, 0);
-  Store_field(consv, 0, v1);
-  Store_field(consv, 1, v2);
-
-  CAMLreturn(consv);
-}
-
 static construction (start_construction)(info in, int id, unsigned char *name, int begin)
 {
   construction_t *cons;
@@ -185,6 +200,8 @@ static tree finish_construction(info in, construction cons, int end)
   CAMLlocal1(nodev);
   nodev = cons->cons_value;
   Store_field(nodev, AUROCHS_P_NODE_END_FIELD, Val_int(end));
+  Store_field(nodev, AUROCHS_P_NODE_CHILD_FIELD, list_rev_append(Field(nodev, AUROCHS_P_NODE_CHILD_FIELD), Val_int(0)));
+  Store_field(nodev, AUROCHS_P_NODE_ATTRS_FIELD, list_rev_append(Field(nodev, AUROCHS_P_NODE_ATTRS_FIELD), Val_int(0)));
   caml_remove_global_root(&cons->cons_value);
   CAMLreturn(nodev);
 }
@@ -271,7 +288,6 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
 {
   CAMLparam3(programv, uv, errorv);
   CAMLlocal1(treev);
-  construction construction;
   uint8_t *input;
   size_t input_length;
   nog_program_t *pg;
@@ -292,12 +308,12 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   builder.pb_start_construction = start_construction;
   builder.pb_add_children = add_children;
   builder.pb_add_attribute = add_attribute;
+  builder.pb_add_token = add_token;
   builder.pb_finish_construction = finish_construction;
 
   cx = peg_create_context(pg, &builder, builder_info, input, input_length);
   if(!cx) caml_failwith("Can't allocate context");
 
-  construction = start_construction(builder_info, ROOT_ID, (uint8_t *) ROOT_NAME, 0);
   if(cnog_execute(cx, pg, &treev)) {
     CAMLreturn(some(treev));
   } else {

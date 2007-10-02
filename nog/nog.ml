@@ -40,6 +40,7 @@ type ('nd, 'at) program = {
   pg_labels      : int SM.t;
   pg_productions : string array;
   pg_choices     : string array;
+  pg_root        : 'nd;    (** Name of the root node *)
   pg_code        : ('nd, 'at) code
 };;
 

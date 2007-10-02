@@ -82,6 +82,7 @@ typedef struct {
   unsigned int np_count;
   unsigned int np_start_pc;
   unsigned int np_build_pc;
+  unsigned int np_root_constructor;
   unsigned int np_num_productions;
   unsigned int np_num_choices;
   unsigned int np_num_constructors;

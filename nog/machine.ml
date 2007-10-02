@@ -1,7 +1,7 @@
 (* Machine *)
 
 let nog_signature = 0xABBE55E5L;;
-let nog_version   = 0x00010000L;;
+let nog_version   = 0x00010001L;;
 
 let fp = Printf.fprintf;;
 
