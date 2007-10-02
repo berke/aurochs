@@ -43,4 +43,14 @@ type data = [`File of string | `String of string];;
 
 val load : data -> string;;
 
-val easy : program:[`Source of data|`Binary of data] -> text:data -> Peg.tree;;
+val read :
+   grammar:[`Source of data|`Program of ('n, 'a) program Lazy.t|`Binary of data] ->
+   text:data ->
+   ('n, 'a) Peg.poly_tree
+;;
+
+val see :
+   grammar:[`Source of data|`Program of generic_program Lazy.t|`Binary of data] ->
+   text:data ->
+   Peg.tree
+;;

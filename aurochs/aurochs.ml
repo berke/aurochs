@@ -70,12 +70,15 @@ let load = function
 
 let ( & ) f x = f x;;
 
-let easy ~program ~text =
-  let binary =
-    match program with
-    | `Binary b -> load b
-    | `Source s -> compile (load s)
-  in
-  let program = program_of_binary binary in
-  parse_generic program (load text)
+let get_program = function
+  | `Binary b -> program_of_binary (load b)
+  | `Source s -> program_of_binary (compile (load s))
+  | `Program p -> Lazy.force p
+;;
+
+let see ~grammar ~text = parse_generic (get_program grammar) (load text);;
+
+let read ~grammar ~text =
+  let u = load text in
+  Peg.relativize u (parse (get_program grammar) u)
 ;;

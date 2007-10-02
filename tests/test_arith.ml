@@ -12,15 +12,11 @@ let rec eval = function
 ;;
 
 let _ =
-  let binary = Aurochs.load (`File "examples/arith.nog") in
-  let program = Aurochs.program_of_binary binary in
   while true do
     let u = input_line stdin in
     try
-      let x = Aurochs.parse program u in
-      (*Peg.print_tree stdout t;*)
-      let x = Peg.relativize u x in
-      let x = eval x in
+      let t = Aurochs.read ~grammar:(`Program Arith.program) ~text:(`String u) in
+      let x = eval t in
       Printf.printf ">>> %d\n%!" x
     with
     | x ->

@@ -401,9 +401,12 @@ let process fno =
       let fn' = Lazy.force base_name in
       List.iter
         begin function
+          | `ml_classic ->
+              let pg = Lazy.force nog in
+              Camelus.generate_classic fn' !Opt.start (Lazy.force peg) pg
           | `ml ->
               let pg = Lazy.force nog in
-              Camelus.generate fn' !Opt.start (Lazy.force peg) pg
+              Camelus.generate_implementation fn' !Opt.start (Lazy.force peg) pg
           | `mli -> Camelus.generate_interface fn' (Lazy.force nog) (Lazy.force peg)
           | `c ->
               Ritchie.generate fn' ~start:!Opt.start (Lazy.force peg_canonified)

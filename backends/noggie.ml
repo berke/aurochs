@@ -404,59 +404,51 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
     pg
 ;;
 (* ***)
-(*** save_program *)
-let save_program fn pg peg =
+(*** put_program *)
+let put_program pg peg sk =
   let attributes, attribute_numbers = Nog.number_attributes pg peg
   and nodes, node_numbers = Nog.number_nodes pg peg
   in
 
-  (*let node_map =
-    build_names !Opt.node_prefix (fun f p -> Peg.iter_over_builds f p; f root_node) in*)
+  let dump_array a =
+    Pack.write_uint sk & Array.length a;
+    Array.iteri
+      begin fun i u ->
+        info `Debug "  #%d: %s" i u;
+        Pack.write_string sk u
+      end
+      a
+  in
 
-  Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in
-    (*let sk = Bytes.logger stdout sk in*)
+  let resolve_label (x, _) = x in
+  let resolve_node x =
+    let id = Hashtbl.find nodes x in
+    info `Debug "Resolving %s as %d" x id;
+    id
+  in
 
-    let dump_array a =
-      Pack.write_uint sk & Array.length a;
-      Array.iteri
-        begin fun i u ->
-          info `Debug "  #%d: %s" i u;
-          Pack.write_string sk u
-        end
-        a
-    in
+  Pack.write_uint64 sk nog_signature;
+  Pack.write_uint64 sk nog_version;
+  Pack.write_uint sk pg.pg_start_pc;
+  Pack.write_uint sk pg.pg_build_pc;
+  Pack.write_uint sk (resolve_node pg.pg_root);
+  Pack.write_uint sk & Array.length pg.pg_productions;
+  Pack.write_uint sk & Array.length pg.pg_choices;
 
-    let resolve_label (x, _) = x in
-    let resolve_node x =
-      let id = Hashtbl.find nodes x in
-      info `Debug "Resolving %s as %d" x id;
-      id
-    in
+  info `Debug "Nodes:";
+  dump_array node_numbers;
 
-    Pack.write_uint64 sk nog_signature;
-    Pack.write_uint64 sk nog_version;
-    Pack.write_uint sk pg.pg_start_pc;
-    Pack.write_uint sk pg.pg_build_pc;
-    Pack.write_uint sk (resolve_node pg.pg_root);
-    Pack.write_uint sk & Array.length pg.pg_productions;
-    Pack.write_uint sk & Array.length pg.pg_choices;
-
-    info `Debug "Nodes:";
-    dump_array node_numbers;
-
-    info `Debug "Attributes:";
-    dump_array attribute_numbers;
+  info `Debug "Attributes:";
+  dump_array attribute_numbers;
 
 
-    Pack.write_uint sk & Array.length pg.pg_code;
-    let resolve_attribute = Hashtbl.find attributes in
-    Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
-  )
-  (*let oc = open_out fn in
-  fp oc "; Start at %s (%d)\n" pg.pg_start pg.pg_start_pc;
-  print_code oc pg.pg_code;
-  close_out oc*)
+  Pack.write_uint sk & Array.length pg.pg_code;
+  let resolve_attribute = Hashtbl.find attributes in
+  Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
 ;;
+(* ***)
+(*** save_program *)
+let save_program fn pg peg = Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in put_program pg peg sk);;
 (* ***)
 (*** generate *)
 let generate fn ?(start="start") peg =

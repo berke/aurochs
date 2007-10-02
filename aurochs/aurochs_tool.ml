@@ -28,14 +28,15 @@ module Spec =
     let specs =
       Arg.align [
         "-target",
-          Symbol(["c";"amd64";"nog";"ml";"mli"],
+          Symbol(["c";"amd64";"nog";"ml";"mli";"ml_classic"],
                  begin function
-                   | "c"     -> targets += `c
-                   | "nog"   -> targets += `nog
-                   | "amd64" -> targets += `amd64
-                   | "ml"    -> targets += `ml
-                   | "mli"   -> targets += `mli
-                   | _       -> raise (Bad "Invalid target")
+                   | "c"             -> targets += `c
+                   | "nog"           -> targets += `nog
+                   | "amd64"         -> targets += `amd64
+                   | "ml"            -> targets += `ml
+                   | "ml_classic"    -> targets += `ml_classic
+                   | "mli"           -> targets += `mli
+                   | _               -> raise (Bad "Invalid target")
                  end),
           " target language (default c)";
 

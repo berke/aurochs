@@ -1,6 +1,6 @@
 (* Opt *)
 
-let targets : [`c|`amd64|`nog|`ml|`mli] list ref = ref [];;
+let targets : [`c|`amd64|`nog|`ml|`mli|`ml_classic] list ref = ref [];;
 let dump_grammar : string option ref = ref None;;
 let dump_canonified : string option ref = ref None;;
 let dump_xml : string option ref = ref None;;

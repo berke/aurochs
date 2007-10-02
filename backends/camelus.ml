@@ -26,26 +26,32 @@ let gensym =
 (* ***)
 let print_node oc n = fp oc "%s%s" !Opt.node_prefix n;;
 let print_attr oc n = fp oc "%s%s" !Opt.attribute_prefix n;;
-(*** generate_interface *)
-let generate_interface fn pg peg =
+
+(*** generate_type_defs *)
+let generate_type_defs oc pg peg =
   let attributes, attribute_numbers = Nog.number_attributes pg peg
   and nodes, node_numbers = Nog.number_nodes pg peg
   in
+  let sum_type print name a =
+    fp oc "type %s =\n" name;
+    Array.iteri (fun i u -> fp oc "| %a (* %d *)\n" print u i) a;
+    fp oc ";;\n";
+  in
+  sum_type print_node "node_name" node_numbers;
+  fp oc "\n";
+  sum_type print_attr "attribute_name" attribute_numbers
+;;
+(* ***)
+(*** generate_interface *)
+let generate_interface fn pg peg =
   Util.with_file_output (fn^".mli") (fun oci ->
     fp oci "(* %s *)\n" (String.capitalize fn);
     fp oci "\n";
-    let sum_type print name a =
-      fp oci "type %s =\n" name;
-      Array.iteri (fun i u -> fp oci "| %a (* %d *)\n" print u i) a;
-      fp oci ";;\n";
-    in
-    sum_type print_node "node_name" node_numbers;
-    fp oci "\n";
-    sum_type print_attr "attribute_name" attribute_numbers)
+    generate_type_defs oci pg peg)
 ;;
 (* ***)
-(*** generate *)
-let generate fn start peg (pg : (string, string) program) =
+(*** generate_classic *)
+let generate_classic fn start peg (pg : (string, string) program) =
   let m = List.length peg in
   let num_alternatives = ref 0 in
   let num_productions = ref 0 in
@@ -316,5 +322,28 @@ let generate fn start peg (pg : (string, string) program) =
 
   fp oci "val parse_positioned : string -> positioned_tree\n";
   fp oci "val parse : string -> tree\n";
+;;
+(* ***)
+(*** generate_implementation *)
+let generate_implementation fn start peg (pg : (string, string) program) =
+  Util.with_file_output (fn^".ml") (fun oc ->
+    Util.with_file_output (fn^".mli") (fun oci ->
+      fp oc "(* %s *)\n\n" (String.capitalize fn);
+      fp oci "(* %s *)\n\n" (String.capitalize fn);
+      generate_type_defs oc pg peg;
+      generate_type_defs oci pg peg;
+      fp oci "\n";
+      fp oci "val binary : Aurochs.binary\n";
+      fp oci "val program : (node_name, attribute_name) Aurochs.program Lazy.t\n";
+
+      let u = Bytes.with_buffer_sink (Noggie.put_program pg peg) in
+      fp oc "\n";
+      fp oc "let binary =\n";
+      Stringifier.print_ocaml_string ~indent:4 () oc u;
+      fp oc ";;\n";
+      fp oc "\n";
+      fp oc "let program = lazy (Aurochs.program_of_binary binary);;\n"
+    )
+  )
 ;;
 (* ***)
