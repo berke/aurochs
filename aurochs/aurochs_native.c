@@ -15,6 +15,12 @@
 #include <alloc.h>
 #include <stack.h>
 
+#if 0
+#define DEBUGF(x, y...) printf("DEBUG " __FILE__ ":" x "\n", ##y);
+#else
+#define DEBUGF(x,...)
+#endif
+
 typedef value tree;
 typedef value attribute;
 typedef struct {
@@ -187,6 +193,7 @@ static construction (start_construction)(info in, int id, unsigned char *name, i
 {
   construction_t *cons;
 
+  DEBUGF("Start construction");
   cons = alloc_malloc(in, sizeof(construction_t));
   if(!cons) caml_failwith("Cannot start construction");
   caml_register_global_root(&cons->cons_value);
@@ -198,11 +205,14 @@ static tree finish_construction(info in, construction cons, int end)
 {
   CAMLparam0();
   CAMLlocal1(nodev);
+
+  DEBUGF("Finish construction");
   nodev = cons->cons_value;
   Store_field(nodev, AUROCHS_P_NODE_END_FIELD, Val_int(end));
   Store_field(nodev, AUROCHS_P_NODE_CHILD_FIELD, list_rev_append(Field(nodev, AUROCHS_P_NODE_CHILD_FIELD), Val_int(0)));
   Store_field(nodev, AUROCHS_P_NODE_ATTRS_FIELD, list_rev_append(Field(nodev, AUROCHS_P_NODE_ATTRS_FIELD), Val_int(0)));
   caml_remove_global_root(&cons->cons_value);
+  alloc_free(in, cons);
   CAMLreturn(nodev);
 }
 
@@ -296,6 +306,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   peg_builder_t builder;
   info builder_info;
 
+  DEBUGF("Parsing");
   pg = program_val(programv).p_nog;
   input = (uint8_t *) String_val(uv);
   input_length = string_length(uv);
@@ -312,6 +323,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   builder.pb_finish_construction = finish_construction;
 
   cx = peg_create_context(&alloc_stdlib, pg, &builder, builder_info, input, input_length);
+  DEBUGF("Created context of input length %ld", input_length);
   if(!cx) caml_failwith("Can't allocate context");
 
   if(cnog_execute(cx, pg, &treev)) {
@@ -322,7 +334,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
     int pos;
 
     pos = cnog_error_position(cx, pg);
-    Store_field(errorv, 0, Int_val(pos));
+    Store_field(errorv, 0, Val_int(pos));
     peg_delete_context(cx);
     CAMLreturn(none); /* None */
   }

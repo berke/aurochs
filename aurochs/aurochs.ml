@@ -8,7 +8,7 @@ type binary = string
 type ('node, 'attribute) program
 type generic_program = (int, int) program
 
-exception Aurochs_parse_error of int;;
+exception Parse_error of int;;
 exception Compile_error of string;;
 
 external get_constructor_count : ('node, 'attribute) program -> int = "caml_aurochs_get_constructor_count" "caml_aurochs_get_constructor_count"
@@ -32,7 +32,7 @@ let attributes pg =
 let parse pg u =
   let error_pos = ref 0 in
   match parse_internal pg u error_pos with
-  | None -> raise (Aurochs_parse_error !error_pos)
+  | None -> raise (Parse_error !error_pos)
   | Some t -> t
 ;;
 

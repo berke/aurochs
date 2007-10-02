@@ -6,7 +6,7 @@
 type binary = string;;
 
 (** This exception is raised on parse error.  The integer is the character position in the input. *)
-exception Aurochs_parse_error of int;;
+exception Parse_error of int;;
 
 (** Aurochs programs are represented using this abstract type.
     Actually, the program is malloc()'d and represented using C structures. *)
