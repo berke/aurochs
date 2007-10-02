@@ -21,10 +21,11 @@ double_quote_string ::= ('"' value:(((~ '"') (double_quote_string_escape | [^"])
 
 string ::= quote_string | double_quote_string;
 
-regexp ::= '/'body:(regexp_inner*)'/'(options:regexp_option+)?;
+regexp ::= (~ ("//"|"/*")) '/'body:(regexp_inner*)'/'(options:regexp_option+)? ~[a-zA-Z0-9_];
+
 regexp_option ::= [giwm];
-regexp_escape ::= '\\' sigma;
-regexp_inner ::= (regexp_escape | [^/\\\n]);
+regexp_escape ::= '\\' [bfnrtv/\\];
+regexp_inner ::= ((~ '/') (regexp_escape | [^/\n]));
 
 numeric ::= float | integer;
 
@@ -389,7 +390,7 @@ outfixing optional_space do
       ;
 
     new_expression ::=
-        <New><Foo/>NEW new_expression</New>
+        <New>NEW new_expression</New>
       | access_expression
       ;
 
@@ -493,12 +494,12 @@ outfixing optional_space do
       ;
 
     bitwise_xor_expression ::=
-        <BitXor>equality_expression HAT bitwise_and_expression</BitXor>
+        <BitXor>bitwise_and_expression HAT bitwise_xor_expression</BitXor>
       | bitwise_and_expression
       ;
 
     bitwise_or_expression ::=
-        <BitOr>equality_expression OR bitwise_and_expression</BitOr>
+        <BitOr>bitwise_xor_expression OR bitwise_or_expression</BitOr>
       | bitwise_xor_expression
       ;
 

@@ -119,7 +119,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
           break;
 
         case NOG_BNEOF:
-          if(head != eof) jump();
+          if(head < eof) jump();
           break;
 
         case NOG_BFC:
@@ -163,7 +163,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
           break;
 
         case NOG_SBNS:
-          if(bof < head && head < eof && *head == arg1()) {
+          if(head < eof && *head == arg1()) {
             head ++;
           } else {
             jump();
