@@ -406,18 +406,8 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
 (* ***)
 (*** save_program *)
 let save_program fn pg peg =
-  let number iterator =
-    let module SS = Set.Make(String) in
-    let set = ref (SS.singleton pg.pg_root) in
-    iterator (fun u -> set := SS.add u !set);
-    let ua = Array.of_list (SS.elements !set) in
-    let h = Hashtbl.create (Array.length ua) in
-    Array.iteri (fun i u -> Hashtbl.add h u i) ua;
-    h, ua
-  in
-
-  let attributes, attribute_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_attributes f pe) peg)
-  and nodes, node_numbers = number (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_builds f pe) peg)
+  let attributes, attribute_numbers = Nog.number_attributes pg peg
+  and nodes, node_numbers = Nog.number_nodes pg peg
   in
 
   (*let node_map =

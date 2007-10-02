@@ -98,6 +98,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
     void jump_to(int pc) { ip_next = pg->np_program + pc; }
     void jump(void) { jump_to(arg0()); } 
 
+    /*printf("run pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip_next - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);*/
     if(!ip_next) return 0;
 
     for(;;) {

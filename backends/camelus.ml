@@ -24,6 +24,26 @@ let gensym =
     sf "_%s_%d" prefix n
 ;;
 (* ***)
+let print_node oc n = fp oc "%s%s" !Opt.node_prefix n;;
+let print_attr oc n = fp oc "%s%s" !Opt.attribute_prefix n;;
+(*** generate_interface *)
+let generate_interface fn pg peg =
+  let attributes, attribute_numbers = Nog.number_attributes pg peg
+  and nodes, node_numbers = Nog.number_nodes pg peg
+  in
+  Util.with_file_output (fn^".mli") (fun oci ->
+    fp oci "(* %s *)\n" (String.capitalize fn);
+    fp oci "\n";
+    let sum_type print name a =
+      fp oci "type %s =\n" name;
+      Array.iteri (fun i u -> fp oci "| %a (* %d *)\n" print u i) a;
+      fp oci ";;\n";
+    in
+    sum_type print_node "node_name" node_numbers;
+    fp oci "\n";
+    sum_type print_attr "attribute_name" attribute_numbers)
+;;
+(* ***)
 (*** generate *)
 let generate fn start peg (pg : (string, string) program) =
   let m = List.length peg in

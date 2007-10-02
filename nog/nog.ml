@@ -796,3 +796,28 @@ let is_not_space = ("is_not_space", (<>) ' ');;
 (*** is_alpha *)
 let is_alpha = ("is_alpha", (fun c -> ('a' <= c && c <= 'z') or ('A' <= c && c <= 'Z')));;
 (* ***)
+(*** number *)
+let number ?root pg iterator =
+  let module SS = Set.Make(String) in
+  let set = ref
+    (match root with
+      | None -> SS.empty
+      | Some r -> SS.singleton r)
+  in
+  iterator (fun u -> set := SS.add u !set);
+  let ua = Array.of_list (SS.elements !set) in
+  let h = Hashtbl.create (Array.length ua) in
+  Array.iteri (fun i u -> Hashtbl.add h u i) ua;
+  h, ua
+;;
+(* ***)
+(*** number_attributes *)
+let number_attributes pg peg =
+  number pg (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_attributes f pe) peg)
+;;
+(* ***)
+(*** number_nodes *)
+let number_nodes pg peg =
+  number ~root:pg.pg_root pg (fun f -> List.iter (fun (_, pe) -> Peg.iter_over_builds f pe) peg)
+;;
+(* ***)

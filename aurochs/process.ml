@@ -399,19 +399,23 @@ let process fno =
     begin
       info `Minor "Generating parser";
       let fn' = Lazy.force base_name in
-      match !Opt.target with
-      | `ml ->
-          let pg = Lazy.force nog in
-          Camelus.generate fn' !Opt.start (Lazy.force peg) pg
-      | `c ->
-          Ritchie.generate fn' ~start:!Opt.start (Lazy.force peg_canonified)
-      | `nog -> Noggie.save_program (fn'^".nog") (Lazy.force nog) (Lazy.force peg)
-      | `amd64 ->
-          let pg = Lazy.force nog in
-          with_file_output (fn'^".s")
-            begin fun oc ->
-              Amd64.emit oc pg
-            end
+      List.iter
+        begin function
+          | `ml ->
+              let pg = Lazy.force nog in
+              Camelus.generate fn' !Opt.start (Lazy.force peg) pg
+          | `mli -> Camelus.generate_interface fn' (Lazy.force nog) (Lazy.force peg)
+          | `c ->
+              Ritchie.generate fn' ~start:!Opt.start (Lazy.force peg_canonified)
+          | `nog -> Noggie.save_program (fn'^".nog") (Lazy.force nog) (Lazy.force peg)
+          | `amd64 ->
+              let pg = Lazy.force nog in
+              with_file_output (fn'^".s")
+                begin fun oc ->
+                  Amd64.emit oc pg
+                end
+        end
+        !Opt.targets
     end
 ;;
 (* ***)

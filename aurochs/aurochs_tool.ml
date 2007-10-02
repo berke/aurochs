@@ -2,6 +2,7 @@
 (* A PEG parser generator *)
 
 open Pffpsf;;
+open Util.Syntax;;
 open Talk;;
 
 module Spec =
@@ -27,12 +28,13 @@ module Spec =
     let specs =
       Arg.align [
         "-target",
-          Symbol(["c";"amd64";"nog";"ml"],
+          Symbol(["c";"amd64";"nog";"ml";"mli"],
                  begin function
-                   | "c"     -> target := `c
-                   | "nog"   -> target := `nog
-                   | "amd64" -> target := `amd64
-                   | "ml"    -> target := `ml
+                   | "c"     -> targets += `c
+                   | "nog"   -> targets += `nog
+                   | "amd64" -> targets += `amd64
+                   | "ml"    -> targets += `ml
+                   | "mli"   -> targets += `mli
                    | _       -> raise (Bad "Invalid target")
                  end),
           " target language (default c)";
