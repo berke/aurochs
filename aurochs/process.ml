@@ -124,10 +124,10 @@ let dump_colorized oc (ac, bc) u =
     in
     if fg <> !last_fg_color then
       begin
-        last_fg_color := b;
+        last_fg_color := fg;
         fp oc "%s" Ansi.foreground.(fg)
       end;
-    if b <> !last_bg_color then
+    if bg <> !last_bg_color then
       begin
         last_bg_color := bg;
         fp oc "%s" Ansi.background.(bg)

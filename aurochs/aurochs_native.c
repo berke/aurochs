@@ -159,6 +159,7 @@ static value create_token(int begin, int end)
   treev = caml_alloc(AUROCHS_P_TOKEN_COUNT, AUROCHS_P_TOKEN_TAG);
   Store_field(treev, AUROCHS_P_NODE_START_FIELD, Val_int(begin));
   Store_field(treev, AUROCHS_P_NODE_END_FIELD, Val_int(end));
+
   CAMLreturn(treev);
 }
 
@@ -171,6 +172,7 @@ static value create_attribute(int id, int begin, int end)
   Store_field(attrv, AUROCHS_ATTRIBUTE_START_FIELD, Val_int(begin));
   Store_field(attrv, AUROCHS_ATTRIBUTE_END_FIELD, Val_int(end));
   Store_field(attrv, AUROCHS_ATTRIBUTE_NAME_FIELD, Val_int(id));
+
   CAMLreturn(attrv);
 }
 
@@ -214,6 +216,7 @@ static tree finish_construction(info in, construction cons, int end)
   Store_field(nodev, AUROCHS_P_NODE_ATTRS_FIELD, list_rev_append(Field(nodev, AUROCHS_P_NODE_ATTRS_FIELD), Val_int(0)));
   caml_remove_global_root(&cons->cons_value);
   alloc_free(in, cons);
+
   CAMLreturn(nodev);
 }
 
@@ -221,8 +224,10 @@ static bool add_children(info a, construction c, tree tr2)
 {
   CAMLparam1(tr2);
   CAMLlocal1(consv);
+
   consv = c->cons_value;
   Store_field(consv, AUROCHS_P_NODE_CHILD_FIELD, cons(tr2, Field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD)));
+
   CAMLreturnT(bool, true);
 }
 
