@@ -104,6 +104,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
       ip = ip_next;
 
       assert(pg->np_program <= ip && ip < pg->np_program + pg->np_count);
+      assert(bof <= head && head <= eof);
       /*printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);*/
       DEBUGF("%ld %ld %d\n", ip - pg->np_program, head - bof, fail);
 
@@ -247,10 +248,12 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
           break;
 
         case NOG_LDMEM:
+          assert(0 <= arg0() && arg0() < cx->cx_num_productions);
           memo = cx->cx_results[arg0()][head - bof];
           break;
 
         case NOG_LDCH:
+          assert(0 <= arg0() && arg0() < cx->cx_num_alternatives);
           choice = cx->cx_alternatives[arg0()][head - bof];
           break;
 
@@ -259,15 +262,18 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
             int position;
 
             position = stack_pop();
+            assert(0 <= arg0() && arg0() < cx->cx_num_productions);
             cx->cx_results[arg0()][position] = head - bof;
           }
           break;
 
         case NOG_STMEMB:
+          assert(0 <= arg0() && arg0() < cx->cx_num_productions);
           cx->cx_results[arg0()][head - bof] = R_BUSY;
           break;
 
         case NOG_STMEMF:
+          assert(0 <= arg0() && arg0() < cx->cx_num_productions);
           cx->cx_results[arg0()][head - bof] = R_FAIL;
           break;
 
@@ -276,6 +282,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
             int position;
 
             position = stack_top();
+            assert(0 <= arg0() && arg0() < cx->cx_num_alternatives);
             cx->cx_alternatives[arg0()][position] = arg1();
           }
           break;

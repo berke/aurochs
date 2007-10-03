@@ -20,7 +20,9 @@ let _ =
     try
       let t = Aurochs.read ~grammar:(`Program Arith.program) ~text:(`String u) in
       let x = eval t in
-      Printf.printf ">>> %d\n%!" x
+      Printf.printf ">>> %d\n%!" x;
+      Util.with_binary_file_output "foo.bin" (fun oc ->
+        Marshal.to_channel oc t []);
     with
     | x ->
         Printf.printf "Exception: %s\n%!" (Printexc.to_string x)

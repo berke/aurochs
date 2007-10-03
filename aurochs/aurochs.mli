@@ -49,6 +49,12 @@ val read :
    ('n, 'a) Peg.poly_tree
 ;;
 
+val read_positioned :
+   grammar:[`Source of data|`Program of ('n, 'a) program Lazy.t|`Binary of data] ->
+   text:data ->
+   ('n, 'a) Peg.poly_positioned_tree
+;;
+
 val see :
    grammar:[`Source of data|`Program of generic_program Lazy.t|`Binary of data] ->
    text:data ->

@@ -99,6 +99,11 @@ let get_program = function
 
 let see ~grammar ~text = parse_generic (get_program grammar) (load text);;
 
+let read_positioned ~grammar ~text =
+  let u = load text in
+  parse (get_program grammar) u
+;;
+
 let read ~grammar ~text =
   let u = load text in
   Peg.relativize u (parse (get_program grammar) u)

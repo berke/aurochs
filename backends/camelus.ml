@@ -331,15 +331,43 @@ let generate_classic fn start peg (pg : (string, string) program) =
 let generate_implementation fn start peg (pg : (string, string) program) =
   Util.with_file_output (fn^".ml") (fun oc ->
     Util.with_file_output (fn^".mli") (fun oci ->
-      fp oc "(* %s *)\n\n" (String.capitalize fn);
-      fp oci "(* %s *)\n\n" (String.capitalize fn);
+      let _, attribute_numbers = Nog.number_attributes pg peg
+      and _, node_numbers = Nog.number_nodes pg peg
+      in
+
+      let build_printer name prefix a =
+        fp oci "\n";
+        fp oci "val print_%s : out_channel -> %s -> unit\n" name name;
+
+        fp oc "\n";
+        fp oc "let print_%s oc = function\n" name;
+        Array.iter
+          begin fun n ->
+            fp oc "| %s%s -> output_string oc %S\n" prefix n n
+          end
+          a;
+        fp oc ";;\n";
+        fp oc "\n"
+      in
+
+      fp oc "(* %s *)\n" (String.capitalize fn);
+      fp oci "(* %s *)\n" (String.capitalize fn);
       fp oc "\nopen Aurochs_pack;;\n\n";
       fp oci "\nopen Aurochs_pack;;\n\n";
+
       generate_type_defs oc pg peg;
       generate_type_defs oci pg peg;
+
       fp oci "\n";
-      fp oci "val binary : Aurochs.binary\n";
-      fp oci "val program : (node_name, attribute_name) Aurochs.program Lazy.t\n";
+      fp oci "type tree = (node_name, attribute_name) Peg.poly_tree\n\n";
+      fp oci "type positioned_tree = (node_name, attribute_name) Peg.poly_positioned_tree\n\n";
+
+      fp oc "\n";
+      fp oc "type tree = (node_name, attribute_name) Peg.poly_tree\n";
+      fp oc "type positioned_tree = (node_name, attribute_name) Peg.poly_positioned_tree\n";
+
+      build_printer "node_name" !Opt.node_prefix node_numbers;
+      build_printer "attribute_name" !Opt.attribute_prefix attribute_numbers;
 
       let u = Bytes.with_buffer_sink (Noggie.put_program pg peg) in
       fp oc "\n";
@@ -347,7 +375,19 @@ let generate_implementation fn start peg (pg : (string, string) program) =
       Stringifier.print_ocaml_string ~indent:4 () oc u;
       fp oc ";;\n";
       fp oc "\n";
-      fp oc "let program = lazy (Aurochs.program_of_binary binary);;\n"
+      fp oc "let program = lazy (Aurochs.program_of_binary binary);;\n";
+
+      fp oc "\n";
+      fp oc "let parse_positioned u = Aurochs.read_positioned ~grammar:(`Program program) ~text:(`String u);;\n";
+      fp oc "let parse u = Peg.relativize u (parse_positioned u);;\n";
+      fp oc "let print_tree oc t = Peg.print_poly_tree ~print_node:print_node_name ~print_attribute:print_attribute_name () oc t;;\n";
+
+      fp oci "\n";
+      fp oci "val binary : Aurochs.binary\n";
+      fp oci "val program : (node_name, attribute_name) Aurochs.program Lazy.t\n";
+      fp oci "val parse : string -> tree;;\n";
+      fp oci "val parse_positioned : string -> positioned_tree;;\n";
+      fp oci "val print_tree : out_channel -> tree -> unit\n";
     )
   )
 ;;
