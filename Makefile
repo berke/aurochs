@@ -6,7 +6,7 @@ TARGET=$(OCAML_DIR)/aurochs_lib
 all: targets
 
 targets:
-	@./build.sh aurochs_tool.native aurochs/test_aurochs.native cpeglib/check
+	@./build.sh aurochs_lib.cma aurochs_lib.cmxa aurochs_tool.native aurochs/test_aurochs.native cpeglib/check
 
 clean:
 	rm -rf _build/
@@ -24,5 +24,6 @@ test_arith: aurochs
 install: targets
 	cp aurochs_tool.native bin/aurochs
 	cp aurochs_tool.native ~/bin/aurochs
-	cp _build/*.{cmxa,cma,a,cmi} $(TARGET)
-	rm $(TARGET)/process.cmi
+	mkdir -p $(TARGET)
+	cp _build/aurochs_pack.cmi $(TARGET)
+	cp _build/{aurochs_lib.{a,cma,cmxa},libaurochs.a,dllaurochs.so} $(TARGET)

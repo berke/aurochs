@@ -1,0 +1,1 @@
+<test_arith.{byte,native}>: use_aurochs_lib, use_libaurochs, use_unix

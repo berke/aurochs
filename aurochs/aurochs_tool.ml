@@ -171,6 +171,12 @@ module Spec =
         "-quiet",
         Unit(fun () -> warning := `None; info := `None; error := `None),
         " Suppress all text output";
+
+        "-version",
+        Unit(fun () ->
+          pf "Aurochs version V%d\n" Version.version;
+          exit 0),
+        " Show Aurochs version.";
       ]
     ;;
   end

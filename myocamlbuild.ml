@@ -31,13 +31,19 @@ module Config64 =
 open Config64;;
 
 let ocaml_local_dir =
-  try
-    Sys.getenv "OCAMLDIR"
-  with
-  | Not_found -> ocamldir_default
+  lazy begin
+    try
+      Sys.getenv "OCAMLDIR"
+    with
+    | Not_found ->
+        let cmd = "ocamlc -where" in
+        My_unix.run_and_open cmd (fun ic ->
+          Log.dprintf 5 "Getting Ocaml directory from command %s" cmd;
+          input_line ic)
+  end
 ;;
 
-let local dir = Filename.concat ocaml_local_dir dir;;
+let local dir = Filename.concat (Lazy.force ocaml_local_dir) dir;;
 
 type libdep_description = {
   ld_name : string;

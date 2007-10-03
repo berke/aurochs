@@ -47,6 +47,8 @@ let generate_interface fn pg peg =
   Util.with_file_output (fn^".mli") (fun oci ->
     fp oci "(* %s *)\n" (String.capitalize fn);
     fp oci "\n";
+    fp oci "open Aurochs_pack;\n";
+    fp oci "\n";
     generate_type_defs oci pg peg)
 ;;
 (* ***)
@@ -89,6 +91,7 @@ let generate_classic fn start peg (pg : (string, string) program) =
   fp oci "(* %s *)\n" (String.capitalize fn);
   fp oci "\n";
 
+  fp oc "open Aurochs_pack;;\n";
   fp oc "open Peg;;\n";
   fp oc "open Nog;;\n";
   fp oc "open Machine;;\n";
@@ -330,6 +333,8 @@ let generate_implementation fn start peg (pg : (string, string) program) =
     Util.with_file_output (fn^".mli") (fun oci ->
       fp oc "(* %s *)\n\n" (String.capitalize fn);
       fp oci "(* %s *)\n\n" (String.capitalize fn);
+      fp oc "\nopen Aurochs_pack;;\n\n";
+      fp oci "\nopen Aurochs_pack;;\n\n";
       generate_type_defs oc pg peg;
       generate_type_defs oci pg peg;
       fp oci "\n";
