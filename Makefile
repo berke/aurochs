@@ -6,7 +6,7 @@ TARGET=$(OCAML_DIR)/aurochs_lib
 all: targets
 
 targets:
-	@./build.sh aurochs_lib.cma aurochs_lib.cmxa aurochs_tool.native aurochs/test_aurochs.native cpeglib/check
+	@./build.sh aurochs_lib.cma aurochs_lib.cmxa aurochs_tool.native aurochs/test_aurochs.native cnog/check
 
 clean:
 	rm -rf _build/
