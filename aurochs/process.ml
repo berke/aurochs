@@ -337,16 +337,17 @@ let process fno =
 
       info `Minor "Canonifying grammar";
       let peg = Canonify.canonify_grammar ~start:!Opt.start (Lazy.force peg) in
-      begin
-        match !Opt.dump_canonified with
-        | None -> ()
-        | Some fn ->
-            info `Normal "Dumping canonified grammar to file %s" fn;
-            with_file_output fn (fun oc -> Pretty.print_grammar oc peg)
-      end;
       peg
     end
   in
+
+  begin
+    match !Opt.dump_canonified with
+    | None -> ()
+    | Some fn ->
+        info `Normal "Dumping canonified grammar to file %s" fn;
+        with_file_output fn (fun oc -> Pretty.print_grammar oc (Lazy.force peg_canonified))
+  end;
 
   let nog =
     lazy begin

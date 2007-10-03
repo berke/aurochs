@@ -49,12 +49,14 @@ let unescape_string ?(quotes=['\'']) u =
       | '[' -> Buffer.add_char b '['; loop0 (i + 1)
       | ']' -> Buffer.add_char b ']'; loop0 (i + 1)
       | '0'..'9' as c -> loop2 (i + 1) 1 ((Char.code c) land 15)
+      | 'x' -> loop3 (i + 1) 0 0
       | c when List.mem c quotes -> Buffer.add_char b c; loop0 (i + 1)
       | c -> invalid_arg (sf "Unknown escape character %C" c)
   and loop2 i j q =
     if j = 3 then
       begin
-        Buffer.add_char b (Char.chr q); loop0 i
+        Buffer.add_char b (Char.chr q);
+        loop0 i
       end
     else
       if i = m then
@@ -62,6 +64,21 @@ let unescape_string ?(quotes=['\'']) u =
       else
         match u.[i] with
         | '0'..'9' as c -> loop2 (i + 1) (j + 1) (10 * q + (Char.code c) land 15)
+        | c -> invalid_arg (sf "Invalid digit %C in decimal escape" c)
+  and loop3 i j q =
+    if j = 2 then
+      begin
+        Buffer.add_char b (Char.chr q);
+        loop0 i
+      end
+    else
+      if i = m then
+        invalid_arg "Unterminated hexadecimal escape string"
+      else
+        match u.[i] with
+        | '0'..'9' as c -> loop3 (i + 1) (j + 1) (q lsl 4 + (Char.code c) land 15)
+        | 'a'..'f' as c -> loop3 (i + 1) (j + 1) (q lsl 4 + (Char.code c - Char.code 'a' + 10))
+        | 'A'..'' as c -> loop3 (i + 1) (j + 1) (q lsl 4 + (Char.code c - Char.code 'a' + 10))
         | c -> invalid_arg (sf "Invalid digit %C in decimal escape" c)
   in
   loop0 0
