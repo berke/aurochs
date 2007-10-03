@@ -54,23 +54,14 @@ let parse_generic pg u =
 
 exception Compile_error of string
 
+(*** compile_inner *)
+let compile_inner ?start ?base ?root ?check u = failwith "Compile not implemented";;
+(* ***)
+
+let compiler : (?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary) ref = ref compile_inner;;
+
 (*** compile *)
-let compile ?(start="start") ?(base="") ?(root="root") ?(check=true) u =
-  let peg = Convert_grammar.convert_grammar & Grammar.parse u in
-  if check then
-    begin
-      let results = Check.check_grammar start peg in
-      List.iter
-        begin function
-          | `Warning _|`Info _ -> ()
-          | `Error u   -> raise(Compile_error u)
-        end
-        results;
-    end;
-  let peg_canonified = Canonify.canonify_grammar ~start peg in
-  let pg = Noggie.generate_code ~start ~root peg_canonified in
-  Bytes.with_buffer_sink (Noggie.put_program pg peg)
-;;
+let compile ?start ?base ?root ?check u = !compiler ?start ?base ?root ?check u;;
 (* ***)
 
 type data = [`File of string | `String of string];;

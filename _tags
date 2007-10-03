@@ -1,6 +1,6 @@
 <*/*.c>: cstuff, opt
 <genmachine.{byte,native}>: use_str, use_unix
-<{aurochs/test_aurochs,tests/test_{arith,inline}}.{byte,native}>: use_libaurochs
+<{aurochs/aurochs_tool,aurochs/test_aurochs,tests/test_{arith,inline}}.{byte,native}>: use_libaurochs
 <{util,peg,pack,syntax,nog,backends,front,aurochs}/*.cmx>: for-pack(Aurochs_pack)
 <aurochs_lib.{cma,cmxa}>: use_libaurochs
 true: debug

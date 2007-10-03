@@ -12,14 +12,7 @@ clean:
 	rm -rf _build/
 
 grammar.ml: aurochs grammar.peg
-	./aurochs.native -bootstrap -target ml -generate grammar.peg
-
-test_grammar:
-	ocamlbuild test_grammar.native
-
-test_arith: aurochs
-	./aurochs.native -target ml -generate arith.peg
-	ocamlbuild test_arith.native
+	./aurochs_tool.native -bootstrap -target ml -generate grammar.peg
 
 install: targets
 	cp aurochs_tool.native bin/aurochs

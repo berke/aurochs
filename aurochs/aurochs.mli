@@ -33,6 +33,9 @@ val parse_generic : generic_program -> string -> Peg.tree
 (** Exception raised when one tries to compile erroneous programs. *)
 exception Compile_error of string;;
 
+(** Mutable value for bootstrapping *)
+val compiler : (?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary) ref
+
 (** Interface to the compiler.
     Takes PEG source code and returns a program string. *)
 val compile : ?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary

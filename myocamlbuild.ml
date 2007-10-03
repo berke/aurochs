@@ -223,6 +223,22 @@ dispatch
           begin fun env _build ->
             Cmd(S[A"gcc"; A"cnog/check.o"; A"-L."; A"-laurochs"; A"-o"; A"cnog/check"])
           end;
+
+        rule "Bootstrap"
+          ~prods:["syntax/grammar.ml";"syntax/grammar.mli"]
+          ~deps:["aurochs/bootstrap.native";"syntax/grammar.peg"]
+          begin fun env _build ->
+            Cmd(S[A"aurochs/bootstrap.native"])
+          end;
+
+        (*rule "aurochs: .peg -> .ml,.mli"
+          ~prods:["%.ml";"%.mli"]
+          ~deps:["%.peg"; "aurochs/aurochs_tool.native"]
+            begin fun env _build ->
+              let peg = env "%.peg" and ml = env "%.ml" in
+              let tags = tags_of_pathname ml++"aurochs" in
+              Cmd(S[A"aurochs/aurochs_tool.native"; T tags; P peg])
+            end*)
       end
   | _ -> ()
   end
