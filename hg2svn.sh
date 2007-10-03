@@ -38,6 +38,8 @@ while true; do
   case $answer in
     yes)
       echo "Okidoki then."
+      rm -f aurochs/version.ml
+      echo "let version = $tip;" >aurochs/version.ml
       svn add -q $(hg manifest)
       svn commit -F /tmp/svnmessage$$
       echo $tip >.svnprev
