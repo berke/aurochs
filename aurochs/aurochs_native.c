@@ -193,9 +193,10 @@ static construction (start_construction)(info in, int id, unsigned char *name, i
 {
   construction_t *cons;
 
-  DEBUGF("Start construction");
   cons = alloc_malloc(in, sizeof(construction_t));
+  DEBUGF("Start construction %p", cons);
   if(!cons) caml_failwith("Cannot start construction");
+  cons->cons_value = Val_int(0);
   caml_register_global_root(&cons->cons_value);
   cons->cons_value = create_node(id, begin);
   return cons;
@@ -206,7 +207,7 @@ static tree finish_construction(info in, construction cons, int end)
   CAMLparam0();
   CAMLlocal1(nodev);
 
-  DEBUGF("Finish construction");
+  DEBUGF("Finish construction %p", cons);
   nodev = cons->cons_value;
   Store_field(nodev, AUROCHS_P_NODE_END_FIELD, Val_int(end));
   Store_field(nodev, AUROCHS_P_NODE_CHILD_FIELD, list_rev_append(Field(nodev, AUROCHS_P_NODE_CHILD_FIELD), Val_int(0)));
@@ -218,26 +219,35 @@ static tree finish_construction(info in, construction cons, int end)
 
 static bool add_children(info a, construction c, tree tr2)
 {
-  Store_field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD, cons(tr2, Field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD)));
-  return true;
+  CAMLparam1(tr2);
+  CAMLlocal1(consv);
+  consv = c->cons_value;
+  Store_field(consv, AUROCHS_P_NODE_CHILD_FIELD, cons(tr2, Field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD)));
+  CAMLreturnT(bool, true);
 }
 
 static bool add_token(info a, construction c, int t_begin, int t_end)
 {
-  Store_field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD,
-    cons(
-      create_token(t_begin, t_end),
-      Field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD)));
-  return true;
+  CAMLparam0();
+  CAMLlocal2(tokv, childv);
+
+  tokv = create_token(t_begin, t_end);
+  childv = cons(tokv, Field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD));
+  Store_field(c->cons_value, AUROCHS_P_NODE_CHILD_FIELD, childv);
+
+  CAMLreturnT(bool, true);
 }
 
 static bool add_attribute(info a, construction c, int id, unsigned char *name, int v_begin, int v_end)
 {
-  Store_field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD,
-    cons(
-      create_attribute(id, v_begin, v_end),
-      Field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD)));
-  return true;
+  CAMLparam0();
+  CAMLlocal2(attrv, attrsv);
+
+  attrv = create_attribute(id, v_begin, v_end);
+  attrsv = cons(attrv, Field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD));
+  Store_field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD, attrsv);
+
+  CAMLreturnT(bool, true);
 }
 
 #define ROOT_NODE_ID 0
