@@ -36,8 +36,11 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 
   return max_j;
 }/*}}}*/
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
-{
+
+typedef struct {
+  peg_context_t *cx;
+  nog_program_t *pg;
+  tree *result;
   bool fail;                /* Failure register */
   unsigned int boolean;     /* Small stack for evaluating boolean formulas */
   memo_t memo;              /* Register for accessing the memo table */
@@ -46,333 +49,337 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
   letter_t *head, *bof, *eof; /* Pointers to current position, beginning and end. */
   peg_builder_t *bd;
   info bi;
+} cnog_closure_t;
 
-  /* Initialize to defined values */
-  void init(void) {/*{{{*/
-    boolean = 0;
-    fail = false;
-    choice = 0;
-    memo = R_UNKNOWN;
-    head = cx->cx_input;
-    bof = head;
-    eof = cx->cx_input + cx->cx_input_length;
-    bd = cx->cx_builder;
-    bi = cx->cx_builder_info;
-    sp = cx->cx_stack;
-  }/*}}}*/
+/* Initialize to defined values */
+static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *result) {/*{{{*/
+  c->cx = cx;
+  c->pg = pg;
+  c->result = result;
+  c->boolean = 0;
+  c->fail = false;
+  c->choice = 0;
+  c->memo = R_UNKNOWN;
+  c->head = cx->cx_input;
+  c->bof = c->head;
+  c->eof = cx->cx_input + cx->cx_input_length;
+  c->bd = cx->cx_builder;
+  c->bi = cx->cx_builder_info;
+  c->sp = cx->cx_stack;
+}/*}}}*/
+/* Boolean stack manipulation */
+static void boolean_push(cnog_closure_t *c, bool x) {/*{{{*/
+  c->boolean <<= 1;
+  c->boolean |= x ? 1 : 0;
+}/*}}}*/
+static bool boolean_pop(cnog_closure_t *c) {/*{{{*/
+  bool result;
 
-  /* Boolean stack manipulation */
-  void boolean_push(bool x) {/*{{{*/
-    boolean <<= 1;
-    boolean |= x ? 1 : 0;
-  }/*}}}*/
-  bool boolean_pop(void) {/*{{{*/
-    bool result;
+  result = c->boolean & 1;
+  c->boolean >>= 1;
+  return result;
+}/*}}}*/
+/* Regular stack manipulation */
+static void stack_push(cnog_closure_t *c, symbol_t x) {/*{{{*/
+  assert(c->sp - c->cx->cx_stack < c->cx->cx_stack_size);
+  *(c->sp ++) = x;
+}/*}}}*/
+static symbol_t stack_pop(cnog_closure_t *c) {/*{{{*/
+  assert(c->sp > c->cx->cx_stack);
+  return *(-- c->sp);
+}/*}}}*/
+static symbol_t stack_top(cnog_closure_t *c) {/*{{{*/
+  assert(c->sp > c->cx->cx_stack);
+  return c->sp[-1];
+}/*}}}*/
+/* Execution loop */
+#define arg0() (ip->ni_arg[0].na_int)
+#define arg1() (ip->ni_arg[1].na_int)
+#define jump_to(pc) do { ip_next = c->pg->np_program + pc; } while(0)
+#define jump() do { jump_to(arg0()); } while(0)
 
-    result = boolean & 1;
-    boolean >>= 1;
-    return result;
-  }/*}}}*/
+static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instruction_t *ip_next, tree *result_tree) {/*{{{*/
+  nog_instruction_t *ip;
 
-  /* Regular stack manipulation */
-  void stack_push(symbol_t x) {/*{{{*/
-    assert(sp - cx->cx_stack < cx->cx_stack_size);
-    *(sp ++) = x;
-  }/*}}}*/
-  symbol_t stack_pop(void) {/*{{{*/
-    assert(sp > cx->cx_stack);
-    return *(-- sp);
-  }/*}}}*/
-  symbol_t stack_top(void) {/*{{{*/
-    assert(sp > cx->cx_stack);
-    return sp[-1];
-  }/*}}}*/
+  /*printf("run pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip_next - pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
+  if(!ip_next) return 0;
 
-  /* Execution loop */
-  nog_instruction_t *run(construction current, nog_instruction_t *ip_next, tree *result_tree) {/*{{{*/
-    nog_instruction_t *ip;
+  for(;;) {
+    ip = ip_next;
 
-    int arg0() { return ip->ni_arg[0].na_int; }
-    int arg1() { return ip->ni_arg[1].na_int; }
-    void jump_to(int pc) { ip_next = pg->np_program + pc; }
-    void jump(void) { jump_to(arg0()); } 
+    assert(c->pg->np_program <= ip && ip < c->pg->np_program + c->pg->np_count);
+    assert(c->bof <= c->head && c->head <= c->eof);
+    /*printf("pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip - c->pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
+    DEBUGF("%ld %ld %d\n", ip - c->pg->np_program, c->head - c->bof, c->fail);
 
-    /*printf("run pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip_next - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);*/
-    if(!ip_next) return 0;
+    ip_next = ip + 1;
 
-    for(;;) {
-      ip = ip_next;
+    switch(ip->ni_opcode) {
+      case NOG_BRA:
+        jump();
+        break;
 
-      assert(pg->np_program <= ip && ip < pg->np_program + pg->np_count);
-      assert(bof <= head && head <= eof);
-      /*printf("pc=%ld i=%ld sp=%ld fail=%d memo=%d\n", ip - pg->np_program, head - bof, sp - cx->cx_stack, fail, memo);*/
-      DEBUGF("%ld %ld %d\n", ip - pg->np_program, head - bof, fail);
+      case NOG_BEOF:
+        if(c->head == c->eof) jump();
+        break;
 
-      ip_next = ip + 1;
+      case NOG_BNEOF:
+        if(c->head < c->eof) jump();
+        break;
 
-      switch(ip->ni_opcode) {
-        case NOG_BRA:
+      case NOG_BFC:
+        if(!c->fail) jump();
+        break;
+
+      case NOG_BFS:
+        if(c->fail) jump();
+        break;
+
+      case NOG_BMB:
+        if(c->memo == R_BUSY) jump();
+        break;
+
+      case NOG_BMBF:
+        if(c->memo == R_BUSY || c->memo == R_FAIL) jump();
+        break;
+
+      case NOG_BMK:
+        if(c->memo != R_UNKNOWN) jump();
+        break;
+
+      case NOG_BMUK:
+        if(c->memo == R_UNKNOWN) jump();
+        break;
+
+      case NOG_BMF:
+        if(c->memo == R_FAIL) jump();
+        break;
+
+      case NOG_BBRC:
+        if(!boolean_pop(c)) jump();
+        break;
+        
+      case NOG_BBRS:
+        if(boolean_pop(c)) jump();
+        break;
+
+      case NOG_JSR:
+        (void) run(c, current, c->pg->np_program + arg0(), result_tree);
+        break;
+
+      case NOG_SBNS:
+        if(c->head < c->eof && *c->head == arg1()) {
+          c->head ++;
+        } else {
           jump();
-          break;
+        }
+        break;
 
-        case NOG_BEOF:
-          if(head == eof) jump();
-          break;
+      case NOG_BSLLT:
+        if(c->eof - c->head < arg1()) jump(); /* XXX */
+        break;
 
-        case NOG_BNEOF:
-          if(head < eof) jump();
-          break;
+      case NOG_BNBOF:
+        if(c->head != c->bof) jump();
+        break;
 
-        case NOG_BFC:
-          if(!fail) jump();
-          break;
+      case NOG_SSEQ:
+        boolean_push(c, c->head < c->eof && *c->head == arg0());
+        break;
 
-        case NOG_BFS:
-          if(fail) jump();
-          break;
+      case NOG_SSIR:
+        boolean_push(c, c->head < c->eof && arg0() <= *c->head && *c->head <= arg1());
+        break;
 
-        case NOG_BMB:
-          if(memo == R_BUSY) jump();
-          break;
+      case NOG_BTRUE:
+        boolean_push(c, true);
+        break;
 
-        case NOG_BMBF:
-          if(memo == R_BUSY || memo == R_FAIL) jump();
-          break;
+      case NOG_BFALSE:
+        boolean_push(c, false);
+        break;
 
-        case NOG_BMK:
-          if(memo != R_UNKNOWN) jump();
-          break;
+      case NOG_BAND:
+        {
+          bool b1, b2;
 
-        case NOG_BMUK:
-          if(memo == R_UNKNOWN) jump();
-          break;
+          b1 = boolean_pop(c);
+          b2 = boolean_pop(c);
+          boolean_push(c, b1 && b2);
+        }
+        break;
 
-        case NOG_BMF:
-          if(memo == R_FAIL) jump();
-          break;
+      case NOG_BOR:
+        {
+          bool b1, b2;
 
-        case NOG_BBRC:
-          if(!boolean_pop()) jump();
-          break;
-          
-        case NOG_BBRS:
-          if(boolean_pop()) jump();
-          break;
+          b1 = boolean_pop(c);
+          b2 = boolean_pop(c);
+          boolean_push(c, b1 || b2);
+        }
+        break;
 
-        case NOG_JSR:
-          (void) run(current, pg->np_program + arg0(), result_tree);
-          break;
+      case NOG_BNOT:
+        boolean_push(c, !boolean_pop(c));
+        break;
 
-        case NOG_SBNS:
-          if(head < eof && *head == arg1()) {
-            head ++;
-          } else {
-            jump();
+      case NOG_SETF:
+        c->fail = true;
+        break;
+
+      case NOG_CLRF:
+        c->fail = false;
+        break;
+
+      case NOG_RIGHT:
+        c->head += arg0();
+        break;
+
+      case NOG_PUSHP:
+        stack_push(c, c->head - c->bof);
+        break;
+
+      case NOG_POPP:
+        c->head = c->bof + stack_pop(c);
+        break;
+
+      case NOG_RESTP:
+        c->head = c->bof + stack_top(c);
+        break;
+
+      case NOG_DROPP:
+        (void) stack_pop(c);
+        break;
+
+      case NOG_LDMEM:
+        assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
+        c->memo = c->cx->cx_results[arg0()][c->head - c->bof];
+        break;
+
+      case NOG_LDCH:
+        assert(0 <= arg0() && arg0() < c->cx->cx_num_alternatives);
+        c->choice = c->cx->cx_alternatives[arg0()][c->head - c->bof];
+        break;
+
+      case NOG_POPSTMEMJ:
+        {
+          int position;
+
+          position = stack_pop(c);
+          assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
+          c->cx->cx_results[arg0()][position] = c->head - c->bof;
+        }
+        break;
+
+      case NOG_STMEMB:
+        assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
+        c->cx->cx_results[arg0()][c->head - c->bof] = R_BUSY;
+        break;
+
+      case NOG_STMEMF:
+        assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
+        c->cx->cx_results[arg0()][c->head - c->bof] = R_FAIL;
+        break;
+
+      case NOG_TOPSTCH:
+        {
+          int position;
+
+          position = stack_top(c);
+          assert(0 <= arg0() && arg0() < c->cx->cx_num_alternatives);
+          c->cx->cx_alternatives[arg0()][position] = arg1();
+        }
+        break;
+
+      case NOG_JMEM:
+        c->head = c->bof + c->memo;
+        break;
+
+      case NOG_RTS:
+        return ip_next;
+
+      case NOG_SWCH:
+        assert(c->choice < ip->ni_arg[0].na_table.nt_length);
+        jump_to(ip->ni_arg[0].na_table.nt_elements[c->choice]);
+        break;
+
+      case NOG_LABEL:
+        break;
+
+      /* Construction */
+      case NOG_SNODE:
+        {
+          int id;
+          unsigned char *name;
+          construction new_cons;
+          tree new_tree;
+
+          id = arg0();
+          name = c->pg->np_constructors[id].ns_chars;
+          new_cons = c->bd->pb_start_construction(c->bi, id, name, c->head - c->bof);
+          ip_next = run(c, new_cons, ip_next, &new_tree);
+          if(!ip_next || !new_tree) {
+            return 0; /* XXX */
           }
-          break;
+          /* new_tree = c->bd->pb_finish_construction(c->bi, new_cons); */
+          if(!c->bd->pb_add_children(c->bi, current, new_tree)) return 0;
+        }
+        break;
 
-        case NOG_BSLLT:
-          if(eof - head < arg1()) jump(); /* XXX */
-          break;
+      case NOG_FNODE:
+        if(result_tree) {
+          *result_tree = c->bd->pb_finish_construction(c->bi, current, c->head - c->bof);
+        } else {
+          printf("no c->result tree\n");
+        }
+        return ip_next;
 
-        case NOG_BNBOF:
-          if(head != bof) jump();
-          break;
+      case NOG_ATTR:
+        {
+          int id;
+          unsigned char *name;
 
-        case NOG_SSEQ:
-          boolean_push(head < eof && *head == arg0());
-          break;
+          id = arg0();
+          name = c->pg->np_attributes[id].ns_chars;
 
-        case NOG_SSIR:
-          boolean_push(head < eof && arg0() <= *head && *head <= arg1());
-          break;
+          if(!c->bd->pb_add_attribute(c->bi, current, id, name, c->head - c->bof, c->memo)) return 0;
+        }
+        break;
 
-        case NOG_BTRUE:
-          boolean_push(true);
-          break;
+      case NOG_POSATTR:
+        {
+          int id;
+          unsigned char *name;
 
-        case NOG_BFALSE:
-          boolean_push(false);
-          break;
+          id = arg0();
+          name = c->pg->np_attributes[id].ns_chars;
 
-        case NOG_BAND:
-          {
-            bool b1, b2;
+          if(!c->bd->pb_add_attribute(c->bi, current, id, name, c->head - c->bof, c->head - c->bof - 1)) return 0;
+        }
+        break;
 
-            b1 = boolean_pop();
-            b2 = boolean_pop();
-            boolean_push(b1 && b2);
-          }
-          break;
+      case NOG_TOKEN:
+        if(!c->bd->pb_add_token(c->bi, current, c->head - c->bof, c->memo)) return 0;
+        break;
 
-        case NOG_BOR:
-          {
-            bool b1, b2;
-
-            b1 = boolean_pop();
-            b2 = boolean_pop();
-            boolean_push(b1 || b2);
-          }
-          break;
-
-        case NOG_BNOT:
-          boolean_push(!boolean_pop());
-          break;
-
-        case NOG_SETF:
-          fail = true;
-          break;
-
-        case NOG_CLRF:
-          fail = false;
-          break;
-
-        case NOG_RIGHT:
-          head += arg0();
-          break;
-
-        case NOG_PUSHP:
-          stack_push(head - bof);
-          break;
-
-        case NOG_POPP:
-          head = bof + stack_pop();
-          break;
-
-        case NOG_RESTP:
-          head = bof + stack_top();
-          break;
-
-        case NOG_DROPP:
-          (void) stack_pop();
-          break;
-
-        case NOG_LDMEM:
-          assert(0 <= arg0() && arg0() < cx->cx_num_productions);
-          memo = cx->cx_results[arg0()][head - bof];
-          break;
-
-        case NOG_LDCH:
-          assert(0 <= arg0() && arg0() < cx->cx_num_alternatives);
-          choice = cx->cx_alternatives[arg0()][head - bof];
-          break;
-
-        case NOG_POPSTMEMJ:
-          {
-            int position;
-
-            position = stack_pop();
-            assert(0 <= arg0() && arg0() < cx->cx_num_productions);
-            cx->cx_results[arg0()][position] = head - bof;
-          }
-          break;
-
-        case NOG_STMEMB:
-          assert(0 <= arg0() && arg0() < cx->cx_num_productions);
-          cx->cx_results[arg0()][head - bof] = R_BUSY;
-          break;
-
-        case NOG_STMEMF:
-          assert(0 <= arg0() && arg0() < cx->cx_num_productions);
-          cx->cx_results[arg0()][head - bof] = R_FAIL;
-          break;
-
-        case NOG_TOPSTCH:
-          {
-            int position;
-
-            position = stack_top();
-            assert(0 <= arg0() && arg0() < cx->cx_num_alternatives);
-            cx->cx_alternatives[arg0()][position] = arg1();
-          }
-          break;
-
-        case NOG_JMEM:
-          head = bof + memo;
-          break;
-
-        case NOG_RTS:
-          return ip_next;
-
-        case NOG_SWCH:
-          assert(choice < ip->ni_arg[0].na_table.nt_length);
-          jump_to(ip->ni_arg[0].na_table.nt_elements[choice]);
-          break;
-
-        case NOG_LABEL:
-          break;
-
-        /* Construction */
-        case NOG_SNODE:
-          {
-            int id;
-            unsigned char *name;
-            construction new_cons;
-            tree new_tree;
-
-            id = arg0();
-            name = pg->np_constructors[id].ns_chars;
-            new_cons = bd->pb_start_construction(bi, id, name, head - bof);
-            ip_next = run(new_cons, ip_next, &new_tree);
-            if(!ip_next || !new_tree) {
-              return 0; /* XXX */
-            }
-            /* new_tree = bd->pb_finish_construction(bi, new_cons); */
-            if(!bd->pb_add_children(bi, current, new_tree)) return 0;
-          }
-          break;
-
-        case NOG_FNODE:
-          if(result_tree) {
-            *result_tree = bd->pb_finish_construction(bi, current, head - bof);
-          } else {
-            printf("no result tree\n");
-          }
-          return ip_next;
-
-        case NOG_ATTR:
-          {
-            int id;
-            unsigned char *name;
-
-            id = arg0();
-            name = pg->np_attributes[id].ns_chars;
-
-            if(!bd->pb_add_attribute(bi, current, id, name, head - bof, memo)) return 0;
-          }
-          break;
-
-        case NOG_POSATTR:
-          {
-            int id;
-            unsigned char *name;
-
-            id = arg0();
-            name = pg->np_attributes[id].ns_chars;
-
-            if(!bd->pb_add_attribute(bi, current, id, name, head - bof, head - bof - 1)) return 0;
-          }
-          break;
-
-        case NOG_TOKEN:
-          if(!bd->pb_add_token(bi, current, head - bof, memo)) return 0;
-          break;
-
-      }
     }
-  }/*}}}*/
+  }
+}/*}}}*/
+bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
+{
+  cnog_closure_t c;
 
-  init();
-  if(run(0, pg->np_program + pg->np_start_pc, 0)) {
-    if(!fail) {
+  init(&c, cx, pg, result);
+  if(run(&c, 0, pg->np_program + pg->np_start_pc, 0)) {
+    if(!c.fail) {
       /* Input parses.  Now construct a tree. */
       construction root;
 
-      if(result) {
-        init();
-        root = bd->pb_start_construction(bi, pg->np_root_constructor, pg->np_constructors[pg->np_root_constructor].ns_chars, 0);
-        (void) run(root, pg->np_program + pg->np_build_pc, 0);
-        *result = bd->pb_finish_construction(bi, root, head - bof);
+      if(c.result) {
+        init(&c, cx, pg, result);
+        root = c.bd->pb_start_construction(c.bi, pg->np_root_constructor, pg->np_constructors[pg->np_root_constructor].ns_chars, 0);
+        (void) run(&c, root, pg->np_program + pg->np_build_pc, 0);
+        *result = c.bd->pb_finish_construction(c.bi, root, c.head - c.bof);
       }
       return true; /* Can't fail (?) XXX */
     }
