@@ -29,7 +29,8 @@ let rec print_production priority oc = function
   | Position -> fp oc "position"
   | Tokenize x -> fp oc "{ %a }" (print_production true) x
   | Ascribe(n, x) -> fp oc "%s:%a" n (print_production false) x
-  | A x ->
+  | Ax(x, Case_insensitive) -> fp oc "%S^i" x
+  | Ax(x, Exact) | A x ->
       if String.length x = 1 then
         begin
           match x.[0] with

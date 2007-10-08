@@ -187,6 +187,10 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
         boolean_push(c, c->head < c->eof && *c->head == arg0());
         break;
 
+      case NOG_TSSEQ:
+        boolean_push(c, c->head < c->eof && c->pg->np_tables[arg0()].nt_entries[*c->head] == arg1());
+        break;
+
       case NOG_SSIR:
         boolean_push(c, c->head < c->eof && arg0() <= *c->head && *c->head <= arg1());
         break;
@@ -365,6 +369,14 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
     }
   }
 }/*}}}*/
+
+#undef arg0
+#undef arg1
+#undef jump_to
+#undef jump
+
+#define CNOG_VERSION 0x00010001
+
 bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
 {
   cnog_closure_t c;
@@ -390,7 +402,7 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
   uint64_t size;
-  int i;
+  int i, j;
 
   nog_program_t *fail(void) { return 0; }
 
@@ -409,6 +421,10 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   DEBUGF("Signature OK\n");
 
   if(!pack_read_uint64(pk, &version)) return fail();
+  if(version <= CNOG_VERSION) {
+    DEBUGF("Version too recent\n");
+    return fail(); /* Version too recent */
+  }
   DEBUGF("Version OK\n");
 
   if(!pack_read_uint(pk, &pg->np_start_pc)) return fail();
@@ -448,6 +464,20 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
     if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size, alloc)) return fail();
     pg->np_attributes[i].ns_length = size;
     DEBUGF("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
+  }
+
+  if(!pack_read_uint(pk, &pg->np_num_tables)) return fail();
+
+  DEBUGF("Num_tables is %d\n", pg->np_num_tables);
+  pg->np_tables = alloc_malloc(alloc, sizeof(nog_table_t) * pg->np_num_tables);
+  if(!pg->np_tables) return fail();
+
+  for(i = 0; i < pg->np_num_tables; i ++) {
+    if(!pack_read_uint(pk, &pg->np_tables[i].nt_classes)) return fail();
+
+    for(j = 0; j < NOG_TABLE_ENTRIES; j ++) {
+      if(!pack_read_uint(pk, pg->np_tables[i].nt_entries + j)) return fail();
+    }
   }
   
   if(!pack_read_uint(pk, &pg->np_count)) return fail();

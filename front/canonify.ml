@@ -13,7 +13,7 @@ exception Error of string;;
 
 (*** remove_actions *)
 let rec remove_actions = function
-  | (N _|A _|C _|Epsilon|Position|EOF|BOF) as t -> t
+  | (N _|A _|Ax _|C _|Epsilon|Position|EOF|BOF) as t -> t
   | Tokenize x -> remove_actions x
   | Ascribe(_, x) -> remove_actions x
   | And x -> And(remove_actions x)
@@ -57,7 +57,7 @@ let canonify_grammar ?start g =
         suggested_name
   in
   let rec transform top = function
-    | (N _|A _|C _|Epsilon|Position|EOF|BOF) as x -> x
+    | (N _|A _|Ax _|C _|Epsilon|Position|EOF|BOF) as x -> x
     | Tokenize x ->
         if top then
           Tokenize(transform false x)

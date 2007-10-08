@@ -48,6 +48,20 @@ let generate_code ~root ~start peg =
   let productions_array = ref []
   and choices_array = ref []
   in
+  let tables, tables_list = Hashtbl.create 100, ref [] in
+  let register_table t =
+    try
+      Hashtbl.find tables t
+    with
+    | Not_found ->
+        tables_list += t;
+        let id = Hashtbl.length tables in
+        Hashtbl.add tables t id;
+        id
+  in
+
+  let lowercase_table_id = lazy (register_table lowercase_table) in
+
   begin
     List.iter
       begin function (name, pe) ->
@@ -130,7 +144,19 @@ let generate_code ~root ~start peg =
     | BOF -> It(L(fail, BNBOF))
     | Tokenize x|Ascribe(_, x) -> compile_pexpr ?choice_number ~fail x (* Ignore tokenization/ascriptions *)
     | Build(_, xl) -> compile_pexpr ?choice_number ~fail (S xl)
-    | A v ->
+    | Ax(v, Case_insensitive) ->
+        begin
+          let m = String.length v in
+          let l = ref [] in
+          l := (L(fail, BSLLT m)) :: !l;
+          for i = 0 to m - 1 do
+            l += U(TSSEQ(Lazy.force lowercase_table_id, Char.code (Char.lowercase v.[i])));
+            l += L(fail, BBRC);
+            l += U(RIGHT 1)
+          done;
+          Lst(List.rev !l)
+        end
+    | Ax(v, Exact) | A v ->
         begin
           let m = String.length v in
           let l = ref [] in
@@ -282,7 +308,7 @@ let generate_code ~root ~start peg =
   let rec bexpr ?number ?choice_number = function
     | BOF | EOF | Position | Epsilon | And _ | Not _ -> empty
     | Opt _ | Star _ | Plus _ -> invalid_arg "Unremoved internal Opt, Star or Plus"
-    | A u -> It(U(RIGHT (String.length u)))
+    | Ax(u, _) | A u -> It(U(RIGHT (String.length u)))
     | C _ -> It(U(RIGHT 1))
     | N n ->
         (*if SS.mem n have_action_set then*)
@@ -379,6 +405,7 @@ let generate_code ~root ~start peg =
     pg_start_pc = start_pc;
     pg_build_pc = build_pc;
     pg_labels = lb;
+    pg_tables = Array.of_list (List.rev !tables_list);
     pg_productions = Array.of_list (List.rev !productions_array);
     pg_choices = Array.of_list (List.rev !choices_array);
     pg_root = root;
@@ -441,6 +468,19 @@ let put_program pg peg sk =
   info `Debug "Attributes:";
   dump_array attribute_numbers;
 
+  info `Debug "Tables";
+  Pack.write_uint sk & Array.length pg.pg_tables;
+  Array.iter
+    begin fun a ->
+      let top = 1 + Array.fold_left max 0 a in
+      Pack.write_uint sk top;
+      Array.iter
+        begin fun x ->
+          Pack.write_uint sk x
+        end
+        a
+    end
+    pg.pg_tables;
 
   Pack.write_uint sk & Array.length pg.pg_code;
   let resolve_attribute = Hashtbl.find attributes in

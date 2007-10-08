@@ -77,6 +77,8 @@ suffixable_expr ::=
 | <Not>op_not suffixable_expr</Not>
 | simple_expr;
 
+string_expr ::= space ('"' value:(((~ '"') (string_escape | [^"])))* '"') space;
+
 simple_expr ::=
   (op_l_paren expr op_r_paren)
 | <Position>op_position</Position>
@@ -88,7 +90,8 @@ simple_expr ::=
 | <BOF>op_bof</BOF>
 | <Sigma>op_sigma</Sigma>
 | <Ascribe>ident op_colon suffixable_expr</Ascribe>
-| <String>space ('"' value:(((~ '"') (string_escape | [^"])))* '"') space</String>
+| <Insensitive>string_expr '^' 'i'</Insensitive>
+| <String>string_expr</String>
 | <Char>space ('\'' value:(char_escape | ((~ char_escape) sigma)) '\'') space</Char>
 | <N>ident</N> | characters;
 

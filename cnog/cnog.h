@@ -27,7 +27,8 @@ typedef enum {
   NOG_SBNS,         /* Scan and branch to label if character does not match */
   NOG_BSLLT,        /* Branch if suffix length is less than given integer */
   NOG_BNBOF,        /* Branch if not BOF */
-  NOG_SSEQ,         /* Scan and push true if not equal, false otherwise */
+  NOG_SSEQ,         /* Scan and push true if equal, false otherwise */
+  NOG_TSSEQ,        /* Scan, translate and push true if equal, false otherwise */
   NOG_SSIR,         /* Scan and push true if char in range, false otherwise */
   NOG_BTRUE,        /* Push true on boolean stack */
   NOG_BFALSE,       /* Push false on boolean stack */
@@ -78,6 +79,13 @@ typedef struct {
   nog_arg_t ni_arg[NI_MAX_ARGS];
 } nog_instruction_t;
 
+#define NOG_TABLE_ENTRIES 256
+
+typedef struct {
+  unsigned int nt_classes;
+  unsigned int nt_entries[NOG_TABLE_ENTRIES];
+} nog_table_t;
+
 typedef struct {
   unsigned int np_count;
   unsigned int np_start_pc;
@@ -89,6 +97,8 @@ typedef struct {
   nog_string_t *np_constructors;
   unsigned int np_num_attributes;
   nog_string_t *np_attributes;
+  unsigned int np_num_tables;
+  nog_table_t *np_tables;
   nog_instruction_t *np_program;
 } nog_program_t;
 

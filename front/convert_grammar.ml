@@ -178,6 +178,7 @@ let rec convert_expression ~(modifier:'a Peg.pe modifier) = function
   | Node(N_Tight, [], xl) -> S(List.map (fun x -> convert_expression ~modifier x) xl)
   | Node(N_Option, [], [x]) -> Opt(convert_expression ~modifier x)
   | Node(N_String, [A_value, v], []) -> A(unescape_string ~quotes:['"'] v)
+  | Node(N_Insensitive, [A_value, v], []) -> Ax(unescape_string ~quotes:['"'] v, Case_insensitive)
   | Node(N_Char,   [A_value, v], []) -> A(unescape_string ~quotes:['\''] v)
   | Node(N_N, [A_name, name], []) -> N name
   | Node(N_Or, [], xl) -> Or(List.map (fun x -> convert_expression ~modifier x) xl)

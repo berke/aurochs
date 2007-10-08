@@ -132,7 +132,7 @@ let generate fn ?(start="start") peg =
     | And x -> fp oc "/* And */\n" (* XXX *)
     | Not x -> fp oc "/* Not */"   (* XXX *)
     | Opt _|Star _|Plus _ -> invalid_arg "Not supported"
-    | A v -> fp oc "i += %d;\n" (String.length v)
+    | Ax(v, _) | A v -> fp oc "i += %d;\n" (String.length v)
     | C _ -> fp oc "i ++;\n"
     (*| _ -> fp oc "i = c->c_result;\n"*)
   (* ***)
@@ -151,12 +151,20 @@ let generate fn ?(start="start") peg =
         fp oc "/* Ascribe %s */\n" n;
         gexpr x;
         fp oc "/* End ascribe %s */\n" n
-    | A v ->
+    | Ax(v, Exact) | A v ->
         let m = String.length v in
         fp oc "if(i > %d) i = R_FAIL;\n" (-m);
         fp oc "else do {\n";
         for i = 0 to m - 1 do
           fp oc "if(u[i++] != %a) { i = R_FAIL; break; }\n" print_c_char v.[i]
+        done;
+        fp oc "} while(0);\n";
+    | Ax(v, Case_insensitive) ->
+        let m = String.length v in
+        fp oc "if(i > %d) i = R_FAIL;\n" (-m);
+        fp oc "else do {\n";
+        for i = 0 to m - 1 do
+          fp oc "if(tolower(u[i++]) != %a) { i = R_FAIL; break; }\n" print_c_char (Char.lowercase v.[i])
         done;
         fp oc "} while(0);\n";
     | C b ->

@@ -2,6 +2,7 @@
 
 open Machine;;
 open Pffpsf;;
+open Util.Syntax;;
 
 exception Parse_error of int;;
 
@@ -40,9 +41,12 @@ type ('nd, 'at) program = {
   pg_labels      : int SM.t;
   pg_productions : string array;
   pg_choices     : string array;
+  pg_tables      : int array array;
   pg_root        : 'nd;    (** Name of the root node *)
   pg_code        : ('nd, 'at) code
 };;
+
+let lowercase_table = Array.init 256 (fun k -> Char.code & Char.lowercase & Char.chr k);;
 
 type memo =
 | Unknown
@@ -253,7 +257,14 @@ let execute_positioned_quick program
                | BTRUE -> Stack.push true c.boolean
                | BFALSE -> Stack.push false c.boolean
                | SSIR(c1, c2) -> Stack.push (c.head < m && c1 <= u.[c.head] && u.[c.head] <= c2) c.boolean
-               | SSEQ(ch) -> Stack.push (c.head < m && ch = u.[c.head]) c.boolean
+               | SSEQ ch -> Stack.push (c.head < m && ch = u.[c.head]) c.boolean
+               | TSSEQ(ti, k) ->
+                   Stack.push (c.head < m &&
+                     begin
+                       let c = Char.code u.[c.head] in
+                       program.pg_tables.(ti).(c) = k
+                     end)
+                     c.boolean
                | RIGHT n -> c.head <- n + c.head
                | JMEM ->
                  begin
@@ -487,6 +498,13 @@ let execute_positioned program
                  | BFALSE -> Stack.push false c.boolean
                  | SSIR(c1, c2) -> Stack.push (c.head < m && c1 <= u.[c.head] && u.[c.head] <= c2) c.boolean
                  | SSEQ(ch) -> Stack.push (c.head < m && ch = u.[c.head]) c.boolean
+                 | TSSEQ(ti, k) ->
+                     Stack.push (c.head < m &&
+                       begin
+                         let cc = Char.code u.[c.head] in
+                         program.pg_tables.(ti).(cc) = k
+                       end)
+                       c.boolean
                  | RIGHT n -> if c.head + n - 1 <= m then c.head <- n + c.head else invalid_arg (sf "RIGHT %d at %d" n c.head)
                  | JMEM ->
                    begin

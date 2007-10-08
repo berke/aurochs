@@ -178,7 +178,7 @@ let gen_c_unpacker ops fn =
         ops;
 
       fp occ "    default:\n";
-      fp occ "      abort(); /* Unknown opcode */\n";
+      fp occ "      return false; /* Unknown opcode */\n";
       fp occ "  }\n";
       fp occ "  return true;\n";
       fp occ "}\n";

@@ -5,12 +5,18 @@ type char_set =
   | Many of char list
   | Range of char * char
 
+type match_options =
+  | Exact
+  | Case_insensitive
+;;
+
 type 'a pe =
   | Epsilon
   | Position
   | Tokenize of 'a pe
   | Ascribe of string * 'a pe
   | A of string (* Atom *)
+  | Ax of string * match_options
   | C of char_set Boolean.t
   | N of 'a (* Nonterminal *)
   | S of 'a pe list (* Sequence *)

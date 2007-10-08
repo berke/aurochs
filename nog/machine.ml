@@ -1,7 +1,7 @@
 (* Machine *)
 
 let nog_signature = 0xABBE55E5L;;
-let nog_version   = 0x00010001L;;
+let nog_version   = 0x00010002L;;
 
 let fp = Printf.fprintf;;
 
@@ -32,7 +32,7 @@ type labelable_instruction =
 ;;
 
 type ('nd,'at) unlabelable_instruction =
-  (* %opcode{U16c} *)  | SSEQ of char               (** Scan and push true if not equal, false otherwise *)
+  (* %opcode{U16c} *)  | SSEQ of char               (** Scan and push true if equal, false otherwise *)
   (* %opcode{U17cc} *) | SSIR of char * char        (** Scan and push true if char in range, false otherwise *)
   (* %opcode{U18} *)   | BTRUE                      (** Push true on boolean stack *)
   (* %opcode{U19} *)   | BFALSE                     (** Push false on boolean stack *)
@@ -61,6 +61,7 @@ type ('nd,'at) unlabelable_instruction =
                                                        and the head position to the current construction *)
   (* %opcode{U41a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
   (* %opcode{U42} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
+  (* %opcode{U45ii} *) | TSSEQ of int * int         (** Scan, translate and push true if result in equal *)
 ;;
 
 type ('nd,'at,'label) instruction =
@@ -100,6 +101,7 @@ let print_labelable oc = function
 ;;
 
 let print_unlabelable ~print_node ~print_attr oc = function
+  | TSSEQ(ti, k) -> fp oc "TSSEQ(%d, %d)" ti k
   | SSEQ c -> fp oc "SSEQ %C" c
   | SSIR(c1, c2) -> fp oc "SSIR(%C, %C)" c1 c2
   | BFALSE -> fp oc "BFALSE"

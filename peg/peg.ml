@@ -9,12 +9,18 @@ type char_set =
   | Range of char * char
 ;;
 
+type match_options =
+  | Exact
+  | Case_insensitive
+;;
+
 type 'a pe =
   | Epsilon
   | Position
   | Tokenize of 'a pe
   | Ascribe of string * 'a pe
   | A of string (* Atom *)
+  | Ax of string * match_options
   | C of char_set Boolean.t
   | N of 'a (* Nonterminal *)
   | S of 'a pe list (* Sequence *)
@@ -83,7 +89,7 @@ let rec relativize u = function
 (*** iter_over_n *)
 let rec iter_over_n f = function
   | N x -> f x
-  | Epsilon|EOF|BOF|Position|A _|C _ -> ()
+  | Epsilon|EOF|BOF|Position|A _|Ax _|C _ -> ()
   | Tokenize x|Ascribe(_,x)|And x|Not x|Opt x|Star x|Plus x -> iter_over_n f x
   | S xl|Build(_, xl)|Or xl -> List.iter (iter_over_n f) xl
 ;;
@@ -96,6 +102,7 @@ let rec map_over_n f = function
   | EOF -> EOF
   | BOF -> BOF
   | A u -> A u
+  | Ax(u, o) -> Ax(u, o)
   | C c -> C c
   | Tokenize x -> Tokenize(map_over_n f x)
   | Ascribe(n, x) -> Ascribe(n, map_over_n f x)
@@ -111,7 +118,7 @@ let rec map_over_n f = function
 (* ***)
 (*** iter_over_builds *)
 let rec iter_over_builds f = function
-  | N _ | Epsilon | Position | EOF | BOF | A _ | C _ -> ()
+  | N _ | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> ()
   | And x | Not x | Opt x | Star x | Plus x | Tokenize x | Ascribe(_, x) -> iter_over_builds f x
   | Build(n, xl) -> f n; List.iter (iter_over_builds f) xl
   | S xl | Or xl -> List.iter (iter_over_builds f) xl
@@ -119,7 +126,7 @@ let rec iter_over_builds f = function
 (* ***)
 (*** iter_over_attributes *)
 let rec iter_over_attributes f = function
-  | N _ | Epsilon | Position | EOF | BOF | A _ | C _ -> ()
+  | N _ | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> ()
   | And x | Not x | Opt x | Star x | Plus x | Tokenize x -> iter_over_attributes f x
   | Ascribe(a, x) -> f a; iter_over_attributes f x
   | Build(_, xl) | S xl | Or xl -> List.iter (iter_over_attributes f) xl
@@ -168,7 +175,7 @@ let compute_active_terminals peg =
     begin fun (n, x) ->
       let rec loop = function
         | N n' -> is_genitor n n'
-        | Epsilon | Position | EOF | BOF | A _ | C _ -> ()
+        | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> ()
         | And x | Not x | Opt x | Star x | Plus x | Tokenize x | Ascribe(_, x) -> loop x
         | Build(_, xl) | S xl | Or xl -> List.iter loop xl
       in
@@ -203,7 +210,7 @@ let compute_active_terminals peg =
   
   let rec active_root = function
     | N n' -> false
-    | Epsilon | Position | EOF | BOF | A _ | C _ -> false
+    | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> false
     | And x | Not x | Opt x | Star x | Plus x -> active_root x
     | Tokenize _ | Ascribe(_, _) | Build(_, _)-> true
     | S xl | Or xl -> List.exists active_root xl
@@ -390,7 +397,13 @@ let process resolve peg u =
                     (i + 1, Empty_)
                   else
                     raise Fail
-              | A v ->
+              | Ax(v, Case_insensitive) ->
+                  let n = String.length v in
+                  if is_factor (String.lowercase v) (String.lowercase u) i then
+                    (i + n, Empty_)
+                  else
+                    raise Fail
+              | Ax(v, Exact) | A v ->
                   let n = String.length v in
                   if is_factor v u i then
                     (i + n, Empty_)
