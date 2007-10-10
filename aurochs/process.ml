@@ -306,7 +306,7 @@ let process fno =
           begin
             match fno with
             | None -> raise (Error "Specify base name with -base <name>")
-            | Some fn -> Filename.chop_extension fn
+            | Some fn -> Filename.basename (Filename.chop_extension fn)
           end
       | Some fn' -> fn'
     end
