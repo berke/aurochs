@@ -7,10 +7,24 @@
 #include <stack.h>
 #include <alloc.h>
 
-typedef jint *tree;
-typedef jint *attribute;
-typedef jint *construction;
-typedef alloc_t *info;
+typedef jobject tree;
+typedef jobject construction;
+
+typedef struct {
+  alloc_t *i_alloc;
+  JNIEnv *i_jnienv;
+
+  jclass i_node_class;
+
+  jmethodID i_constructor_mid;
+  jmethodID i_add_token_mid;
+  jmethodID i_add_attribute_mid;
+  jmethodID i_add_children_mid;
+
+  jobject exc;
+} info_t;
+
+typedef info_t *info;
 
 #define BUILDER_TYPES_DEFINED 1
 
@@ -37,27 +51,48 @@ static void fail(JNIEnv *env, const char *msg)
 
 static construction start_construction(info in, int id, unsigned char *name, int begin)
 {
-  printf("Start construction %s @ %d\n", name, begin);
-  return 0;
+  jobject node;
+  jstring jname;
+  JNIEnv *env;
+
+  env = in->i_jnienv;
+
+  jname = (*env)->NewStringUTF(env, (char *) name);
+  if(!jname) return 0;
+
+  node = (*env)->NewObjectA(env, in->i_node_class, in->i_constructor_mid,
+                            (jvalue *) &jname);
+  return node;
 }
 static tree finish_construction(info in, construction cons, int end)
 {
-  printf("Finish construction %d, info = %p\n", end, in);
-  return 0;
+  return cons;
 }
-static bool add_children(info a, construction c, tree tr2)
+static bool add_children(info in, construction c, tree tr2)
 {
-  printf("Add children\n");
+  JNIEnv *env;
+
+  env = in->i_jnienv;
+  (*env)->CallVoidMethod(env, c, in->i_add_children_mid, tr2);
   return true;
 }
-static bool add_token(info a, construction c, int t_begin, int t_end)
+static bool add_token(info in, construction c, int t_begin, int t_end)
 {
-  printf("Add token %d-%d\n", t_begin, t_end);
+  JNIEnv *env;
+
+  env = in->i_jnienv;
+  (*env)->CallVoidMethod(env, c, in->i_add_token_mid, t_begin, t_end);
   return true;
 }
-static bool add_attribute(info a, construction c, int id, unsigned char *name, int v_begin, int v_end)
+static bool add_attribute(info in, construction c, int id, unsigned char *name, int v_begin, int v_end)
 {
-  printf("Add attribute %s %d-%d\n", name, v_begin, v_end);
+  JNIEnv *env;
+  jstring jname;
+
+  env = in->i_jnienv;
+  jname = (*env)->NewStringUTF(env, (char *) name);
+  if(!jname) return 0;
+  (*env)->CallVoidMethod(env, c, in->i_add_attribute_mid, jname, v_begin, v_end);
   return true;
 }
 
@@ -71,13 +106,11 @@ JNIEXPORT jlong JNICALL Java_fr_aurochs_Parser_unpack (JNIEnv *env, jobject obj,
 
   binary = (uint8_t *) (*env)->GetByteArrayElements(env, nog, 0);
   length = (*env)->GetArrayLength(env, nog);
-  printf("Length is %ld\n", length);
   if(pack_init_from_string(&pk, binary, length)) {
     s = stack_create(&alloc_stdlib);
     if(s) {
       pg = cnog_unpack_program(&s->s_alloc, &pk);
       (*env)->ReleaseByteArrayElements(env, nog, (jbyte *) binary, JNI_ABORT);
-      printf("pg = %p\n", pg);
       return (jlong) pg;
     }
     //stack_dispose(s);
@@ -97,7 +130,7 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
   peg_context_t *cx;
   stack_t *s;
   peg_builder_t builder;
-  info builder_info;
+  info_t builder_info;
   tree tree;
   jobject result;
 
@@ -121,12 +154,10 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
     fail(env, "Program is null");
     goto bye;
   }
-  printf("Got pg at %p\n", pg);
 
   /* Get byte pointer to the input */
   input = (uint8_t *) (*env)->GetByteArrayElements(env, ub, 0);
   input_length = (*env)->GetArrayLength(env, ub);
-  printf("Length is %ld\n", input_length);
 
   /* Do stuff */
   s = stack_create(&alloc_stdlib);
@@ -135,53 +166,69 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
     goto bye;
   }
 
-  builder_info = &s->s_alloc;
-  printf("Info = %p\n", builder_info);
+  builder_info.i_alloc = &s->s_alloc;
+  builder_info.i_jnienv = env;
 
-  builder.pb_info = builder_info;
+  builder_info.i_node_class = (*env)->FindClass(env, "fr/aurochs/Node");
+  if(!builder_info.i_node_class) {
+    fail(env, "Can't find Node class");
+    goto bye;
+  }
+
+#define F(x) x
+#define JFUN(x,y) "(" F(x) ")" F(y)
+#define JCLS(x) "L" F(x) ";"
+#define JVOID "V"
+#define JINT "I"
+#define JSTR JCLS("java/lang/String")
+#define JNODE JCLS("fr/aurochs/Node")
+#define JTREE JCLS("fr/aurochs/Tree")
+
+  builder_info.i_constructor_mid   = (*env)->GetMethodID(env, builder_info.i_node_class, "<init>",       JFUN(JSTR, JVOID));
+  if(!builder_info.i_constructor_mid) { fail(env, "Can't find constructor"); goto bye; }
+
+  builder_info.i_add_token_mid     = (*env)->GetMethodID(env, builder_info.i_node_class, "addToken",     JFUN(JINT JINT, JVOID));
+  if(!builder_info.i_add_token_mid) { fail(env, "Can't find addToken method"); goto bye; }
+
+  builder_info.i_add_attribute_mid = (*env)->GetMethodID(env, builder_info.i_node_class, "addAttribute", JFUN(JSTR JINT JINT, JVOID));
+  if(!builder_info.i_add_attribute_mid) { fail(env, "Can't find addAttribute method"); goto bye; }
+
+  builder_info.i_add_children_mid  = (*env)->GetMethodID(env, builder_info.i_node_class, "addChildren",  JFUN(JTREE, JVOID));
+  if(!builder_info.i_add_children_mid) { fail(env, "Can't find addChildren method"); goto bye; }
+
+  builder.pb_info = &builder_info;
   builder.pb_start_construction = start_construction;
   builder.pb_add_children = add_children;
   builder.pb_add_attribute = add_attribute;
   builder.pb_add_token = add_token;
   builder.pb_finish_construction = finish_construction;
 
-  cx = peg_create_context(&alloc_stdlib, pg, &builder, builder_info, input, input_length);
+  cx = peg_create_context(&alloc_stdlib, pg, &builder, &builder_info, input, input_length);
   if(!cx) {
-    //stack_dispose(s);
+    stack_dispose(s);
     fail(env, "Can't allocate context");
     goto bye;
   }
 
-  {
-    int i;
-    for(i = 0; i < input_length; i ++) {
-      printf("  input[%d] = %c\n", i, input[i]);
-    }
-  }
-  printf("Execute\n");
   if(cnog_execute(cx, pg, &tree)) {
-
+    peg_delete_context(cx);
+    stack_dispose(s);
+    return tree;
   } else {
     jclass cls;
     jint pos;
     jmethodID mid;
     jobject exc;
 
-    printf("Failed!\n");
     pos = cnog_error_position(cx, pg);
-    printf("Position =%d\n", pos);
     peg_delete_context(cx);
-    //stack_dispose(s);
+    stack_dispose(s);
 
-    printf("Disposed\n");
     cls = (*env)->FindClass(env, "fr/aurochs/ParseError");
-    printf("Class %p\n", cls);
     if(!cls) goto bye;
     mid = (*env)->GetMethodID(env, cls, "<init>", "(I)V");
-    printf("Method %p\n", mid);
     if(!mid) goto bye;
     exc = (*env)->NewObjectA(env, cls, mid, (jvalue *) &pos);
-    printf("Exception %p\n", exc);
     if(!exc) goto bye;
     if(!exc){
       goto bye;
