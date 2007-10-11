@@ -57,14 +57,19 @@ class Node extends Tree {
     for(Attribute a : attributes) {
       out.printf(" %s=\"%s\"", a.name, input.substring(a.start, a.end));
     }
-    out.printf(">\n");
 
-    for(Tree t : children) {
-      t.print(out, indent + 1, input);
+    if(children.isEmpty()) {
+      out.printf("/>\n");
+    } else {
+      out.printf(">\n");
+
+      for(Tree t : children) {
+        t.print(out, indent + 1, input);
+      }
+
+      putIndent(out, indent);
+      out.printf("</%s>\n", name);
     }
-
-    putIndent(out, indent);
-    out.printf("</%s>\n", name);
   }
 }
 
@@ -99,7 +104,6 @@ class Parser {
 
   Parser(byte[] nog) throws NOGexception {
     program = unpack(nog);
-    System.out.printf("Program = %d\n", program);
     if(program == 0) {
       throw new NOGexception();
     }

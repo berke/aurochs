@@ -113,7 +113,7 @@ JNIEXPORT jlong JNICALL Java_fr_aurochs_Parser_unpack (JNIEnv *env, jobject obj,
       (*env)->ReleaseByteArrayElements(env, nog, (jbyte *) binary, JNI_ABORT);
       return (jlong) pg;
     }
-    //stack_dispose(s);
+    stack_dispose(s);
   }
   pack_shutdown(&pk);
 
