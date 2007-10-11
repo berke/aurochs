@@ -25,6 +25,15 @@ class Attribute {
     this.start = start;
     this.end = end;
   }
+
+  void print(PrintStream out, String input) {
+     out.printf("%s=\"", name);
+     if(start < end) {
+       out.printf("%s\"", input.substring(start, end));
+     } else {
+       out.printf("%d\"", start);
+     }
+  }
 }
 
 class Node extends Tree {
@@ -55,7 +64,8 @@ class Node extends Tree {
 
     out.printf("<%s", name);
     for(Attribute a : attributes) {
-      out.printf(" %s=\"%s\"", a.name, input.substring(a.start, a.end));
+      out.printf(" ");
+      a.print(out, input);
     }
 
     if(children.isEmpty()) {
