@@ -11,6 +11,8 @@
 
 #if 0
 #define DEBUGF(x, y...) printf(x, ##y);
+#undef assert
+#define assert(x) do { if(!(x)) { DEBUGF("Fuck: " #x "\n"); } } while(0)
 #else
 #define DEBUGF(x,...)
 #endif
@@ -322,8 +324,8 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
           name = c->pg->np_constructors[id].ns_chars;
           new_cons = c->bd->pb_start_construction(c->bi, id, name, c->head - c->bof);
           ip_next = run(c, new_cons, ip_next, &new_tree);
-          if(!ip_next || !new_tree) {
-            return 0; /* XXX */
+          if(!ip_next) {
+            return 0;
           }
           /* new_tree = c->bd->pb_finish_construction(c->bi, new_cons); */
           if(!c->bd->pb_add_children(c->bi, current, new_tree)) return 0;
@@ -333,8 +335,6 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
       case NOG_FNODE:
         if(result_tree) {
           *result_tree = c->bd->pb_finish_construction(c->bi, current, c->head - c->bof);
-        } else {
-          printf("no c->result tree\n");
         }
         return ip_next;
 

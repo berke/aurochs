@@ -30,7 +30,9 @@ typedef unsigned char choice_t;
 typedef int symbol_t;
 
 /* Builder callbacks */
-#ifndef BUILDER_TYPES_DEFINED
+#if BUILDER_TYPES_DEFINED
+#warning "Builder types already defined"
+#else
 typedef struct { }* info;
 typedef struct { }* tree;
 typedef struct { }* construction;

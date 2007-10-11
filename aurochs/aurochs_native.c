@@ -191,7 +191,7 @@ static value create_node(int id, int begin)
   CAMLreturn(treev);
 }
 
-static construction (start_construction)(info in, int id, unsigned char *name, int begin)
+static construction start_construction(info in, int id, unsigned char *name, int begin)
 {
   construction_t *cons;
 
@@ -339,10 +339,14 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
 
   cx = peg_create_context(&alloc_stdlib, pg, &builder, builder_info, input, input_length);
   DEBUGF("Created context of input length %ld", input_length);
-  if(!cx) caml_failwith("Can't allocate context");
+  if(!cx) {
+    stack_dispose(s);
+    caml_failwith("Can't allocate context");
+  }
 
   if(cnog_execute(cx, pg, &treev)) {
     peg_delete_context(cx);
+    stack_dispose(s);
     CAMLreturn(some(treev));
   } else {
     /* We've got a parse error, compute its position. */
@@ -351,6 +355,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
     pos = cnog_error_position(cx, pg);
     Store_field(errorv, 0, Val_int(pos));
     peg_delete_context(cx);
+    stack_dispose(s);
     CAMLreturn(none); /* None */
   }
 }/*}}}*/

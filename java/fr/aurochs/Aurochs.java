@@ -26,6 +26,9 @@ class Token extends Tree {
 
 class ParseError extends Exception {
   int position;
+  ParseError(int x) {
+    position = x;
+  }
 }
 
 class NOGexception extends Exception { }

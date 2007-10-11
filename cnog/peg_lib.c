@@ -78,6 +78,7 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
   cx->cx_num_productions = num_productions;
 
   cx->cx_alternatives = alloc_malloc(alloc, sizeof(choice_t *) * num_alternatives);
+  if(!cx->cx_alternatives) return 0;
   alternatives = alloc_malloc(alloc, sizeof(choice_t) * (input_length + 1) * num_alternatives);
   if(!alternatives) return 0;
   for(i = 0; i < num_alternatives * (input_length + 1); i ++) {
@@ -88,6 +89,7 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
   }
 
   cx->cx_results = alloc_malloc(alloc, sizeof(result_t *) * num_productions);
+  if(!cx->cx_results) return 0;
   results = alloc_malloc(alloc, sizeof(result_t) * (input_length + 1) * num_productions);
   if(!results) return 0;
   for(i = 0; i < num_productions * (input_length + 1); i ++) {

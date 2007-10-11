@@ -17,7 +17,7 @@ INCDIRS=/opt/sun-jdk-$(VERSION)/include /opt/sun-jdk-$(VERSION)/include/linux ..
 INCLUDES=$(addprefix -I, $(INCDIRS))
 
 CC=gcc
-CFLAGS=$(INCLUDES) -fPIC -c -std=c99
+CFLAGS=$(INCLUDES) -Wall -fPIC -c -std=c99
 
 CXX=g++
 CXXFLAGS=$(CFLAGS)
@@ -27,7 +27,7 @@ CXXFLAGS=$(CFLAGS)
 all: build java lib
 
 test: all arith.nog
-	LD_LIBRARY_PATH=. java -classpath . fr.aurochs.Test arith.nog /etc/passwd
+	LD_LIBRARY_PATH=. java -classpath . fr.aurochs.Test arith.nog arith.txt
 
 %.nog: %.peg
 	../aurochs_tool.native -target nog -generate $<
