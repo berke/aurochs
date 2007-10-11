@@ -4,3 +4,4 @@
 <{util,peg,pack,syntax,nog,backends,front,aurochs}/*.cmx>: for-pack(Aurochs_pack)
 <aurochs_lib.{cma,cmxa}>: use_libaurochs
 true: debug
+<java/**>: not_hygienic

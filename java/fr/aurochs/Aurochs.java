@@ -28,19 +28,25 @@ class ParseError extends Exception {
   int position;
 }
 
+class NOGexception extends Exception { }
+
 class Parser {
   private long program;
 
   private native long unpack(byte[] nog);
 
-  Parser(byte[] nog) {
+  Parser(byte[] nog) throws NOGexception {
     program = unpack(nog);
+    System.out.printf("Program = %d\n", program);
+    if(program == 0) {
+      throw new NOGexception();
+    }
   }
 
-  native Tree parse(String u) throws ParseError;
+  native Tree parse(byte[] u) throws ParseError;
 
   static
   {
-    System.loadLibrary("aurochs_java");
+    System.loadLibrary("aurochsjava");
   }
 }
