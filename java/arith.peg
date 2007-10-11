@@ -15,7 +15,7 @@ op_mul    ::= s'*'s;
 op_lparen ::= s'('s;
 op_rparen ::= s')'s;
 
-  start ::= sum EOF;
+  start ::= s sum s EOF;
   expression ::= sum;
 
   sum ::=

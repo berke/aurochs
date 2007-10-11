@@ -27,7 +27,7 @@ CXXFLAGS=$(CFLAGS)
 all: build java lib
 
 test: all arith.nog
-	LD_LIBRARY_PATH=. java -classpath . fr.aurochs.Test arith.nog arith.txt
+	LD_LIBRARY_PATH=. $(JAVA) -classpath . fr.aurochs.Test arith.nog arith.txt
 
 %.nog: %.peg
 	../aurochs_tool.native -target nog -generate $<
