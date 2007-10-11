@@ -1,4 +1,4 @@
-<*/*.c>: cstuff, opt
+<*/*.c>: cstuff, optimize
 <genmachine.{byte,native}>: use_str, use_unix
 <{aurochs/aurochs_tool,aurochs/test_aurochs,tests/test_{arith,inline}}.{byte,native}>: use_libaurochs
 <{util,peg,pack,syntax,nog,backends,front,aurochs}/*.cmx>: for-pack(Aurochs_pack)
