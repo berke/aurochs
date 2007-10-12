@@ -2,29 +2,39 @@
 
 SRC=src
 OBJ=obj
+DYNOBJ=dyn
 LIB=lib
 BIN=bin
 
 AR=ar
 CC=gcc
 CFLAGS=-Wall -O3
+DYNCFLAGS=$(CFLAGS) -fPIC
 INCDIRS=-Iinclude
 HEADERS=include/base_types.h include/stack.h include/alloc.h include/pack.h include/peg_prelude.h include/peg_lib.h include/peg.h include/parse_tree.h include/cnog.h
 OBJS=$(addprefix $(OBJ)/, stack.o alloc.o pack.o peg_lib.o parse_tree.o cnog.o cnog_unpack.o)
+DYNOBJS=$(addprefix $(DYNOBJ)/, stack.o alloc.o pack.o peg_lib.o parse_tree.o cnog.o cnog_unpack.o)
 
 .PHONY: all clean
 
-all: $(LIB)/libaurochs.a $(BIN)/check
+all: $(LIB)/libaurochs.a $(LIB)/libaurochs.so $(BIN)/check
 
 clean:
-	rm -f obj/*.o
-	rm -f lib/*.a
+	rm -f $(OBJ)/*.o
+	rm -f $(DYNOBJ)/*.o
+	rm -f $(LIB)/*.a
 
 $(LIB)/libaurochs.a: $(OBJS)
 	$(AR) r $@ $(OBJS)
+
+$(LIB)/libaurochs.so: $(DYNOBJS)
+	$(CC) -shared $(DYNOBJS) -o $@
 	
 $(OBJ)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) $(INCDIRS) -c $< -o $@
+
+$(DYNOBJ)/%.o: $(SRC)/%.c
+	$(CC) $(DYNCFLAGS) $(INCDIRS) -c $< -o $@
 
 $(BIN)/check: $(OBJ)/check.o $(LIB)/libaurochs.a
 	$(CC) $(CFLAGS) $< -L$(LIB) -laurochs -o $@

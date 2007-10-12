@@ -123,6 +123,6 @@ class Parser {
 
   static
   {
-    System.loadLibrary("aurochsjava");
+    System.loadLibrary("aurochs");
   }
 }
