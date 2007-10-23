@@ -31,7 +31,7 @@ CXXFLAGS=$(CFLAGS)
 
 .PHONY: all build clean cac lib test java
 
-avll: build java lib
+all: build java lib
 
 test: all $(OBJ)/arith.nog
 	LD_LIBRARY_PATH=lib $(JAVA) $(JAVAFLAGS) fr.aurochs.Test obj/arith.nog java/arith.txt
@@ -57,10 +57,10 @@ $(DYNOBJ)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.class
-	rm -f *.o
-	rm -f *.so
-	rm -f *.h
-	rm -f `find . -name '*.class'`
+	rm -f $(OBJ)/*.nog
+	rm -f $(DYNOBJ)/*.o
+	rm -f $(LIB)/*.so
+	rm -f $(DIR)/fr_aurochs_Parser.h
+	rm -f `find $(DIR) -name '*.class'`
 
 cac: clean all check

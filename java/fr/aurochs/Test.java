@@ -21,23 +21,27 @@ class Test {
   }
   public static void main(String[] args) {
     String nog_fn = args[0];
-    String input_fn = args[1];
 
     try {
       System.out.printf("Loading NOG from %s\n", nog_fn);
       byte[] nog = loadFile(nog_fn);
       System.out.printf("Creating parser\n");
       Parser p = new Parser(nog);
-      System.out.printf("Loading input\n");
-      byte[] input = loadFile(input_fn);
-      System.out.printf("Parsing input\n");
-      Tree t = p.parse(input);
-      System.out.printf("Parsed input:\n");
-      t.print(System.out, 0, new String(input));
+      for(int i = 1; i < args.length; i ++) {
+        String input_fn = args[i];
+        System.out.printf("Loading file %s\n", input_fn);
+        byte[] input = loadFile(input_fn);
+        try {
+          System.out.printf("Parsing input\n");
+          Tree t = p.parse(input);
+          System.out.printf("Parsed input:\n");
+          t.print(System.out, 0, new String(input));
+        } catch(ParseError pe) {
+          System.out.printf("Parse error at position %d\n", pe.position);
+        }
+      }
     } catch(IOException io) {
       System.out.printf("IO exception: %s\n", io);
-    } catch(ParseError p) {
-      System.out.printf("Parse error at position %d\n", p.position);
     } catch(Exception x) {
       System.out.printf("Exception: %s\n", x);
     }
