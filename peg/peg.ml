@@ -232,6 +232,18 @@ let print_indent oc d =
   done
 ;;
 (* ***)
+(*** print_escaping *)
+let print_escaping oc u =
+  let m = String.length u in
+  for i = 0 to m - 1 do
+    match u.[i] with
+    | '"' -> fp oc "&quot;"
+    | '<' -> fp oc "&lt;"
+    | '>' -> fp oc "&gt;"
+    | c -> output_char oc c
+  done
+;;
+(* ***)
 (*** print_tree, print_tree_list *)
 let print_string oc x = fp oc "%s" x;;
 let rec print_poly_tree ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc t =
@@ -240,7 +252,7 @@ let rec print_poly_tree ?(depth=0) ?(short=false) ~print_node ~print_attribute (
       if short then fp oc "<%a" print_node n else fp oc "%a<%a" print_indent depth print_node n;
       List.iter
         begin fun (name, value) ->
-          fp oc " %a=%S" print_attribute name value
+          fp oc " %a=\"%a\"" print_attribute name print_escaping value
         end
         al;
       if short then fp oc ">" else fp oc ">\n";
@@ -253,15 +265,15 @@ let rec print_poly_tree ?(depth=0) ?(short=false) ~print_node ~print_attribute (
       if short then fp oc "<%a" print_node n else fp oc "%a<%a" print_indent depth print_node n;
       List.iter
         begin fun (name, value) ->
-          fp oc " %a=%S" print_attribute name value
+          fp oc " %a=\"%a\"" print_attribute name print_escaping value
         end
         al;
       if short then fp oc "/>" else fp oc "/>\n"
   | Token u ->
       if short then
-        fp oc "%s" u
+        print_escaping oc u
       else
-        fp oc "%a%s\n" print_indent depth u
+        fp oc "%a%a\n" print_indent depth print_escaping u
 and print_poly_tree_list ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc l =
   List.iter
     begin fun t ->
