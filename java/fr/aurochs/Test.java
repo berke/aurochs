@@ -1,6 +1,28 @@
 package fr.aurochs;
 
+import java.lang.*;
+import java.util.*;
 import java.io.*;
+
+abstract class calcNode
+{
+  Vector<calcNode> content;
+
+  abstract public int calculate();
+}
+
+class calcRoot extends calcNode
+{
+  public int calculate()
+  {
+    int res = 0;
+
+    for(calcNode n : content)
+      res += n.calculate();
+
+    return res;
+  }
+}
 
 class Test {
   private static byte[] loadFile(String fn) throws IOException {
@@ -36,6 +58,9 @@ class Test {
           Tree t = p.parse(input);
           System.out.printf("Parsed input:\n");
           t.print(System.out, 0, new String(input));
+
+	  t.instantiate("");
+
         } catch(ParseError pe) {
           System.out.printf("Parse error at position %d\n", pe.position);
         }

@@ -52,7 +52,8 @@ aurochs_stub.o: aurochs_stub.c fr_aurochs_Parser.h
 	$(CC) $(CFLAGS) $<
 
 check:
-	LD_LIBRARY_PATH=. CLASSPATH=. $(JAVA) $(JAVAFLAGS) $(TARGET)
+	LD_LIBRARY_PATH=. CLASSPATH=. $(JAVA) fr.aurochs.Test arith.nog
+#LD_LIBRARY_PATH=. CLASSPATH=. $(JAVA) $(JAVAFLAGS) $(TARGET)
 
 clean:
 	rm -f *.class
