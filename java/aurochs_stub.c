@@ -22,6 +22,8 @@ typedef struct {
   jmethodID i_add_children_mid;
 
   jobject exc;
+
+  jbyteArray exp;
 } info_t;
 
 typedef info_t *info;
@@ -46,7 +48,7 @@ static void find_and_fail(JNIEnv *env, const char *msg, const char *name)
 
 static void fail(JNIEnv *env, const char *msg)
 {
-  find_and_fail(env, msg, "Exception");
+  find_and_fail(env, msg, "java/lang/Exception");
 }
 
 static construction start_construction(info in, int id, unsigned char *name, int begin)
@@ -73,7 +75,7 @@ static bool add_children(info in, construction c, tree tr2)
   JNIEnv *env;
 
   env = in->i_jnienv;
-  (*env)->CallVoidMethod(env, c, in->i_add_children_mid, tr2);
+  (*env)->CallVoidMethod(env, c, in->i_add_children_mid, tr2, in->exp);
   return true;
 }
 static bool add_token(info in, construction c, int t_begin, int t_end)
@@ -81,7 +83,7 @@ static bool add_token(info in, construction c, int t_begin, int t_end)
   JNIEnv *env;
 
   env = in->i_jnienv;
-  (*env)->CallVoidMethod(env, c, in->i_add_token_mid, t_begin, t_end);
+  (*env)->CallVoidMethod(env, c, in->i_add_token_mid, t_begin, t_end, in->exp);
   return true;
 }
 static bool add_attribute(info in, construction c, int id, unsigned char *name, int v_begin, int v_end)
@@ -92,7 +94,7 @@ static bool add_attribute(info in, construction c, int id, unsigned char *name, 
   env = in->i_jnienv;
   jname = (*env)->NewStringUTF(env, (char *) name);
   if(!jname) return 0;
-  (*env)->CallVoidMethod(env, c, in->i_add_attribute_mid, jname, v_begin, v_end);
+  (*env)->CallVoidMethod(env, c, in->i_add_attribute_mid, jname, v_begin, v_end, in->exp);
   return true;
 }
 
@@ -168,6 +170,7 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
 
   builder_info.i_alloc = &s->s_alloc;
   builder_info.i_jnienv = env;
+  builder_info.exp = ub;
 
   builder_info.i_node_class = (*env)->FindClass(env, "fr/aurochs/Node");
   if(!builder_info.i_node_class) {
@@ -183,14 +186,15 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
 #define JSTR JCLS("java/lang/String")
 #define JNODE JCLS("fr/aurochs/Node")
 #define JTREE JCLS("fr/aurochs/Tree")
+#define JBARR "[B"
 
   builder_info.i_constructor_mid   = (*env)->GetMethodID(env, builder_info.i_node_class, "<init>",       JFUN(JSTR, JVOID));
   if(!builder_info.i_constructor_mid) { fail(env, "Can't find constructor"); goto bye; }
 
-  builder_info.i_add_token_mid     = (*env)->GetMethodID(env, builder_info.i_node_class, "addToken",     JFUN(JINT JINT, JVOID));
+  builder_info.i_add_token_mid     = (*env)->GetMethodID(env, builder_info.i_node_class, "addToken",     JFUN(JINT JINT JBARR, JVOID));
   if(!builder_info.i_add_token_mid) { fail(env, "Can't find addToken method"); goto bye; }
 
-  builder_info.i_add_attribute_mid = (*env)->GetMethodID(env, builder_info.i_node_class, "addAttribute", JFUN(JSTR JINT JINT, JVOID));
+  builder_info.i_add_attribute_mid = (*env)->GetMethodID(env, builder_info.i_node_class, "addAttribute", JFUN(JSTR JINT JINT JBARR, JVOID));
   if(!builder_info.i_add_attribute_mid) { fail(env, "Can't find addAttribute method"); goto bye; }
 
   builder_info.i_add_children_mid  = (*env)->GetMethodID(env, builder_info.i_node_class, "addChildren",  JFUN(JTREE, JVOID));
