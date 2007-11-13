@@ -59,7 +59,7 @@ class Test {
           System.out.printf("Parsed input:\n");
           t.print(System.out, 0, new String(input));
 
-	  t.instantiate("");
+	  t.instantiate();
 
         } catch(ParseError pe) {
           System.out.printf("Parse error at position %d\n", pe.position);

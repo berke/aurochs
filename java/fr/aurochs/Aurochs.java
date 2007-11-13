@@ -167,7 +167,7 @@ class Node extends Tree {
     Vector a = (Vector) f.get(node);
 
     for(Tree t : children)
-      a.add(t.instantiate(pkg));
+      a.add(t.instantiate());
 
     for(Attribute attr : attributes)
       attr.instantiate(node, c);
