@@ -1,1 +1,1 @@
-<cgidemo.{byte,native}>: use_aurochs_lib, use_libaurochs, use_unix
+<{form,cgi}.ml>: camlp4o

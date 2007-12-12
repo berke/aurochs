@@ -1,4 +1,4 @@
-(* Astsaver *)
+(* Cgi-bin *)
 
 open Aurochs_pack;;
 
