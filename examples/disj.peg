@@ -1,5 +1,0 @@
-foo ::= "foo";
-bar ::= "bar";
-foobar ::= foo | bar;
-foobar2 ::= ((foo | bar) | foobar) ("alpha" | "beta");
-start ::= foobar2;

@@ -17,14 +17,6 @@ spacer ::= space+ | ~alpha;
 
 name ::= name:token;
 
-(*prefixing pre_spacer do
-  suffixing post_spacer do
-    appending spacer do
-      start ::= arg+;
-    done;
-  done;
-done;*)
-
 surrounding space* do
   arg ::= <Arg>name</Arg> | '(' <Meta> arg+ </Meta> ')';
   start ::= <Program>BOF.space?.arg+.space?.EOF</Program>;

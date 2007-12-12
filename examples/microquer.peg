@@ -1,4 +1,0 @@
-start ::= <Things>product</Things> EOF;
-product ::= alpha | decimal;
-alpha ::= <Alpha>[a-zA-Z]+</Alpha>
-decimal ::= |<Decimal>[0-9]+</Decimal>;

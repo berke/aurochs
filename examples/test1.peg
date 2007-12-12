@@ -1,3 +1,0 @@
-start ::= x;
-
-x ::= 'x' x | epsilon;

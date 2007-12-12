@@ -1,4 +1,5 @@
 (* Java grammar *)
+(* Based on a grammar from Pappy *)
 
 line_terminator ::= "\r\n" | "\n";
 input_character ::= ~line_terminator sigma;

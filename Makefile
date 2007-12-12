@@ -1,5 +1,6 @@
 .PHONY: all aurochs clean test_grammar test_arith install lib
 
+PREFIX=/usr/local
 OCAML_DIR=$(shell ocamlc -where)
 TARGET=$(OCAML_DIR)/aurochs_lib
 
@@ -15,8 +16,13 @@ grammar.ml: aurochs grammar.peg
 	./aurochs_tool.native -bootstrap -target ml -generate grammar.peg
 
 install: targets
-	cp aurochs_tool.native bin/aurochs
-	cp aurochs_tool.native ~/bin/aurochs
+	install -m 0755 aurochs_tool.native $(PREFIX)/bin/aurochs
 	mkdir -p $(TARGET)
-	cp _build/aurochs_pack.cmi $(TARGET)
-	cp _build/{aurochs_lib.{a,cma,cmxa},libaurochs.a,dllaurochs.so} $(TARGET)
+	install -m 0644 \
+	  _build/aurochs_pack.cmi \
+	  _build/aurochs_lib.a \
+	  _build/aurochs_lib.cma \
+	  _build/aurochs_lib.cmxa \
+	  _build/libaurochs.a \
+	  _build/dllaurochs.so \
+	  $(TARGET)

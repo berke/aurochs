@@ -286,7 +286,7 @@ let parse_file peg fn =
 (* ***)
 (*** process *)
 let process fno =
-  banner "Aurochs 0.5";
+  banner "Aurochs V%d" Version.version;
 
   let peg =
     lazy begin

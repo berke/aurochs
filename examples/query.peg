@@ -1,4 +1,4 @@
-(* Exaquery *)
+(* Query *)
 
 start ::= <Expr> disjunction EOF </Expr>;
 

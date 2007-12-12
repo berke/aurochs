@@ -1,0 +1,6 @@
+Installation instructions
+=========================
+
+1) Make sure you have Objective Caml 3.10 or later
+2) Edit the installation path prefix PREFIX in Makefile
+2) make && sudo make install

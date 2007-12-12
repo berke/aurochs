@@ -1,0 +1,8 @@
+Examples
+========
+
+java.peg: A more-or-less complete Java 1.1 grammar with some newer extensions, based on the Pappy grammar.
+ecma.peg: A complete Javascript grammar, based on the grammar given in the ECMA language specification.
+astsaver/: A tool for parsing a set of files using an arbitrary grammar and saving the parse trees (in Ocaml binary format)
+calculator/: A very simple calculator.  The most basic example.
+url.peg: A complete URL parser validated on a large set, that also parses FORM argument encodings
