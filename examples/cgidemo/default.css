@@ -1,0 +1,75 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+div.tree {
+  right: 0px;
+  top: 0px;
+  position: fixed;
+  width: 70ex;
+  background-color: #ddd;
+  margin: 1em;
+  border: 2px solid #888;
+  font-family: Courier, fixed;
+  overflow: auto;
+  height: 95%;
+}
+
+div.node {
+  border-width: 0px 0px 0px 1px;
+  border-style: solid;
+  border-color: #888;
+  margin-left: 1em;
+  padding: 4px 4px 4px 1em;
+  color: black;
+}
+
+span.node-name {
+  color: #440;
+  background-color: #ff8;
+}
+
+div.tree > div.node:first-child {
+  border: 0;
+  margin: 0;
+}
+
+span.attribute {
+  color: #f00;
+}
+
+div.token {
+  color: #080;
+  margin-left: 1em;
+  border-width: 0px 0px 0px 1px;
+  border-style: solid;
+  border-color: #888;
+  padding: 4px 4px 4px 1em;
+}
+
+div.error {
+  right: 1em;
+  top: 1em;
+  position: fixed;
+  width: 40em;
+  border-width: 3px;
+  border-style: solid;
+  border-color: red;
+  padding-left: 1em;
+  background-color: #ff8;
+}
+
+div.error pre {
+  margin: 1em;
+}
+
+div.error span.highlight {
+  background-color: #f88;
+}
+
+span.marker {
+  background-color: red;
+  color: white;
+  position: fixed;
+  opacity: 0.5;
+}
