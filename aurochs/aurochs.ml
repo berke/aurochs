@@ -1,15 +1,16 @@
 (* Aurochs *)
 
-open Peg;;
-open Util.Syntax;;
-open Pffpsf;;
+open Peg
+open Util.Syntax
+open Pffpsf
 
 type binary = string
 type ('node, 'attribute) program
 type generic_program = (int, int) program
 
-exception Parse_error of int;;
-exception Compile_error of string;;
+exception Parse_error of int
+exception Error of string
+exception Compile_error of exn
 
 external get_constructor_count : ('node, 'attribute) program -> int = "caml_aurochs_get_constructor_count" "caml_aurochs_get_constructor_count"
 external get_constructor_name : ('node, 'attribute) program -> int -> string = "caml_aurochs_get_constructor_name" "caml_aurochs_get_constructor_name"
@@ -22,19 +23,16 @@ external parse_internal : ('node, 'attribute) program -> string -> int ref -> ('
 let constructors pg =
   let m = get_constructor_count pg in
   Array.init m (get_constructor_name pg)
-;;
 
 let attributes pg =
   let m = get_attribute_count pg in
   Array.init m (get_attribute_name pg)
-;;
 
 let parse pg u =
   let error_pos = ref 0 in
   match parse_internal pg u error_pos with
   | None -> raise (Parse_error !error_pos)
   | Some t -> t
-;;
 
 let parse_generic pg u =
   let t = parse pg u in
@@ -50,21 +48,18 @@ let parse_generic pg u =
   | P_Token(i, j) -> Token(sub u i j)
   in
   convert t
-;;
 
-exception Compile_error of string
+let compile_inner ?start ?base ?root ?check u = failwith "Compile not implemented"
 
-(*** compile_inner *)
-let compile_inner ?start ?base ?root ?check u = failwith "Compile not implemented";;
-(* ***)
+let compiler : (?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary) ref = ref compile_inner
 
-let compiler : (?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary) ref = ref compile_inner;;
+let compile ?start ?base ?root ?check u =
+  try
+    !compiler ?start ?base ?root ?check u
+  with
+  | x -> raise (Compile_error x)
 
-(*** compile *)
-let compile ?start ?base ?root ?check u = !compiler ?start ?base ?root ?check u;;
-(* ***)
-
-type data = [`File of string | `String of string];;
+type data = [`File of string | `String of string]
 
 let read_file fn =
   let ic = open_in fn in
@@ -73,29 +68,24 @@ let read_file fn =
   really_input ic u 0 m;
   close_in ic;
   u
-;;
 
 let load = function
   | `String u -> u
   | `File fn -> read_file fn
-;;
 
-let ( & ) f x = f x;;
+let ( & ) f x = f x
 
 let get_program = function
   | `Binary b -> program_of_binary (load b)
   | `Source s -> program_of_binary (compile (load s))
   | `Program p -> Lazy.force p
-;;
 
-let see ~grammar ~text = parse_generic (get_program grammar) (load text);;
+let see ~grammar ~text = parse_generic (get_program grammar) (load text)
 
 let read_positioned ~grammar ~text =
   let u = load text in
   parse (get_program grammar) u
-;;
 
 let read ~grammar ~text =
   let u = load text in
   Peg.relativize u (parse (get_program grammar) u)
-;;

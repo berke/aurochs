@@ -75,17 +75,10 @@ type 'a model =
   }
 
 let model0 =
+  let (_, (grammar, input)) = List.hd Examples.examples in
   {
-    m_grammar = "\
-foo ::= \"foo\" | \"bar\";
-word ::= <Foo> kind:foo </Foo> | <Word> { [a-zA-Z]+ } </Word> ;
-space ::= [\\n\\t\\r ]+;
-junk ::= <Junk> { sigma * } </Junk>;
-punctuation ::= <Punctuation>kind:[.,;!?]+</Punctuation>;
-phrase ::= <Phrase> word ( space word )* punctuation? </Phrase>;
-start ::= space* (phrase space*)* junk EOF;";
-    m_input = "A bar is a particular kind of foo.
-This is true regardless of the phase of the moon.";
+    m_grammar = grammar;
+    m_input   = input;
     m_output = paragraph [D"Welcome to the Aurochs parser generator on-line demonstration!  Please feel comfortable and try a few grammars."]
   }
 
@@ -103,7 +96,16 @@ let view model =
           paragraph [D"Input:"];
           textarea ~name:"input"   ~rows:5 ~cols:80 ~content:model.m_input ();
           br;
-          submit ~name:"submit" ~value:"Parse" ()
+          submit ~name:"submit" ~value:"Parse" ();
+          (* Examples *)
+          div "examples"
+            [
+              paragraph [D"Some pre-defined examples:"];
+              N("ul", [],
+                List.map
+                   (fun (name, _) -> N("li", [], [submit ~name:"example" ~value:name ()]))
+                   Examples.examples)
+            ]
         ]
       );
       model.m_output
@@ -112,7 +114,37 @@ let view model =
 let grammar_limit = 1000
 let input_limit = 1000
 
-let compute ~grammar ~input () =
+let ( |< ) f g x = f (g x)
+
+let split u i =
+  let m = String.length u in
+  let i = max 0 (min m i) in
+  if i = m then
+    (u, "")
+  else
+    if i = 0 then
+      ("", u)
+    else
+      (String.sub u 0 i, String.sub u i (m - i))
+
+let error text position =
+  let (u, v) = split text position in
+  U(
+     N("pre",[],
+       [
+         D u;
+         span "marker" [D " "];
+         span "highlight" [D v]
+       ]
+     )
+   )
+
+let compute ~grammar ~input ?example () =
+  let (grammar, input) =
+    match example with
+    | None -> (grammar, input)
+    | Some name -> List.assoc name Examples.examples
+  in
   let model =
     {
       model0 with
@@ -120,10 +152,11 @@ let compute ~grammar ~input () =
       m_input   = input;
     }
   in
+  let err x = { model with m_output  = div "error" x } in
   if String.length grammar > grammar_limit then
-    { model with m_output = paragraph [D"Grammar too big for on-line version"] }
+    err [paragraph [D"Grammar too big for on-line version"]]
   else if String.length input > input_limit then
-    { model with m_output = paragraph [D"Input too big for on-line version"] }
+    err [paragraph [D"Input too big for on-line version"]]
   else
     try
       let t = Aurochs.see ~grammar:(`Source(`String grammar)) ~text:(`String input) in
@@ -163,10 +196,25 @@ let compute ~grammar ~input () =
       let output = loop t in
       { model with m_output  = div "tree" [output] }
     with
+    | Check.Error u -> err [paragraph [D(sf "Grammar error: %s" u)]]
+    | Aurochs.Compile_error(Aurochs.Error u|Check.Error u) -> err [paragraph [D(sf "Error in grammar: %s" u)]]
+    | Aurochs.Compile_error(Aurochs.Parse_error n) ->
+       err
+         [
+           paragraph [D(sf "Parse error in grammar at %d" n)];
+           error grammar n
+         ]
     | Aurochs.Parse_error n ->
-        { model with m_output  = paragraph [D(sf "Parse error at %d" n)] }
+        err
+          [
+            paragraph [D(sf "Parse error in input at %d" n)];
+            error input n
+          ]
+    | Aurochs.Compile_error x -> err [paragraph [D(sf "Error in grammar: %s" (Printexc.to_string x))]]
+    | Aurochs.Error u ->
+        err [paragraph [D(sf "Parse error in input: %s" u)]]
     | x ->
-        { model with m_output  = paragraph [D(sf "Exception: %s" (Printexc.to_string x))] }
+        err [paragraph [D(sf "Exception: %s" (Printexc.to_string x))]]
 
 let _ =
   (*let host = remote_host in*)
@@ -175,5 +223,11 @@ let _ =
   | POST ->
       let form = Form.parse_form_from_stream (Stream.of_channel stdin) in
       let gs key = Form.get_value form Form.to_string key in
-      let model = compute ~grammar:(gs "grammar") ~input:(gs "input") () in
+      let model =
+        compute
+          ~grammar:(gs "grammar")
+          ~input:(gs "input")
+          ?example:(Form.get_value form ~default:None (Form.some |< Form.to_string) "example")
+          ()
+      in
       view model

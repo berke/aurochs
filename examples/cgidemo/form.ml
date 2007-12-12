@@ -177,3 +177,5 @@ let get_value f ?default g k =
 let empty = SM.empty
 
 let to_string (x : string) = x
+
+let some x = Some x

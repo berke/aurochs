@@ -67,3 +67,4 @@ val get_value : t -> ?default:'b -> (string -> 'b) -> string -> 'b
 val add : t -> string -> string -> t
 val empty : t
 val to_string : string -> string
+val some : 'a -> 'a option

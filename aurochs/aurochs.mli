@@ -3,10 +3,13 @@
 (** The main module for all your parsing needs! *)
 
 (** This type alias helps distinguish binary programs from other strings. *)
-type binary = string;;
+type binary = string
 
 (** This exception is raised on parse error.  The integer is the character position in the input. *)
-exception Parse_error of int;;
+exception Parse_error of int
+
+(** This exception is raised on generic errors. *)
+exception Error of string
 
 (** Aurochs programs are represented using this abstract type.
     Actually, the program is malloc()'d and represented using C structures. *)
@@ -30,8 +33,8 @@ val parse : ('node, 'attribute) program -> string -> ('node, 'attribute) Peg.pol
 (** Parse a given string *)
 val parse_generic : generic_program -> string -> Peg.tree
 
-(** Exception raised when one tries to compile erroneous programs. *)
-exception Compile_error of string;;
+(** Exception wrapper to differentiate between compile and parse errors. *)
+exception Compile_error of exn
 
 (** Mutable value for bootstrapping *)
 val compiler : (?start:string -> ?base:string -> ?root:string -> ?check:bool -> string -> binary) ref
@@ -42,24 +45,21 @@ val compile : ?start:string -> ?base:string -> ?root:string -> ?check:bool -> st
 
 (** Convenience function *)
 
-type data = [`File of string | `String of string];;
+type data = [`File of string | `String of string]
 
-val load : data -> string;;
+val load : data -> string
 
 val read :
    grammar:[`Source of data|`Program of ('n, 'a) program Lazy.t|`Binary of data] ->
    text:data ->
    ('n, 'a) Peg.poly_tree
-;;
 
 val read_positioned :
    grammar:[`Source of data|`Program of ('n, 'a) program Lazy.t|`Binary of data] ->
    text:data ->
    ('n, 'a) Peg.poly_positioned_tree
-;;
 
 val see :
    grammar:[`Source of data|`Program of generic_program Lazy.t|`Binary of data] ->
    text:data ->
    Peg.tree
-;;
