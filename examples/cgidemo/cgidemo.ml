@@ -1,6 +1,7 @@
 (* Cgi-bin *)
 
 open Aurochs_pack
+open Peg
 open Cgi
 open Xml
 open Pffpsf
@@ -44,9 +45,13 @@ let error_html msg =
     U(N("p", [],  [D msg]))
   ]
 
-let br = C("br",[])
+let br = O("br",[])
 
 let paragraph x = N("p",[],x)
+
+let div taxon child = N("div", [{n="class"; v=S taxon}], child)
+
+let span taxon child = N("span", [{n="class"; v=S taxon}], child)
 
 let textarea ~name ~rows ~cols ?(content="") () =
   U(N("textarea",
@@ -62,11 +67,26 @@ let submit ~name ~value () =
      {n="name";  v=S name}],
      []))
 
-type model =
+type 'a model =
   {
     m_grammar : string;
     m_input   : string;
-    m_message : string
+    m_output  : 'a
+  }
+
+let model0 =
+  {
+    m_grammar = "\
+foo ::= \"foo\" | \"bar\";
+word ::= <Foo> kind:foo </Foo> | <Word> { [a-zA-Z]+ } </Word> ;
+space ::= [\\n\\t\\r ]+;
+junk ::= <Junk> { sigma * } </Junk>;
+punctuation ::= <Punctuation>kind:[.,;!?]+</Punctuation>;
+phrase ::= <Phrase> word ( space word )* punctuation? </Phrase>;
+start ::= space* (phrase space*)* junk EOF;";
+    m_input = "A bar is a particular kind of foo.
+This is true regardless of the phase of the moon.";
+    m_output = paragraph [D"Welcome to the Aurochs parser generator on-line demonstration!  Please feel comfortable and try a few grammars."]
   }
 
 let reply h = reply_html (fun oc -> output_xml oc (make_html h))
@@ -78,56 +98,82 @@ let view model =
       N("form", [{n="action"; v=S"demo.cgi"}; {n="method";v=S"post"}],
         [
           paragraph [D"PEG grammar:"];
-          textarea ~name:"grammar" ~rows:5 ~cols:80 ~content:model.m_grammar ();
+          textarea ~name:"grammar" ~rows:25 ~cols:80 ~content:model.m_grammar ();
           br;
           paragraph [D"Input:"];
           textarea ~name:"input"   ~rows:5 ~cols:80 ~content:model.m_input ();
           br;
-          paragraph [D model.m_message];
-          br;
           submit ~name:"submit" ~value:"Parse" ()
         ]
-      )
+      );
+      model.m_output
     ]
 
-let _ =
-  let host = remote_host in
-  match invocation_method () with
-  | GET ->
-      let model = 
-        { m_grammar = "start ::= \"foo\" [ ]* \"bar\" EOF;" ;
-          m_input   = "foo  bar";
-          m_message = "Welcome to the Aurochs parser generator on-line demonstration!  Please feel comfortable and try a few grammars."
-        }
+let grammar_limit = 1000
+let input_limit = 1000
+
+let compute ~grammar ~input () =
+  let model =
+    {
+      model0 with
+      m_grammar = grammar;
+      m_input   = input;
+    }
+  in
+  if String.length grammar > grammar_limit then
+    { model with m_output = paragraph [D"Grammar too big for on-line version"] }
+  else if String.length input > input_limit then
+    { model with m_output = paragraph [D"Input too big for on-line version"] }
+  else
+    try
+      let t = Aurochs.see ~grammar:(`Source(`String grammar)) ~text:(`String input) in
+      let rec loop = function
+        | Token t -> div "token" [D t]
+        | Node(name, attrs, child) ->
+            let attrs' =
+              List.map
+                (fun (aname, aval) -> span "attribute" [D aname; D"="; D aval])
+                attrs
+            in
+            match child with
+            | [] ->
+                div "node"
+                  [span "node-name"
+                    (List.concat[
+                      [D("<" ^ name)];
+                      attrs';
+                      [D("/>")]
+                    ])
+                  ]
+            | _ ->
+                div "node"
+                  (List.concat
+                    [
+                      [span "node-name"
+                        (List.concat[
+                          [D("<" ^ name)];
+                          attrs';
+                          [D">"]
+                        ])];
+                      List.map loop child;
+                      [span "node-name" [D("</" ^ name ^">")]];
+                    ]
+                  )
       in
-      view model
+      let output = loop t in
+      { model with m_output  = div "tree" [output] }
+    with
+    | Aurochs.Parse_error n ->
+        { model with m_output  = paragraph [D(sf "Parse error at %d" n)] }
+    | x ->
+        { model with m_output  = paragraph [D(sf "Exception: %s" (Printexc.to_string x))] }
+
+let _ =
+  (*let host = remote_host in*)
+  match invocation_method () with
+  | GET -> view model0
   | POST ->
       let form = Form.parse_form_from_stream (Stream.of_channel stdin) in
-      let grammar = Form.get_value form Form.to_string "grammar" in 
-      let input = Form.get_value form Form.to_string "input" in 
-      let message = sf "Your grammar has length %d" (String.length grammar) in
-      let model =
-        {
-          m_grammar = grammar;
-          m_input   = input;
-          m_message = message
-        }
-      in
+      let gs key = Form.get_value form Form.to_string key in
+      let model = compute ~grammar:(gs "grammar") ~input:(gs "input") () in
       view model
-
-  (*
-  let peg = Sys.argv.(1) in
-  for i = 2 to Array.length Sys.argv - 1 do
-    begin
-      let fn = Sys.argv.(i) in
-      Printf.printf "%s\n%!" fn;
-      try
-        let t = Aurochs.read_positioned ~grammar:(`Binary(`File peg)) ~text:(`File fn) in
-        let fn' = (Filename.chop_extension (Filename.basename fn))^".bin" in
-        Util.with_binary_file_output fn' (fun oc -> Marshal.to_channel oc t []);
-      with
-      | Aurochs.Parse_error n -> Printf.printf "%s: parse error at %d\n%!" fn n
-    end;
-    Gc.compact ()
-  done
-;;*)

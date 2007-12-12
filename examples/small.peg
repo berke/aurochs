@@ -1,9 +1,3 @@
-word ::=
-  <Word>
-    { [^ ]+ }
-  </Word>
-;
-
+word ::= <Word> { [^ ]+ } </Word> ;
 space ::= ' '+;
-
 start ::= <Phrase> word ( space word )* </Phrase>;
