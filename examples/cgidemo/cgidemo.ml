@@ -5,7 +5,7 @@ open Cgi
 open Xml
 open Pffpsf
 
-let error_xml msg =
+let make_html x =
   html_xml
     (
       N("html",
@@ -25,7 +25,7 @@ let error_xml msg =
               O("link",
                 [{n="rel";       v=S"stylesheet"};
                  {n="type";      v=S"text/css"};
-                 {n="href";      v=S"default.css"};
+                 {n="href";      v=S"/default.css"};
                  {n="media";     v=S"screen"}]);
               O("link",
                 [{n="rel";       v=S"icon"};
@@ -33,23 +33,87 @@ let error_xml msg =
                  {n="href";      v=S"/icon.png"}])
             ]
           );
-          N("body", [],
-            [
-              U(N("h1", [], [D"Error"]));
-              U(N("p", [],  [D msg]))
-            ]
-          );
+          N("body", [], x);
         ]
       )
     )
 
+let error_html msg =
+  [
+    U(N("h1", [], [D"Error"]));
+    U(N("p", [],  [D msg]))
+  ]
+
+let br = C("br",[])
+
+let paragraph x = N("p",[],x)
+
+let textarea ~name ~rows ~cols ?(content="") () =
+  U(N("textarea",
+    [{n="rows"; v=I rows};
+     {n="cols"; v=I cols};
+     {n="name"; v=S name}],
+     [D content]))
+
+let submit ~name ~value () =
+  U(N("input",
+    [{n="type";  v=S"submit"};
+     {n="value"; v=S value};
+     {n="name";  v=S name}],
+     []))
+
+type model =
+  {
+    m_grammar : string;
+    m_input   : string;
+    m_message : string
+  }
+
+let reply h = reply_html (fun oc -> output_xml oc (make_html h))
+
+let view model =
+  reply
+    [
+      U(N("h1", [], [D"Aurochs parser"]));
+      N("form", [{n="action"; v=S"demo.cgi"}; {n="method";v=S"post"}],
+        [
+          paragraph [D"PEG grammar:"];
+          textarea ~name:"grammar" ~rows:5 ~cols:80 ~content:model.m_grammar ();
+          br;
+          paragraph [D"Input:"];
+          textarea ~name:"input"   ~rows:5 ~cols:80 ~content:model.m_input ();
+          br;
+          paragraph [D model.m_message];
+          br;
+          submit ~name:"submit" ~value:"Parse" ()
+        ]
+      )
+    ]
+
 let _ =
+  let host = remote_host in
   match invocation_method () with
-  | GET | POST ->
-      reply_html
-        (fun oc ->
-          let msg = sf "Unhandled invocation method" in
-          output_xml oc (error_xml msg))
+  | GET ->
+      let model = 
+        { m_grammar = "start ::= \"foo\" [ ]* \"bar\" EOF;" ;
+          m_input   = "foo  bar";
+          m_message = "Welcome to the Aurochs parser generator on-line demonstration!  Please feel comfortable and try a few grammars."
+        }
+      in
+      view model
+  | POST ->
+      let form = Form.parse_form_from_stream (Stream.of_channel stdin) in
+      let grammar = Form.get_value form Form.to_string "grammar" in 
+      let input = Form.get_value form Form.to_string "input" in 
+      let message = sf "Your grammar has length %d" (String.length grammar) in
+      let model =
+        {
+          m_grammar = grammar;
+          m_input   = input;
+          m_message = message
+        }
+      in
+      view model
 
   (*
   let peg = Sys.argv.(1) in

@@ -2,9 +2,9 @@
 (* Copyright (C)2000-2006 Berke Durak                               *)
 (* Released under the GNU Lesser General Public License version 2.1 *)
 
-exception Duplicate;;
+exception Duplicate
 
-let sf = Printf.sprintf;;
+let sf = Printf.sprintf
 
 let hexadecimal c =
   match c with
@@ -12,42 +12,40 @@ let hexadecimal c =
   | 'a' .. 'f' -> (Char.code c) - (Char.code 'a') + 10
   | 'A' .. 'F' -> (Char.code c) - (Char.code 'A') + 10
   | _ -> raise (Invalid_argument (sf "Character %C is not hexadecimal" c))
-;;
 
 let read_hex_encoded_char =
   parser
     | [< 'c1; 'c2 >] -> (Char.chr (16 * (hexadecimal c1) + (hexadecimal c2)))
-;;
 
 let rec read_chunk s =
   let b = Buffer.create 16 in
-  let rec boucle =
+  let rec loop =
   parser
     | [< 'c; s >] ->
 	begin
 	  match c with
 	  | '%' ->
 	      Buffer.add_char b (read_hex_encoded_char s);
-	      boucle s
+	      loop s
 	  | '+' ->
 	      Buffer.add_char b ' ';
-	      boucle s
+	      loop s
 	  | '=' -> (Buffer.contents b, `Equal)
 	  | '&' -> (Buffer.contents b, `Ampersand)
 	  | _ ->
 	      Buffer.add_char b c;
-	      boucle s
+	      loop s
 	end
     | [< >] ->
 	(Buffer.contents b, `EOS)
   in
-  boucle s
-;;
+  loop s
 
-module SM = Map.Make (struct type t = string let compare = compare end);;
-module SS = Set.Make (struct type t = string let compare = compare end);;
+module SM = Map.Make (struct type t = string let compare = compare end)
 
-type t = SS.t SM.t;;
+module SS = Set.Make (struct type t = string let compare = compare end)
+
+type t = SS.t SM.t
 
 let add f n v =
   if SM.mem n f then
@@ -55,7 +53,6 @@ let add f n v =
     SM.add n (SS.add v x) f
   else
     SM.add n (SS.singleton v) f
-;;
 
 let parse_form_from_stream t =
   let rec loop f =
@@ -82,23 +79,19 @@ let parse_form_from_stream t =
 	end
   in
   loop SM.empty
-;;
 
 let parse_form_from_string s =
   let t = Stream.of_string s in
   parse_form_from_stream t
-;;
 
 let display_stringmapstring f =
   SM.iter (fun k d -> Printf.printf "\"%s\" -> \"%s\"\n" k d) f
-;;
 
 let display_form f =
   SM.iter (fun k d ->
     Printf.printf "\"%s\" -> {" k;
     SS.iter (fun s -> Printf.printf " \"%s\"" s) d;
     Printf.printf " }\n") f
-;;
 
 let encode_string b x =
   let hex = "0123456789ABCDEF" in
@@ -119,7 +112,6 @@ let encode_string b x =
         end
       else Buffer.add_char b c
   done
-;;
 
 let encode_form f =
   let b = Buffer.create 16 in
@@ -132,7 +124,6 @@ let encode_form f =
 	   Buffer.add_char b '=';
 	   encode_string b v) s)) f;
   Buffer.contents b
-;;
 
 let encode_form_from_list ?buffer f =
   let b =
@@ -150,10 +141,11 @@ let encode_form_from_list ?buffer f =
           Buffer.add_char b '=';
           encode_string b v) s)) f;
  Buffer.contents b
-;;
 
-let get_list f k = SS.elements (SM.find k f);;
-let get_set f k = SM.find k f;;
+let get_list f k = SS.elements (SM.find k f)
+
+let get_set f k = SM.find k f
+
 let get f ?default k =
   let none () =
     match default with
@@ -167,7 +159,6 @@ let get f ?default k =
     | _::_ -> raise Duplicate
   with
   | Not_found -> none ()
-;;
 
 let get_value f ?default g k =
   let none () =
@@ -182,6 +173,7 @@ let get_value f ?default g k =
     | _::_ -> raise Duplicate
   with
   | Not_found -> none ()
-;;
 
-let empty = SM.empty;;
+let empty = SM.empty
+
+let to_string (x : string) = x
