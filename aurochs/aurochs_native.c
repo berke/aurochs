@@ -271,6 +271,22 @@ static value some(value x)/*{{{*/
 
 #define none (Val_int(0))
 
+value caml_aurochs_get_production_count(value programv)/*{{{*/
+{
+  CAMLparam1(programv);
+  nog_program_t *pg;
+
+  pg = program_val(programv).p_nog;
+  CAMLreturn(Val_int(pg->np_num_productions));
+}/*}}}*/
+value caml_aurochs_get_choice_count(value programv)/*{{{*/
+{
+  CAMLparam1(programv);
+  nog_program_t *pg;
+
+  pg = program_val(programv).p_nog;
+  CAMLreturn(Val_int(pg->np_num_choices));
+}/*}}}*/
 value caml_aurochs_get_constructor_count(value programv)/*{{{*/
 {
   CAMLparam1(programv);

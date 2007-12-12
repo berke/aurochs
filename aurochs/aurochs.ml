@@ -12,6 +12,8 @@ exception Parse_error of int
 exception Error of string
 exception Compile_error of exn
 
+external get_choice_count : ('node, 'attribute) program -> int = "caml_aurochs_get_choice_count" "caml_aurochs_get_choice_count"
+external get_production_count : ('node, 'attribute) program -> int = "caml_aurochs_get_production_count" "caml_aurochs_get_production_count"
 external get_constructor_count : ('node, 'attribute) program -> int = "caml_aurochs_get_constructor_count" "caml_aurochs_get_constructor_count"
 external get_constructor_name : ('node, 'attribute) program -> int -> string = "caml_aurochs_get_constructor_name" "caml_aurochs_get_constructor_name"
 external get_attribute_count : ('node, 'attribute) program -> int = "caml_aurochs_get_attribute_count" "caml_aurochs_get_attribute_count"

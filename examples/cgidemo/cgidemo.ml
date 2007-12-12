@@ -71,7 +71,8 @@ type 'a model =
   {
     m_grammar : string;
     m_input   : string;
-    m_output  : 'a
+    m_output  : 'a;
+    m_info    : Buffer.t
   }
 
 let model0 =
@@ -79,7 +80,8 @@ let model0 =
   {
     m_grammar = grammar;
     m_input   = input;
-    m_output = paragraph [D"Welcome to the Aurochs parser generator on-line demonstration!  Please feel comfortable and try a few grammars."]
+    m_output  = paragraph [D"Welcome to the Aurochs parser generator on-line demonstration!  Please feel comfortable and try a few grammars."];
+    m_info    = Buffer.create 8
   }
 
 let reply h = reply_html (fun oc -> output_xml oc (make_html h))
@@ -108,11 +110,21 @@ let view model =
             ]
         ]
       );
-      model.m_output
+      model.m_output;
+      div "info" [U(N("pre", [], [D(Buffer.contents model.m_info)]))]
     ]
 
 let grammar_limit = 1000
 let input_limit = 1000
+let workload_limit = 1000000
+
+let workload program input =
+  let m = String.length input in
+  let n =
+    Aurochs.get_choice_count program *
+    Aurochs.get_production_count program
+  in
+  m * n
 
 let ( |< ) f g x = f (g x)
 
@@ -134,10 +146,47 @@ let error text position =
        [
          D u;
          span "marker" [D " "];
-         span "highlight" [D v]
+         span "highlight" [D v];
+         D " "
        ]
      )
    )
+
+let convert_tree t =
+  let rec loop = function
+    | Token t -> div "token" [D t]
+    | Node(name, attrs, child) ->
+        let attrs' =
+          List.map
+            (fun (aname, aval) -> span "attribute" [D aname; D"="; D aval])
+            attrs
+        in
+        match child with
+        | [] ->
+            div "node"
+              [span "node-name"
+                (List.concat[
+                  [D("<" ^ name)];
+                  attrs';
+                  [D("/>")]
+                ])
+              ]
+        | _ ->
+            div "node"
+              (List.concat
+                [
+                  [span "node-name"
+                    (List.concat[
+                      [D("<" ^ name)];
+                      attrs';
+                      [D">"]
+                    ])];
+                  List.map loop child;
+                  [span "node-name" [D("</" ^ name ^">")]];
+                ]
+              )
+  in
+  loop t
 
 let compute ~grammar ~input ?example () =
   let (grammar, input) =
@@ -145,11 +194,13 @@ let compute ~grammar ~input ?example () =
     | None -> (grammar, input)
     | Some name -> List.assoc name Examples.examples
   in
+  let info = Buffer.create 256 in
   let model =
     {
       model0 with
       m_grammar = grammar;
       m_input   = input;
+      m_info    = info;
     }
   in
   let err x = { model with m_output  = div "error" x } in
@@ -159,42 +210,20 @@ let compute ~grammar ~input ?example () =
     err [paragraph [D"Input too big for on-line version"]]
   else
     try
-      let t = Aurochs.see ~grammar:(`Source(`String grammar)) ~text:(`String input) in
-      let rec loop = function
-        | Token t -> div "token" [D t]
-        | Node(name, attrs, child) ->
-            let attrs' =
-              List.map
-                (fun (aname, aval) -> span "attribute" [D aname; D"="; D aval])
-                attrs
-            in
-            match child with
-            | [] ->
-                div "node"
-                  [span "node-name"
-                    (List.concat[
-                      [D("<" ^ name)];
-                      attrs';
-                      [D("/>")]
-                    ])
-                  ]
-            | _ ->
-                div "node"
-                  (List.concat
-                    [
-                      [span "node-name"
-                        (List.concat[
-                          [D("<" ^ name)];
-                          attrs';
-                          [D">"]
-                        ])];
-                      List.map loop child;
-                      [span "node-name" [D("</" ^ name ^">")]];
-                    ]
-                  )
-      in
-      let output = loop t in
-      { model with m_output  = div "tree" [output] }
+      let bin = !Aurochs.compiler grammar in
+      let prog = Aurochs.program_of_binary bin in
+      let w = workload prog input in
+      bf info "Total %d productions\n" (Aurochs.get_production_count prog);
+      bf info "Total %d choices\n" (Aurochs.get_choice_count prog);
+      bf info "Total %d constructors\n" (Aurochs.get_constructor_count prog);
+      bf info "Total %d attributes\n" (Aurochs.get_attribute_count prog);
+      bf info "Workload %d units\n" w;
+      if w > workload_limit then
+        err [paragraph [D(sf "Workload of %d is too high for on-line version, limit is %d" w workload_limit)]]
+      else
+        let t = Aurochs.parse_generic prog input in
+        let output = convert_tree t in
+        { model with m_output  = div "tree" [output] }
     with
     | Check.Error u -> err [paragraph [D(sf "Grammar error: %s" u)]]
     | Aurochs.Compile_error(Aurochs.Error u|Check.Error u) -> err [paragraph [D(sf "Error in grammar: %s" u)]]
@@ -211,10 +240,9 @@ let compute ~grammar ~input ?example () =
             error input n
           ]
     | Aurochs.Compile_error x -> err [paragraph [D(sf "Error in grammar: %s" (Printexc.to_string x))]]
-    | Aurochs.Error u ->
-        err [paragraph [D(sf "Parse error in input: %s" u)]]
-    | x ->
-        err [paragraph [D(sf "Exception: %s" (Printexc.to_string x))]]
+    | Aurochs.Error u -> err [paragraph [D(sf "Parse error in input: %s" u)]]
+    | Canonify.Error u -> err [paragraph [D(sf "Can't canonify grammar: %s" u)]]
+    | x -> err [paragraph [D(sf "Exception: %s" (Printexc.to_string x))]]
 
 let _ =
   (*let host = remote_host in*)

@@ -18,6 +18,18 @@ type ('node, 'attribute) program
 (** A generic program *)
 type generic_program = (int, int) program
 
+(** Return the number of productions used in the grammar *)
+val get_production_count : ('node, 'attribute) program -> int
+
+(** Return the number of alternatives used in the grammar *)
+val get_choice_count : ('node, 'attribute) program -> int
+
+(** Return the number of constructors used in the grammar *)
+val get_constructor_count : ('node, 'attribute) program -> int
+
+(** Return the number of attributes used in the grammar *)
+val get_attribute_count : ('node, 'attribute) program -> int
+
 (** Get a table giving the string representation of node constructors *)
 val constructors : ('node, 'attribute) program -> string array
 
