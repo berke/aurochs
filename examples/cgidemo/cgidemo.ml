@@ -6,6 +6,34 @@ open Cgi
 open Xml
 open Pffpsf
 
+let error_html msg =
+  [
+    U(N("h1", [], [D"Error"]));
+    U(N("p", [],  [D msg]))
+  ]
+
+let br = O("br",[])
+
+let paragraph x = N("p",[],x)
+
+let div taxon child = N("div", [{n="class"; v=S taxon}], child)
+
+let span taxon child = N("span", [{n="class"; v=S taxon}], child)
+
+let textarea ~name ~rows ~cols ?(content="") () =
+  U(N("textarea",
+    [{n="rows"; v=I rows};
+     {n="cols"; v=I cols};
+     {n="name"; v=S name}],
+     [D content]))
+
+let submit ~name ~value () =
+  U(N("input",
+    [{n="type";  v=S"submit"};
+     {n="value"; v=S value};
+     {n="name";  v=S name}],
+     []))
+
 let make_html x =
   html_xml
     (
@@ -34,38 +62,12 @@ let make_html x =
                  {n="href";      v=S"/icon.png"}])
             ]
           );
-          N("body", [], x);
+          N("body", [],
+            (paragraph [D"Return to the"; N("a",[{n="href";v=S"/"}],[D"Aurochs homepage"])]) ::
+            x);
         ]
       )
     )
-
-let error_html msg =
-  [
-    U(N("h1", [], [D"Error"]));
-    U(N("p", [],  [D msg]))
-  ]
-
-let br = O("br",[])
-
-let paragraph x = N("p",[],x)
-
-let div taxon child = N("div", [{n="class"; v=S taxon}], child)
-
-let span taxon child = N("span", [{n="class"; v=S taxon}], child)
-
-let textarea ~name ~rows ~cols ?(content="") () =
-  U(N("textarea",
-    [{n="rows"; v=I rows};
-     {n="cols"; v=I cols};
-     {n="name"; v=S name}],
-     [D content]))
-
-let submit ~name ~value () =
-  U(N("input",
-    [{n="type";  v=S"submit"};
-     {n="value"; v=S value};
-     {n="name";  v=S name}],
-     []))
 
 type 'a model =
   {
