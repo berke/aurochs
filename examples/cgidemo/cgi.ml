@@ -1,6 +1,6 @@
 (* Cgi *)
 
-let sf = Printf.sprintf
+open Pffpsf
 
 let hex c =
   match c with
@@ -142,3 +142,8 @@ let remote_host =
   f (g "REMOTE_HOST")
     (f (g "REMOTE_USER")
        (g "REMOTE_ADDR"))
+
+let reply_html f =
+  fp stdout "Content-type: text/html\n";
+  fp stdout "\n";
+  f stdout
