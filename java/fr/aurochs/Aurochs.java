@@ -1,5 +1,6 @@
-/* Aurochs
- */
+// Aurochs Java interface
+//
+// Instantiation code contributed by Maxime van Noppen
 
 package fr.aurochs;
 
@@ -64,19 +65,19 @@ class Attribute {
 
       // Try to convert to primitive types
 
-      if (cF == cByte)
+      if (cF == Byte.class)
 	f.setByte(self, Byte.parseByte(value));
-      else if(cF == cDouble)
+      else if(cF == Double.class)
 	f.setDouble(self, Double.parseDouble(value));
-      else if(cF == cFloat)
+      else if(cF == Float.class)
 	f.setFloat(self, Float.parseFloat(value));
-      else if (cF == cInteger)
+      else if (cF == Integer.class)
 	f.setInt(self, Integer.parseInt(value));
-      else if (cF == cLong)
+      else if (cF == Long.class)
 	f.setLong(self, Long.parseLong(value));
-      else if (cF == cShort)
+      else if (cF == Short.class)
 	f.setShort(self, Short.parseShort(value));
-      else if (cF == cString)
+      else if (cF == String.class)
 	f.set(self, value);
       else
 	// We have neither a method *FromString nor a primitive type, i give up :-(
@@ -90,25 +91,6 @@ class Attribute {
     {
     }
   }
-
-  static
-  {
-    cByte = new Byte("0").getClass();
-    cDouble = new Double(0.).getClass();
-    cFloat = new Float(0.).getClass();
-    cInteger = new Integer(0).getClass();
-    cLong = new Long(0).getClass();
-    cShort = new Short((short) 0).getClass();
-    cString = new String("").getClass();
-  }
-
-  static Class cByte;
-  static Class cDouble;
-  static Class cFloat;
-  static Class cInteger;
-  static Class cLong;
-  static Class cShort;
-  static Class cString;
 }
 
 class Node extends Tree {

@@ -1,3 +1,5 @@
+// Example for Aurochs
+
 package fr.aurochs;
 
 import java.lang.*;
@@ -58,9 +60,8 @@ class Test {
           Tree t = p.parse(input);
           System.out.printf("Parsed input:\n");
           t.print(System.out, 0, new String(input));
-
+          System.out.printf("Instantiating object:\n");
 	  t.instantiate();
-
         } catch(ParseError pe) {
           System.out.printf("Parse error at position %d\n", pe.position);
         }
