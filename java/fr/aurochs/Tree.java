@@ -12,5 +12,5 @@ abstract public class Tree {
     }
   }
   abstract void print(PrintStream out, int indent, String input);
-  abstract Object instantiate() throws Exception;
+  abstract Object instantiate(String pkg) throws Exception;
 }

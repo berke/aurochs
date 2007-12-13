@@ -8,7 +8,7 @@ import java.io.*;
 
 abstract class calcNode
 {
-  Vector<calcNode> content;
+  public Vector<calcNode> content;
 
   abstract public int calculate();
 }
@@ -24,6 +24,8 @@ class calcRoot extends calcNode
 
     return res;
   }
+  
+  public Vector<calcNode> content;
 }
 
 class Test {
@@ -61,7 +63,7 @@ class Test {
           System.out.printf("Parsed input:\n");
           t.print(System.out, 0, new String(input));
           System.out.printf("Instantiating object:\n");
-	  t.instantiate();
+	  t.instantiate("fr.aurochs");
         } catch(ParseError pe) {
           System.out.printf("Parse error at position %d\n", pe.position);
         }

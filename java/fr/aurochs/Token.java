@@ -22,7 +22,7 @@ public class Token extends Tree {
     out.printf("%s\n", input.substring(begin, end));
   }
 
-  public Object instantiate() throws Exception
+  public Object instantiate(String pkg) throws Exception
   {
     Object obj = new Object();
 

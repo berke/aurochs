@@ -51,9 +51,9 @@ public class Node extends Tree {
     }
   }
 
-  public Object instantiate() throws Exception
+  public Object instantiate(String pkg) throws Exception
   {
-    Class c = Class.forName(name);
+    Class c = Class.forName(pkg + "." + name);
 
     Object node = c.newInstance();
 
@@ -61,7 +61,7 @@ public class Node extends Tree {
     Vector a = (Vector) f.get(node);
 
     for(Tree t : children)
-      a.add(t.instantiate());
+      a.add(t.instantiate(pkg));
 
     for(Attribute attr : attributes)
       attr.instantiate(node, c);
