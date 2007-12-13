@@ -6,7 +6,7 @@ open Command;;
 open Ocaml_specific;;
 open Outcome;;
 
-let aurochs = ref (S[A"aurochs";A"-target";A"ml"]);;
+let aurochs = ref (S[A"aurochs";A"-target";A"ml";A"-generate"]);;
 let system_lib_dir = "/usr/lib";;
 
 dispatch

@@ -10,7 +10,7 @@ header ::= <title> line </title>;
 
 body ::= section*;
 
-section ::= h3 | h2 | h1 | list1 | paragraph | text;
+section ::= h3 | h2 | h1 | list1 | paragraph | text | verbatim;
 
 h1 ::= "==" <h1> line </h1>;
 h2 ::= "===" <h2> line </h2>;
@@ -32,8 +32,19 @@ indented ::= ~(list1 | list2 | list3) ' '+ segment* '\n';
 segment ::=
   link
 | tt
-| {[^{\[\n]+}
+| {[^%{\[\n]+}
 ;
+
+verbatim ::=
+  "%verbatim"
+
+  <pre>
+  { ([^%]+ | ~"%verbatim" "%")* }
+  </pre>
+
+  "%verbatim"
+
+  ;
 
 tt ::= <tt> '{' {[^}]*} '}' </tt>;
 

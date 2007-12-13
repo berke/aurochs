@@ -27,9 +27,46 @@ In fact, there are many different ways to use Aurochs:
   * Use Aurochs to generate a parser in Ocaml, C or amd64 assembly code.
   * Use Aurochs to generate a stub code for Ocaml.
 
+=== Way 1: Use Aurochs as a stand-alone parser
+Write your grammar in a file {grammar.peg}, then parse a file {file.txt} using
+{aurochs -parse file.txt grammar.peg}.  The output is a parse tree in XML format.
+
+=== Way 2: Use Aurochs from Ocaml
+
+The simplest Ocaml code would be
+%verbatim
+open Aurochs_pack;;
+open Peg;;
+open Arith;;
+
+let rec eval = function
+  | Node(N_Root, _, [x]) -> eval x
+  | Node(N_add, _, [x;y]) -> (eval x) + (eval y)
+  | Node(N_mul, _, [x;y]) -> (eval x) * (eval y)
+  | Node(N_sub, _, [x;y]) -> (eval x) - (eval y)
+  | Node(N_neg, _, [x]) -> - (eval x)
+  | Node(N_number, [A_value,x], []) -> int_of_string x
+  | _ -> invalid_arg "eval"
+;;
+
+let _ =
+  while true do
+    let u = input_line stdin in
+    try
+      let t = Aurochs.read ~grammar:(`Program Arith.program) ~text:(`String u) in
+      let x = eval t in
+      Printf.printf ">>> %d\n%!" x;
+      Util.with_binary_file_output "foo.bin" (fun oc ->
+        Marshal.to_channel oc t []);
+    with
+    | x ->
+        Printf.printf "Exception: %s\n%!" (Printexc.to_string x)
+  done
+;;
+%verbatim
+
 == Summary of options
-  * -target {c|amd64|nog|ml|mli|ml_classic}
-  target language (default c)
+  * -target {c|amd64|nog|ml|mli|ml_classic} target language (default c)
   * -start <string>            Set start symbol (default "start")
   * -save-nog <file>           Save NOG into file
   * -load-nog <file>           Load NOG from file

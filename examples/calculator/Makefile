@@ -1,4 +1,7 @@
-.PHONY: all
+.PHONY: all clean
 
 all:
-	@ocamlbuild test_arith.native
+	@ocamlbuild calculator.native
+
+clean:
+	@rm -rf _build _log calculator.native
