@@ -1,5 +1,5 @@
 LIBNAME=aurochsjava
-JAVASRC=fr/aurochs/Aurochs.java fr/aurochs/Test.java
+JAVASRC=fr/aurochs/Attribute.java fr/aurochs/Node.java fr/aurochs/Parser.java fr/aurochs/Token.java fr/aurochs/Tree.java fr/aurochs/Test.java
 JAVAJNI=fr.aurochs.Parser
 JNIHEADERS=fr_aurochs_Parser.h
 OBJS=aurochs_stub.o $(addprefix ../_build/, cnog/cnog.o cpack/pack.o cnog/parse_tree.o cnog/peg_lib.o cnog/cnog_unpack.o cutil/alloc.o cutil/stack.o)
@@ -30,7 +30,7 @@ test: all arith.nog
 	LD_LIBRARY_PATH=. $(JAVA) -classpath . fr.aurochs.Test arith.nog arith.txt
 
 %.nog: %.peg
-	../aurochs_tool.native -target nog -generate $<
+	../aurochs_tool.native -root-node calcRoot -target nog -generate $<
 
 build:
 	@cd .. && ./build.sh
