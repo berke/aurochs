@@ -1,0 +1,39 @@
+start ::= <head> header </head> <body> body </body> EOF;
+
+empty_line ::= ' '* '\n';
+
+paragraph ::= <p/> empty_line empty_line+;
+
+line ::= {[^\n]*} '\n';
+
+header ::= <title> line </title>;
+
+body ::= section*;
+
+section ::= h3 | h2 | h1 | list1 | paragraph | text;
+
+h1 ::= "==" <h1> line </h1>;
+h2 ::= "===" <h2> line </h2>;
+h3 ::= "====" <h3> line </h3>;
+
+list1 ::= <ul> list_element1+ </ul>;
+list_element1 ::= ' '+ "*" ' '+ <li> text </li> | list2;
+
+list2 ::= <ul> list_element2+ </ul>;
+list_element2 ::= ' '+ "**" ' '+ <li> text </li> | list3;
+
+list3 ::= <ul> list_element3+ </ul>;
+list_element3 ::= ' '+ "***" ' '+ <li> text </li>;
+
+text ::= segment* '\n';
+
+segment ::=
+  link
+| {[^\[\n]+}
+;
+
+space ::= [ \t]+;
+
+link ::=
+  <a> '[' href:[^| ]+ space? '|' space? {[^\]]+} ']' </a>
+;
