@@ -57,11 +57,11 @@ public class Node extends Tree {
 
     Object node = c.newInstance();
 
-    Field f = c.getField("content");
-    Vector a = (Vector) f.get(node);
+    Field f = c.getField("contents");
+    LinkedList l = (LinkedList) f.get(node);
 
     for(Tree t : children)
-      a.add(t.instantiate(pkg));
+      l.add(t.instantiate(pkg));
 
     for(Attribute attr : attributes)
       attr.instantiate(node, c);

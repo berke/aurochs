@@ -8,7 +8,11 @@ import java.io.*;
 
 abstract class calcNode
 {
-  public Vector<calcNode> content;
+  public LinkedList<calcNode> contents;
+
+  calcNode() {
+    contents = new LinkedList<calcNode>();
+  }
 
   abstract public int calculate();
 }
@@ -17,15 +21,42 @@ class calcRoot extends calcNode
 {
   public int calculate()
   {
+    return contents.get(0).calculate();
+  }
+}
+
+class number extends calcNode {
+  public int value;
+
+  public int calculate() {
+    return value;
+  }
+}
+
+class add extends calcNode
+{
+  public int calculate()
+  {
     int res = 0;
 
-    for(calcNode n : content)
+    for(calcNode n : contents)
       res += n.calculate();
 
     return res;
   }
-  
-  public Vector<calcNode> content;
+}
+
+class mul extends calcNode
+{
+  public int calculate()
+  {
+    int res = 1;
+
+    for(calcNode n : contents)
+      res *= n.calculate();
+
+    return res;
+  }
 }
 
 class Test {
@@ -63,7 +94,8 @@ class Test {
           System.out.printf("Parsed input:\n");
           t.print(System.out, 0, new String(input));
           System.out.printf("Instantiating object:\n");
-	  t.instantiate("fr.aurochs");
+	  calcRoot r = (calcRoot) t.instantiate("fr.aurochs");
+          System.out.printf("Computed value is %d\n", r.calculate());
         } catch(ParseError pe) {
           System.out.printf("Parse error at position %d\n", pe.position);
         }
@@ -72,6 +104,7 @@ class Test {
       System.out.printf("IO exception: %s\n", io);
     } catch(Exception x) {
       System.out.printf("Exception: %s\n", x);
+      x.printStackTrace();
     }
   }
 }

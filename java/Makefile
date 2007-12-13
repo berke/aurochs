@@ -1,11 +1,11 @@
+#VERSION=1.5.0.11
+VERSION=1.6.0
+
 LIBNAME=aurochsjava
 JAVASRC=fr/aurochs/Attribute.java fr/aurochs/Node.java fr/aurochs/Parser.java fr/aurochs/Token.java fr/aurochs/Tree.java fr/aurochs/Test.java
 JAVAJNI=fr.aurochs.Parser
 JNIHEADERS=fr_aurochs_Parser.h
 OBJS=aurochs_stub.o $(addprefix ../_build/, cnog/cnog.o cpack/pack.o cnog/parse_tree.o cnog/peg_lib.o cnog/cnog_unpack.o cutil/alloc.o cutil/stack.o)
-
-#VERSION=1.5.0.11
-VERSION=1.6.0
 
 JAVA=/opt/sun-jdk-$(VERSION)/bin/java
 JAVAFLAGS=-cp .
@@ -51,15 +51,10 @@ aurochs_stub.o: aurochs_stub.c fr_aurochs_Parser.h
 %.o: %.c
 	$(CC) $(CFLAGS) $<
 
-check: arith.nog
-	LD_LIBRARY_PATH=. CLASSPATH=. $(JAVA) fr.aurochs.Test arith.nog arith.txt
-#LD_LIBRARY_PATH=. CLASSPATH=. $(JAVA) $(JAVAFLAGS) $(TARGET)
-
 clean:
 	rm -f *.class
 	rm -f *.o
 	rm -f *.so
 	rm -f *.h
+	rm -f *.nog
 	rm -f `find . -name '*.class'`
-
-cac: clean all check
