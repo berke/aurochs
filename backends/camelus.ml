@@ -1,14 +1,14 @@
 (* Camelus *)
 
-open Peg;;
-open Seq;;
-open Machine;;
-open Nog;;
-open Pffpsf;;
+open Peg
+open Seq
+open Machine
+open Nog
+open Pffpsf
 
-module B = Boolean;;
+module B = Boolean
 
-module SM = Map.Make(String);;
+module SM = Map.Make(String)
 
 (*** gensym *)
 let gensym =
@@ -22,10 +22,10 @@ let gensym =
     in
     Hashtbl.replace t prefix (n + 1);
     sf "_%s_%d" prefix n
-;;
+
 (* ***)
-let print_node oc n = fp oc "%s%s" !Opt.node_prefix n;;
-let print_attr oc n = fp oc "%s%s" !Opt.attribute_prefix n;;
+let print_node oc n = fp oc "%s%s" !Opt.node_prefix n
+let print_attr oc n = fp oc "%s%s" !Opt.attribute_prefix n
 
 (*** generate_type_defs *)
 let generate_type_defs oc pg peg =
@@ -35,12 +35,11 @@ let generate_type_defs oc pg peg =
   let sum_type print name a =
     fp oc "type %s =\n" name;
     Array.iteri (fun i u -> fp oc "| %a (* %d *)\n" print u i) a;
-    fp oc ";;\n";
+    fp oc "\n";
   in
   sum_type print_node "node_name" node_numbers;
   fp oc "\n";
   sum_type print_attr "attribute_name" attribute_numbers
-;;
 (* ***)
 (*** generate_interface *)
 let generate_interface ?(pack=true) fn pg peg =
@@ -49,7 +48,6 @@ let generate_interface ?(pack=true) fn pg peg =
     fp oci "\n";
     if pack then fp oci "\nopen Aurochs_pack;\n";
     generate_type_defs oci pg peg)
-;;
 (* ***)
 (*** generate_classic *)
 let generate_classic fn start peg (pg : (string, string) program) =
@@ -90,12 +88,12 @@ let generate_classic fn start peg (pg : (string, string) program) =
   fp oci "(* %s *)\n" (String.capitalize fn);
   fp oci "\n";
 
-  fp oc "open Aurochs_pack;;\n";
-  fp oc "open Peg;;\n";
-  fp oc "open Nog;;\n";
-  fp oc "open Machine;;\n";
+  fp oc "open Aurochs_pack\n";
+  fp oc "open Peg\n";
+  fp oc "open Nog\n";
+  fp oc "open Machine\n";
   fp oc "\n";
-  fp oc "exception Parse_error of int * string;;\n";
+  fp oc "exception Parse_error of int * string\n";
   fp oc "\n";
   (* Collect builds *)
   let root_node = !Opt.root_node in
@@ -130,7 +128,7 @@ let generate_classic fn start peg (pg : (string, string) program) =
         fp oc "| %s%s -> output_string oc %S\n" prefix n n
       end
       map;
-    fp oc ";;\n";
+    fp oc "\n";
     fp oc "\n"
   in
 
@@ -155,7 +153,7 @@ let generate_classic fn start peg (pg : (string, string) program) =
 
   fp oci "val print_tree : out_channel -> tree -> unit\n";
   fp oci "val program : (node_name, attribute_name) Nog.program\n";
-  fp oc "let print_tree oc t = Peg.print_poly_tree ~print_node:print_node_name ~print_attribute:print_attribute_name () oc t;;\n";
+  fp oc "let print_tree oc t = Peg.print_poly_tree ~print_node:print_node_name ~print_attribute:print_attribute_name () oc t\n";
 
   (*
   (*** bexpr *)
@@ -248,7 +246,7 @@ let generate_classic fn start peg (pg : (string, string) program) =
   fp oc "  let ((_attributes, _children) as _node) = (ref [], ref []) in\n";
   fp oc "  ignore (_build_%s _node 0);\n" start;
   fp oc "  (Node(%s%s, List.rev !_attributes, List.rev !_children))\n" !Opt.node_prefix root_node;
-  fp oc ";;\n";
+  fp oc "\n";
   fp oc "\n";
   *)
 
@@ -293,7 +291,7 @@ let generate_classic fn start peg (pg : (string, string) program) =
   fp oc "    u.[i] <- Char.chr ((((Char.code d.[2 * i]) - 97) lsl 4) + (((Char.code d.[2 * i + 1] - 97))))\n";
   fp oc "  done;\n";
   fp oc "  Marshal.from_string u 0\n";
-  fp oc ";;\n";*)
+  fp oc "\n";*)
 
   fp oc "let program = {\n";
   fp oc "  pg_start = %S;\n" pg.pg_start;
@@ -313,18 +311,17 @@ let generate_classic fn start peg (pg : (string, string) program) =
   Array.iter (fun x ->
      fp oc "    %a;\n" (Machine.dump_instruction ~print_node ~print_attr) x) pg.pg_code;
   fp oc "    |];\n";
-  fp oc "  };;\n\n";
+  fp oc "  }\n\n";
 
   fp oc "let parse_positioned u =\n";
   fp oc "  Nog.execute_positioned program ~print_node:print_node_name ~print_attr:print_attribute_name ~root:%a u\n" print_node root_node;
-  fp oc ";;\n";
+  fp oc "\n";
   fp oc "\n";
 
-  fp oc "let parse u = relativize u (parse_positioned u);;\n";
+  fp oc "let parse u = relativize u (parse_positioned u)\n";
 
   fp oci "val parse_positioned : string -> positioned_tree\n";
-  fp oci "val parse : string -> tree\n";
-;;
+  fp oci "val parse : string -> tree\n"
 (* ***)
 (*** generate_implementation *)
 let generate_implementation ?(pack=true) fn start peg (pg : (string, string) program) =
@@ -346,7 +343,7 @@ let generate_implementation ?(pack=true) fn start peg (pg : (string, string) pro
             fp oc "| %s%s -> output_string oc %S\n" prefix n n
           end
           a;
-        fp oc ";;\n";
+        fp oc "\n";
         fp oc "\n"
       in
 
@@ -354,8 +351,8 @@ let generate_implementation ?(pack=true) fn start peg (pg : (string, string) pro
       fp oci "(* %s *)\n" (String.capitalize fn);
       if pack then
         begin
-          fp oc "\nopen Aurochs_pack;;\n\n";
-          fp oci "\nopen Aurochs_pack;;\n\n";
+          fp oc "\nopen Aurochs_pack\n\n";
+          fp oci "\nopen Aurochs_pack\n\n";
         end;
 
       generate_type_defs oc pg peg;
@@ -376,22 +373,21 @@ let generate_implementation ?(pack=true) fn start peg (pg : (string, string) pro
       fp oc "\n";
       fp oc "let binary =\n";
       Stringifier.print_ocaml_string ~indent:4 () oc u;
-      fp oc ";;\n";
       fp oc "\n";
-      fp oc "let program = lazy (%s.program_of_binary binary);;\n" aurochs;
+      fp oc "\n";
+      fp oc "let program = lazy (%s.program_of_binary binary)\n" aurochs;
 
       fp oc "\n";
-      fp oc "let parse_positioned u = %s.read_positioned ~grammar:(`Program program) ~text:(`String u);;\n" aurochs;
-      fp oc "let parse u = Peg.relativize u (parse_positioned u);;\n";
-      fp oc "let print_tree oc t = Peg.print_poly_tree ~print_node:print_node_name ~print_attribute:print_attribute_name () oc t;;\n";
+      fp oc "let parse_positioned u = %s.read_positioned ~grammar:(`Program program) ~text:(`String u)\n" aurochs;
+      fp oc "let parse u = Peg.relativize u (parse_positioned u)\n";
+      fp oc "let print_tree oc t = Peg.print_poly_tree ~print_node:print_node_name ~print_attribute:print_attribute_name () oc t\n";
 
       fp oci "\n";
       fp oci "val binary : %s.binary\n" aurochs;
       fp oci "val program : (node_name, attribute_name) %s.program Lazy.t\n" aurochs;
-      fp oci "val parse : string -> tree;;\n";
-      fp oci "val parse_positioned : string -> positioned_tree;;\n";
+      fp oci "val parse : string -> tree\n";
+      fp oci "val parse_positioned : string -> positioned_tree\n";
       fp oci "val print_tree : out_channel -> tree -> unit\n";
     )
   )
-;;
 (* ***)

@@ -1,17 +1,17 @@
 (* Noggie *)
 
-open Peg;;
-open Seq;;
-open Machine;;
-open Nog;;
-open Pffpsf;;
-open Talk;;
-open Util.Syntax;;
+open Peg
+open Seq
+open Machine
+open Nog
+open Pffpsf
+open Talk
+open Util.Syntax
 
-module B = Boolean;;
-module SS = Set.Make(String);;
+module B = Boolean
+module SS = Set.Make(String)
 
-exception Inside of string * exn;;
+exception Inside of string * exn
 
 (*** register_complexity *)
 let rec register_complexity = function
@@ -28,7 +28,7 @@ let rec register_complexity = function
           l
       in
       n' + arity - 1
-;;
+
 (* ***)
 (*** generate_code *)
 let generate_code ~root ~start peg =
@@ -410,7 +410,7 @@ let generate_code ~root ~start peg =
     pg_choices = Array.of_list (List.rev !choices_array);
     pg_root = root;
     pg_code = cd }
-;;
+
 (* ***)
 (*** print_compiled *)
 let print_compiled oc =
@@ -418,7 +418,7 @@ let print_compiled oc =
     begin fun (name, bb) ->
       fp oc "; %s\n\n%a\n" name print_instruction_sequence bb
     end
-;;
+
 (* ***)
 (*** print_code *)
 let print_code oc ?(annotator = fun _ _ -> ()) pg =
@@ -429,7 +429,7 @@ let print_code oc ?(annotator = fun _ _ -> ()) pg =
       | _ -> fp oc "%a      %a\n" annotator pc Machine.print_instruction instr
     end
     pg
-;;
+
 (* ***)
 (*** put_program *)
 let put_program pg peg sk =
@@ -485,14 +485,13 @@ let put_program pg peg sk =
   Pack.write_uint sk & Array.length pg.pg_code;
   let resolve_attribute = Hashtbl.find attributes in
   Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
-;;
+
 (* ***)
 (*** save_program *)
-let save_program fn pg peg = Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in put_program pg peg sk);;
+let save_program fn pg peg = Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in put_program pg peg sk)
 (* ***)
 (*** generate *)
 let generate fn ?(start="start") peg =
   let peg' = Canonify.canonify_grammar ~start peg in
   generate_code ~start peg'
-;;
 (* ***)

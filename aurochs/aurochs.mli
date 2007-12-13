@@ -42,6 +42,9 @@ val program_of_binary : binary -> ('node, 'attribute) program
 (** Parse a given string *)
 val parse : ('node, 'attribute) program -> string -> ('node, 'attribute) Peg.poly_positioned_tree
 
+(** Convert a positioned tree to a string tree *)
+val convert_tree : ('node, 'attribute) program -> (int, int) Peg.poly_positioned_tree -> (string, string) Peg.poly_positioned_tree
+
 (** Parse a given string *)
 val parse_generic : generic_program -> string -> Peg.tree
 
@@ -75,3 +78,5 @@ val see :
    grammar:[`Source of data|`Program of generic_program Lazy.t|`Binary of data] ->
    text:data ->
    Peg.tree
+
+val read_file : string -> string

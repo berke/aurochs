@@ -1,63 +1,46 @@
 (* Process *)
 
-open Peg;;
-open Pffpsf;;
-open Util;;
-open Talk;;
+open Peg
+open Pffpsf
+open Util
+open Talk
 
-exception Error of string;;
+let ( !< ) = Lazy.force
+
+exception Error of string
 
 type 'a name =
 | Resolved of string * 'a
 | Unresolved of string
-;;
 
-(*** load_grammar *)
-let load_grammar fn =
-  if !Opt.bootstrap then
-    begin
-      let u = Driver.read_file fn in
-      let m = String.length u in
-      let peg = Grammar_original.peg in
-      with_file_output "internal.peg" (fun oc -> Pretty.print_grammar oc peg);
-      let (q, i, t) =
-        Peg.descent
-          (fun x -> List.assoc x peg)
-           (List.assoc "start" peg) u in
-      try
-        if q && i = m then
-          begin
-            begin
-              match !Opt.dump_xml with
-              | None -> ()
-              | Some fn ->
-                  info `Normal "Dumping XML grammar to file %s" fn;
-                  with_file_output fn (fun oc -> Peg.print_tree () oc t)
-            end;
-            Convert_grammar_original.convert_grammar t
-          end
-        else
-          raise (Error(sf "Error in grammar file %S at character %d" fn (i + 1)))
-      with
-      | Peg.Fail -> raise (Error(sf "Cannot parse grammar file %S" fn))
-    end
-  else
-    begin
-      let u = Driver.read_file fn in
-      let t = Grammar.parse u in
+let bootstrap fn =
+  let u = Driver.read_file fn in
+  let m = String.length u in
+  let peg = Grammar_original.peg in
+  with_file_output "internal.peg" (fun oc -> Pretty.print_grammar oc peg);
+  let (q, i, t) =
+    Peg.descent
+      (fun x -> List.assoc x peg)
+       (List.assoc "start" peg) u in
+  try
+    if q && i = m then
       begin
-        match !Opt.dump_xml with
-        | None -> ()
-        | Some fn ->
-            info `Normal "Dumping XML grammar to file %s" fn;
-            with_file_output fn (fun oc -> Grammar.print_tree oc t)
-      end;
-      Convert_grammar.convert_grammar t
-     (*assert false*)
-    end
-;;
-(* ***)
-module SM = Map.Make(String);;
+        begin
+          match !Opt.dump_xml with
+          | None -> ()
+          | Some fn ->
+              info `Normal "Dumping XML grammar to file %s" fn;
+              with_file_output fn (fun oc -> Peg.print_tree () oc t)
+        end;
+        Convert_grammar_original.convert_grammar t
+      end
+    else
+      raise (Error(sf "Error in grammar file %S at character %d" fn (i + 1)))
+  with
+  | Peg.Fail -> raise (Error(sf "Cannot parse grammar file %S" fn))
+
+module SM = Map.Make(String)
+
 (*** build_color_table *)
 let build_color_table ?(min_color=1) ?(max_color=7) t =
   let color = ref min_color in
@@ -74,7 +57,7 @@ let build_color_table ?(min_color=1) ?(max_color=7) t =
   Peg.iter_over_poly_tree_nodes (fun b -> add_color builds_table b) t;
   Peg.iter_over_poly_tree_attributes (fun a -> add_color attributes_table a) t;
   (!builds_table, !attributes_table)
-;;
+
 (* ***)
 (*** colorize *)
 let colorize ?(default_acolor=Ansi.black) ?(default_bcolor=Ansi.white) (builds_table, attributes_table) u pt =
@@ -101,7 +84,7 @@ let colorize ?(default_acolor=Ansi.black) ?(default_bcolor=Ansi.white) (builds_t
   in
   loop_build pt;
   (ac, bc)
-;;
+
 (* ***)
 (*** dump_colorized *)
 let dump_colorized oc (ac, bc) u =
@@ -135,8 +118,9 @@ let dump_colorized oc (ac, bc) u =
     output_char oc u.[i]
   done;
   fp oc "%s%!" Ansi.none
-;;
+
 (* ***)
+
 (*** parse_file_with_nog *)
 let parse_file_with_nog pg fn =
   let with_dump_oc = 
@@ -218,7 +202,63 @@ let parse_file_with_nog pg fn =
       end
   else
     treat (Driver.read_file fn)
-;;
+
+(* ***)
+(*** parse_file_with_prog *)
+let parse_file_with_prog prog fn =
+  let with_dump_oc = 
+    match !Opt.dump_colorized with
+    | None -> ignore
+    | Some fn ->
+        let oc = open_out fn in
+        fun f -> f oc
+  in
+  let line = ref 0 in
+  let treat u =
+    try
+      let pt = Aurochs.parse prog u in
+      let pt = Aurochs.convert_tree prog pt in
+      let t = Peg.relativize u pt in
+      with_dump_oc
+        begin fun oc ->
+          let bat = build_color_table t in
+          let ct = colorize bat u pt in
+          dump_colorized oc ct u;
+          if !Opt.line then fp oc "%!\n"
+        end;
+      if !Opt.tree then
+        begin
+          info `Important "RESULT";
+          Peg.print_tree () stdout t;
+          flush stdout
+        end
+      else
+        info `Important "RESULT OK"
+    with
+    | Nog.Parse_error i ->
+        if !Opt.line then
+          info `Important "PARSE ERROR AT CHARACTER %d IN LINE %d OF FILE %s" i !line fn
+        else
+          begin
+            info `Important "PARSE ERROR IN FILE %s AT CHARACTER %d" fn i;
+            exit 1
+          end
+  in
+  if !Opt.line then
+    with_file_input fn
+      begin fun ic ->
+        try
+          while true do
+            let u = input_line ic in
+            incr line;
+            treat u
+          done
+        with
+        | End_of_file -> ()
+      end
+  else
+    treat (Driver.read_file fn)
+
 (* ***)
 (*** parse_file *)
 let parse_file peg fn =
@@ -282,19 +322,22 @@ let parse_file peg fn =
       end
   else
     treat (Driver.read_file fn)
-;;
+
 (* ***)
 (*** process *)
 let process fno =
-  banner "Aurochs V%d" Version.version;
+  let (v1,v2,v3) = Version.version in
+  banner "Aurochs %d.%d.%d" v1 v2 v3;
 
   let peg =
     lazy begin
       match fno with
       | None -> raise (Error "No grammar file specified")
       | Some fn ->
-          let peg = load_grammar fn in
+          let u = Aurochs.read_file fn in
           info `Normal "Grammar loaded from file %s" fn;
+          let peg = Convert_grammar.convert_grammar (Grammar.parse u) in
+          info `Minor "Grammar converted";
           peg
     end
   in
@@ -317,13 +360,13 @@ let process fno =
     | None -> ()
     | Some fn ->
         info `Normal "Dumping grammar to file %s" fn;
-        with_file_output fn (fun oc -> Pretty.print_grammar oc (Lazy.force peg))
+        with_file_output fn (fun oc -> Pretty.print_grammar oc (!< peg))
   end;
 
   let peg_canonified =
     lazy begin
       info `Minor "Checking grammar";
-      let results = Check.check_grammar !Opt.start (Lazy.force peg) in
+      let results = Check.check_grammar !Opt.start (!< peg) in
       let fail = ref false in
       List.iter
         begin function
@@ -336,7 +379,7 @@ let process fno =
       if !fail then raise (Error "Invalid grammar");
 
       info `Minor "Canonifying grammar";
-      let peg = Canonify.canonify_grammar ~start:!Opt.start (Lazy.force peg) in
+      let peg = Canonify.canonify_grammar ~start:!Opt.start (!< peg) in
       peg
     end
   in
@@ -346,15 +389,15 @@ let process fno =
     | None -> ()
     | Some fn ->
         info `Normal "Dumping canonified grammar to file %s" fn;
-        with_file_output fn (fun oc -> Pretty.print_grammar oc (Lazy.force peg_canonified))
+        with_file_output fn (fun oc -> Pretty.print_grammar oc (!< peg_canonified))
   end;
 
-  let nog =
+  let pg =
     lazy begin
       match !Opt.load_nog with
       | None ->
           info `Minor "Generating NOG code";
-          Noggie.generate (Lazy.force base_name) ~root:!Opt.root_node ~start:!Opt.start (Lazy.force peg_canonified)
+          Noggie.generate (!< base_name) ~root:!Opt.root_node ~start:!Opt.start (!< peg_canonified)
       | Some fn -> with_file_input fn (fun ic -> Marshal.from_channel ic)
     end
   in
@@ -364,62 +407,63 @@ let process fno =
     | None -> ()
     | Some fn ->
         info `Normal "Dumping NOG code to %s" fn;
-        with_file_output fn (fun oc -> Noggie.print_code oc (Lazy.force nog).Nog.pg_code)
+        with_file_output fn (fun oc -> Noggie.print_code oc (!< pg).Nog.pg_code)
   end;
+
+  let bin = lazy (Bytes.with_buffer_sink (Noggie.put_program (!< pg) (!< peg))) in
+
+  let prog = lazy (Aurochs.program_of_binary (!< bin)) in
 
   begin
     match !Opt.save_nog with
     | None -> ()
     | Some fn ->
         info `Normal "Saving NOG program to %s" fn;
-        with_file_output fn (fun oc -> Marshal.to_channel oc (Lazy.force nog) [])
+        with_file_output fn (fun oc -> Marshal.to_channel oc (!< pg) [])
   end;
 
   begin
     match !Opt.parse with
-    | [] -> info `Normal "No file to parse."
+    | [] -> ()
     | something ->
         List.iter
           begin fun fn' ->
             if !Opt.parse_with_nog then
               begin
                 info `Normal "Parsing file %s using Nog interpreter" fn';
-                let pg = Lazy.force nog in
-                parse_file_with_nog pg fn'
+                parse_file_with_prog (!< prog) fn'
               end
             else
               begin
                 info `Normal "Parsing file %s using expression interpreter" fn';
-                parse_file (Lazy.force peg) fn'
+                parse_file (!< peg) fn'
               end
           end
           (List.rev something)
   end;
 
-  if !Opt.generate then
-    begin
-      info `Minor "Generating parser";
-      let fn' = Lazy.force base_name in
+  match !Opt.targets with
+  | [] -> info `Normal "No targets"
+  | targets ->
+      let fn' = !< base_name in
       List.iter
-        begin function
+        (function
           | `ml_classic ->
-              let pg = Lazy.force nog in
-              Camelus.generate_classic fn' !Opt.start (Lazy.force peg) pg
+              info `Normal "Generating classic ML parser";
+              Camelus.generate_classic fn' !Opt.start (!< peg) (!< pg)
           | `ml ->
-              let pg = Lazy.force nog in
-              Camelus.generate_implementation fn' !Opt.start (Lazy.force peg) pg
-          | `mli -> Camelus.generate_interface fn' (Lazy.force nog) (Lazy.force peg)
+              info `Normal "Generating ML implementation";
+              Camelus.generate_implementation fn' !Opt.start (!< peg) (!< pg)
+          | `mli ->
+              info `Normal "Generating ML interface";
+              Camelus.generate_interface fn' (!< pg) (!< peg)
           | `c ->
-              Ritchie.generate fn' ~start:!Opt.start (Lazy.force peg_canonified)
-          | `nog -> Noggie.save_program (fn'^".nog") (Lazy.force nog) (Lazy.force peg)
-          | `amd64 ->
-              let pg = Lazy.force nog in
-              with_file_output (fn'^".s")
-                begin fun oc ->
-                  Amd64.emit oc pg
-                end
-        end
-        !Opt.targets
-    end
-;;
+              info `Normal "Generating C parser";
+              Ritchie.generate fn' ~start:!Opt.start (!< peg_canonified)
+          | `nog ->
+              info `Normal "Generating NOG parser";
+              Noggie.save_program (fn'^".nog") (!< pg) (!< peg)
+        )
+        targets
+
 (* ***)

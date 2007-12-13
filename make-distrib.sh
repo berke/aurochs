@@ -1,9 +1,8 @@
 #!/bin/sh
 
-set -x
 set -e
 
-VERSION=$(sed -n -e 's/^.*version *= *\([0-9]\+\) *;.*$/\1/p' aurochs/version.ml)
+VERSION=$(sed -n -e 's/^.*version *= *(\([0-9]\+,[0-9]\+,[0-9]\+\)) *$/\1/' -e 's/,/./gp' aurochs/version.ml)
 
 echo "Version is $VERSION"
 
@@ -33,8 +32,7 @@ cp cnog/*.h cpack/*.h cutil/*.h include/*.h $TARGET/include
 cp cnog/*.c cpack/*.c cutil/*.c $TARGET/src
 cp ../cnog/check.c $TARGET/src
 cp ../java/*.c ../java/Makefile $TARGET/java
-cp ../java/fr/aurochs/Aurochs.java $TARGET/java/fr/aurochs
-cp ../java/fr/aurochs/Test.java $TARGET/java/fr/aurochs
+cp ../java/fr/aurochs/*.java $TARGET/java/fr/aurochs
 cp ../java/arith.peg $TARGET/java
 cp ../java/arith.txt $TARGET/java
 

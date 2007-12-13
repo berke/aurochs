@@ -36,20 +36,20 @@ let parse pg u =
   | None -> raise (Parse_error !error_pos)
   | Some t -> t
 
-let parse_generic pg u =
-  let t = parse pg u in
+let convert_tree pg t =
   let cons = constructors pg
   and attrs = attributes pg 
   in
-  let sub u i j = String.sub u i (j - i) in
   let rec convert = function
-  | P_Node(_, _, n, al, xl) ->
-      Node(cons.(n),
-        List.map (fun (i, j, a) -> (attrs.(a), if j < i then string_of_int i else sub u i j)) al,
+  | P_Node(a, b, n, al, xl) ->
+      P_Node(a, b, cons.(n),
+        List.map (fun (i, j, a) -> (i, j, attrs.(a))) al,
         List.map convert xl)
-  | P_Token(i, j) -> Token(sub u i j)
+  | P_Token(i, j) as t -> t
   in
   convert t
+
+let parse_generic pg u = relativize u (convert_tree pg (parse pg u))
 
 let compile_inner ?start ?base ?root ?check u = failwith "Compile not implemented"
 
