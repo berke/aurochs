@@ -1,6 +1,6 @@
 .PHONY: all aurochs clean test_grammar test_arith install lib
 
-PREFIX=/usr/local
+PREFIX?=/usr/local
 OCAML_DIR=$(shell ocamlc -where)
 TARGET=$(OCAML_DIR)/aurochs_lib
 
