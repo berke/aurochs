@@ -91,22 +91,22 @@ bool ptree_add_children(info pti, tree tr1, tree tr2)/*{{{*/
 
   return true;
 }/*}}}*/
+tree ptree_reverse_sibling_loop(tree tr_accu, tree tr) {/*{{{*/
+  if(tr) {
+    tree tr_rest;
+    tr_rest = tr->t_sibling;
+    tr->t_sibling = tr_accu;
+    return ptree_reverse_sibling_loop(tr, tr_rest);
+  } else {
+    return tr_accu;
+  }
+}/*}}}*/
 void ptree_reverse_sibling(info pti, tree tr) {/*{{{*/
   node nd;
 
   nd = ptree_get_node(tr);
 
-  tree loop(tree tr_accu, tree tr) {/*{{{*/
-    if(tr) {
-      tree tr_rest;
-      tr_rest = tr->t_sibling;
-      tr->t_sibling = tr_accu;
-      return loop(tr, tr_rest);
-    } else {
-      return tr_accu;
-    }
-  }/*}}}*/
-  nd->n_children = loop(0, nd->n_children);
+  nd->n_children = ptree_reverse_sibling_loop(0, nd->n_children);
 }/*}}}*/
 void ptree_reverse_tree(info pti, tree tr) {/*{{{*/
   switch(tr->t_kind) {
