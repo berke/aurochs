@@ -8,28 +8,6 @@ open Outcome;;
 
 let ( & ) f x = f x;;
 
-module Config_common =
-  struct
-    let ocamldir_default = "/udir/durak/lib/ocaml";;
-  end
-;;
-
-module Config32 =
-  struct
-    include Config_common
-    let bits64 = false;;
-  end
-;;
-
-module Config64 =
-  struct
-    include Config_common
-    let bits64 = true;;
-  end
-;;
-
-open Config64;;
-
 let ocaml_local_dir =
   lazy begin
     try
@@ -40,6 +18,18 @@ let ocaml_local_dir =
         My_unix.run_and_open cmd (fun ic ->
           Log.dprintf 5 "Getting Ocaml directory from command %s" cmd;
           input_line ic)
+  end
+;;
+
+let cflags =
+  lazy begin
+    try
+      let fl = Sys.getenv "CFLAGS" in
+      let flags = Lexers.comma_or_blank_sep_strings (Lexing.from_string fl) in
+      S(List.concat (List.map (fun fl -> [A"-ccopt"; A fl]) flags))
+    with
+    | Not_found ->
+        clflags_from_system system
   end
 ;;
 
@@ -62,12 +52,7 @@ type ocaml_lib_description = {
   od_incdirs : string list
 };;
 
-let system_lib_dir =
-  if bits64 then
-    "/usr/lib64"
-  else
-    "/usr/lib"
-;;
+let system_lib_dir = "/usr/lib";;
 
 let zlib_description = {
   ld_name = "zlib";
@@ -88,29 +73,6 @@ let aurochslib_description = {
   ld_c_headers = [];
   ld_static = true
 }
-
-(*** clibdep *)
-let clibdep ld =
-   (* When one makes a C library that use the zlib with ocamlmklib,
-      then issue these flags. *)
-   flag ["ocamlmklib"; "c"; "use_"^ld.ld_name]
-        (S[A ld.ld_dir; A ld.ld_lib]);
-
-   (* When one compiles C code using the zlib *)
-   flag ["c"; "compile"; "include_"^ld.ld_name]
-        (S[A"-ccopt"; A ld.ld_include;
-           begin match ld.ld_have_lib with
-             | None -> N
-             | Some x -> S[A"-ccopt"; A x]
-           end]);
-
-   flag ["link"; "ocaml"; "library"; "use_"^ld.ld_name]
-        (S[A"-ccopt"; A ld.ld_dir; A"-cclib"; A ld.ld_lib]);
-
-   (* If `static' is true then every ocaml link in bytecode will add -custom *)
-   if ld.ld_static then flag ["link"; "ocaml"; "byte"] (A"-custom");
-;;
-(* ***)
 
 let aurochs_lib_description = {
   od_path = "";
@@ -136,7 +98,7 @@ let ocamllib old =
 
    flag ["compile"; "c"; "cstuff"] &
      S[A"-ccopt";A"-Wall";
-       A"-ccopt";A"-fnested-functions";
+       Lazy.force cflags;
        A"-verbose";
        S(List.map(fun x -> S[A"-ccopt";A("-I"^x)]) old.od_incdirs);
      ];
