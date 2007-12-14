@@ -28,8 +28,7 @@ let cflags =
       let flags = Lexers.comma_or_blank_sep_strings (Lexing.from_string fl) in
       S(List.concat (List.map (fun fl -> [A"-ccopt"; A fl]) flags))
     with
-    | Not_found ->
-        clflags_from_system system
+    | Not_found -> S[]
   end
 ;;
 
