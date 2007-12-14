@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   size_t peg_data_size;
   nog_program_t *pg;
   packer_t pk;
-  stack_t *st;
+  aurochs_stack_t *st;
   int rc;
 
   rc = 0;
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
       for(i = 0; i < argc; i ++) {
         fn = argv[i];
         peg_builder_t pb;
-        stack_t *s2;
+        aurochs_stack_t *s2;
 
         s2 = stack_create(&alloc_stdlib);
 

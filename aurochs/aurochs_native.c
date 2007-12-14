@@ -37,7 +37,7 @@ typedef construction_t *construction;
 
 typedef struct {
   nog_program_t *p_nog;
-  stack_t *p_stack;
+  aurochs_stack_t *p_stack;
 } program_t;
 
 #define program_val(v) (*((program_t *) Data_custom_val(v)))
@@ -58,7 +58,7 @@ static void program_finalize(value pgv)
   stack_dispose(program_val(pgv).p_stack);
 }
 
-static value program_alloc(nog_program_t *pg, stack_t *s)
+static value program_alloc(nog_program_t *pg, aurochs_stack_t *s)
 {
   value v = alloc_custom(&program_ops, sizeof(program_t), pg->np_count, 1000000);
   program_val(v).p_nog = pg;
@@ -100,7 +100,7 @@ value caml_aurochs_program_of_binary(value binaryv)
   uint8_t *binary;
   size_t length;
   packer_t pk;
-  stack_t *s;
+  aurochs_stack_t *s;
   nog_program_t *pg;
   const char *error;
 
@@ -333,7 +333,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   size_t input_length;
   nog_program_t *pg;
   peg_context_t *cx;
-  stack_t *s;
+  aurochs_stack_t *s;
   peg_builder_t builder;
   info builder_info;
 

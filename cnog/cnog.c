@@ -401,7 +401,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
 nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
-  uint64_t size;
+  size_t size;
   int i, j;
 
   DEBUGF("Unpacking\n");

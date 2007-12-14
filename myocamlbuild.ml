@@ -136,6 +136,7 @@ let ocamllib old =
 
    flag ["compile"; "c"; "cstuff"] &
      S[A"-ccopt";A"-Wall";
+       A"-ccopt";A"-fnested-functions";
        A"-verbose";
        S(List.map(fun x -> S[A"-ccopt";A("-I"^x)]) old.od_incdirs);
      ];
