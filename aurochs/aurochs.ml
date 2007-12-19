@@ -43,7 +43,7 @@ let convert_tree pg t =
   let rec convert = function
   | P_Node(a, b, n, al, xl) ->
       P_Node(a, b, cons.(n),
-        List.map (fun (i, j, a) -> (i, j, attrs.(a))) al,
+        List.map (fun (v, a) -> (v, attrs.(a))) al,
         List.map convert xl)
   | P_Token(i, j) as t -> t
   in

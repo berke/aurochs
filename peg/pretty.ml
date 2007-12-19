@@ -28,6 +28,7 @@ let rec print_production priority oc = function
   | Epsilon -> fp oc "epsilon"
   | Position -> fp oc "position"
   | Tokenize x -> fp oc "{ %a }" (print_production true) x
+  | Constant u -> fp oc "=%S" u
   | Ascribe(n, x) -> fp oc "%s:%a" n (print_production false) x
   | Ax(x, Case_insensitive) -> fp oc "%S^i" x
   | Ax(x, Exact) | A x ->

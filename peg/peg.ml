@@ -1,24 +1,23 @@
 (* Peg *)
 
-open Pffpsf;;
+open Pffpsf
 
 (*** types *)
 type char_set =
   | One of char
   | Many of char list
   | Range of char * char
-;;
 
 type match_options =
   | Exact
   | Case_insensitive
-;;
 
 type 'a pe =
   | Epsilon
   | Position
   | Tokenize of 'a pe
   | Ascribe of string * 'a pe
+  | Constant of string
   | A of string (* Atom *)
   | Ax of string * match_options
   | C of char_set Boolean.t
@@ -33,7 +32,6 @@ type 'a pe =
   | Plus of 'a pe
   | BOF
   | EOF
-;;
 
 type proto_tree =
   | Empty_
@@ -41,50 +39,53 @@ type proto_tree =
   | Attribute_ of string * string
   | Token_ of string
   | Pseudo_ of proto_tree list
-;;
+
+type value =
+  | V_Substring of int * int
+  | V_Constant of string
 
 type ('node, 'attribute) poly_positioned_tree =
-  | P_Node of int * int * 'node * (int * int * 'attribute) list * ('node, 'attribute) poly_positioned_tree list (* Node (name, attributes_list, children *)
+  | P_Node of int * int * 'node * (value * 'attribute) list * ('node, 'attribute) poly_positioned_tree list (* Node (name, attributes_list, children *)
   | P_Token of int * int
-;;
 
 type ('node, 'attribute) poly_tree =
   | Node of 'node * ('attribute * string) list * ('node, 'attribute) poly_tree list (* Node (name, attributes_list, children *)
   | Token of string
-;;
 
 let rec iter_over_poly_tree_nodes f = function
   | Node(nd, _, xl) -> f nd; List.iter (iter_over_poly_tree_nodes f) xl
   | Token _ -> ()
-;;
 
 let rec iter_over_poly_tree_attributes f = function
   | Node(_, al, xl) -> List.iter (fun (a, _) -> f a) al; List.iter (iter_over_poly_tree_attributes f) xl
   | Token _ -> ()
-;;
 
-type tree = (string, string) poly_tree;;
+type tree = (string, string) poly_tree
 
 type 'a result =
   | Failure
   | Success of 'a
   | Busy
-;;
 
-exception Fail;;
-exception Not_implemented;;
-exception Error of string;;
+exception Fail
+exception Not_implemented
+exception Error of string
 (* ***)
-let sub u i j = String.sub u i (j - i);;
+let sub u i j = String.sub u i (j - i)
 
 (*** rec *)
 let rec relativize u = function
   | P_Node(_, _, n, al, xl) ->
       Node(n,
-        List.map (fun (i, j, a) -> (a, if j < i then string_of_int i else sub u i j)) al,
+        List.map
+          (fun (v, a) ->
+            match v with
+            | V_Substring(i, j) -> (a, if j < i then string_of_int i else sub u i j)
+            | V_Constant u ->      (a, u)
+          )
+        al,
         List.map (relativize u) xl)
   | P_Token(i, j) -> Token(sub u i j)
-;;
 (* ***)
 (*** iter_over_n *)
 let rec iter_over_n f = function
@@ -92,7 +93,6 @@ let rec iter_over_n f = function
   | Epsilon|EOF|BOF|Position|A _|Ax _|C _ -> ()
   | Tokenize x|Ascribe(_,x)|And x|Not x|Opt x|Star x|Plus x -> iter_over_n f x
   | S xl|Build(_, xl)|Or xl -> List.iter (iter_over_n f) xl
-;;
 (* ***)
 (*** map_over_n *)
 let rec map_over_n f = function
@@ -114,7 +114,6 @@ let rec map_over_n f = function
   | S xl -> S(List.map (map_over_n f) xl)
   | Build(n, xl) -> Build(n, List.map (map_over_n f) xl)
   | Or xl -> Or(List.map (map_over_n f) xl)
-;;
 (* ***)
 (*** iter_over_builds *)
 let rec iter_over_builds f = function
@@ -122,7 +121,6 @@ let rec iter_over_builds f = function
   | And x | Not x | Opt x | Star x | Plus x | Tokenize x | Ascribe(_, x) -> iter_over_builds f x
   | Build(n, xl) -> f n; List.iter (iter_over_builds f) xl
   | S xl | Or xl -> List.iter (iter_over_builds f) xl
-;;
 (* ***)
 (*** iter_over_attributes *)
 let rec iter_over_attributes f = function
@@ -130,29 +128,25 @@ let rec iter_over_attributes f = function
   | And x | Not x | Opt x | Star x | Plus x | Tokenize x -> iter_over_attributes f x
   | Ascribe(a, x) -> f a; iter_over_attributes f x
   | Build(_, xl) | S xl | Or xl -> List.iter (iter_over_attributes f) xl
-;;
 (* ***)
 
-module SS = Set.Make(String);;
-module SM = Map.Make(String);;
+module SS = Set.Make(String)
+module SM = Map.Make(String)
 
 type trool =
 | Unknown
 | True
 | False
-;;
 
 let ( ||| ) a b = match (a, b) with
   | (Unknown, x)|(x, Unknown) -> x
   | (True,_)|(_,True) -> True
   | (_,_) -> False
-;;
 
 let print_trool oc = function
 | True -> fp oc "true"
 | False -> fp oc "false"
 | Unknown -> fp oc "unknown"
-;;
  
 (*** rec *)
 (* MUST BE CANONIFIED *)
@@ -219,18 +213,16 @@ let compute_active_terminals peg =
   List.iter (fun (n, x) -> if active_root x then mark SS.empty n) peg;
 
   !actives
-;;
 (* ***)
 
-let fp = Printf.fprintf;;
-let sf = Printf.sprintf;;
+let fp = Printf.fprintf
+let sf = Printf.sprintf
 
 (*** print_indent *)
 let print_indent oc d =
   for i = 1 to d do
     fp oc "  "
   done
-;;
 (* ***)
 (*** print_escaping *)
 let print_escaping oc u =
@@ -242,10 +234,9 @@ let print_escaping oc u =
     | '>' -> fp oc "&gt;"
     | c -> output_char oc c
   done
-;;
 (* ***)
 (*** print_tree, print_tree_list *)
-let print_string oc x = fp oc "%s" x;;
+let print_string oc x = fp oc "%s" x
 let rec print_poly_tree ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc t =
   match t with
   | Node(n, al, (_::_ as l)) ->
@@ -280,12 +271,12 @@ and print_poly_tree_list ?(depth=0) ?(short=false) ~print_node ~print_attribute 
       print_poly_tree ~depth ~short ~print_node ~print_attribute () oc t
     end
     l
-;;
-let print_tree ?depth ?short () oc t = print_poly_tree ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc t;;
-let print_tree_list ?depth ?short () oc l = print_poly_tree_list ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc l;;
+
+let print_tree ?depth ?short () oc t = print_poly_tree ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc t
+let print_tree_list ?depth ?short () oc l = print_poly_tree_list ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc l
 (* ***)
 (*** collect *)
-exception Bad_tree;;
+exception Bad_tree
 
 let collect t =
   let rec do_collector n attributes children = function
@@ -311,7 +302,6 @@ let collect t =
   | Token_ u -> Token u
   in
   do_tree t
-;;
 (* ***)
 (*** is_factor *)
 let is_factor v u i =
@@ -324,7 +314,6 @@ let is_factor v u i =
     u.[i + j] = v.[j] && loop (j + 1)
   in
   loop 0
-;;
 (* ***)
 (*** extract_token, extract_token_from_list *)
 let rec extract_token = function
@@ -344,7 +333,6 @@ and extract_token_from_list = function
             | Fail -> extract_token_from_list rest
           end
       | _ -> extract_token_from_list rest
-;;
 (* ***)
 (*** process *)
 let process resolve peg u =
@@ -521,7 +509,6 @@ let process resolve peg u =
       end
   in
   loop 0 peg, cache
-;;
 (* ***)
 (*** descent *)
 let descent resolve peg u =
@@ -542,5 +529,4 @@ let descent resolve peg u =
       Printf.eprintf "Parse error at character %d.\n%!" !max_i;
       (false, i, collect s)
     end
-;;
 (* ***)

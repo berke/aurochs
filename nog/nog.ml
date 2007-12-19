@@ -60,7 +60,7 @@ module IS = Set.Make(struct type t = int let compare = compare end);;
 type ('nd, 'at) construction = {
   cons_name : 'nd option;
   cons_start : int;
-  mutable cons_attributes : (int * int * 'at) list;
+  mutable cons_attributes : (Peg.value * 'at) list;
   mutable cons_children : ('nd, 'at) Peg.poly_positioned_tree list;
 };;
 
@@ -314,10 +314,11 @@ let execute_positioned_quick program
                | ATTR n ->
                    begin
                      match c.memo_register with
-                     | Jump i -> c.cons.cons_attributes <- (c.head, i, n) :: c.cons.cons_attributes
+                     | Jump i -> c.cons.cons_attributes <- (Peg.V_Substring(c.head, i), n) :: c.cons.cons_attributes
                      | _ -> raise (Error "ATTR without valid value in memo register")
                    end
-               | POSATTR n -> c.cons.cons_attributes <- (c.head, c.head - 1, n) :: c.cons.cons_attributes
+               | POSATTR n -> c.cons.cons_attributes <- (Peg.V_Substring(c.head, c.head - 1), n) :: c.cons.cons_attributes
+               | STRATTR(n, u) -> c.cons.cons_attributes <- (Peg.V_Constant u, n) :: c.cons.cons_attributes
                | TOKEN ->
                    begin
                      match c.memo_register with
@@ -562,10 +563,11 @@ let execute_positioned program
                      begin
                        match c.memo_register with
                        | Jump i ->
-                         c.cons.cons_attributes <- (c.head, i, n) :: c.cons.cons_attributes
+                         c.cons.cons_attributes <- (Peg.V_Substring(c.head, i), n) :: c.cons.cons_attributes
                        | _ -> raise (Error "ATTR without valid value in memo register")
                      end
-                 | POSATTR n -> c.cons.cons_attributes <- (c.head, c.head - 1, n) :: c.cons.cons_attributes
+                 | POSATTR n -> c.cons.cons_attributes <- (Peg.V_Substring(c.head, c.head - 1), n) :: c.cons.cons_attributes
+                 | STRATTR(n, u) -> c.cons.cons_attributes <- (Peg.V_Constant u, n) :: c.cons.cons_attributes
                  | TOKEN ->
                      begin
                        match c.memo_register with

@@ -55,7 +55,8 @@ typedef enum {
   NOG_ATTR,         /* Add an attribute of the given name whose value is the input between the saved position and, */
   NOG_POSATTR,      /* Add an attribute of the given name whose value is the current input position */
   NOG_TOKEN,        /* Build a token between the memo register and the head position and add it to the current construction */
-  NOG_SWCH,
+  NOG_SWCH,         /* Switch on stored choice */
+  NOG_STRATTR,      /* Create a constant attribute */
 } nog_opcode_t;
 
 typedef struct {

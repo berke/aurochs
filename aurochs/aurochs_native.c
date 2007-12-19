@@ -145,11 +145,24 @@ enum {
 #define AUROCHS_ATTRIBUTE_TAG 0
 
 enum {
-  AUROCHS_ATTRIBUTE_START_FIELD,
-  AUROCHS_ATTRIBUTE_END_FIELD,
+  AUROCHS_ATTRIBUTE_VALUE_FIELD,
   AUROCHS_ATTRIBUTE_NAME_FIELD,
   AUROCHS_ATTRIBUTE_COUNT
 };
+
+enum {
+  AUROCHS_VALUE_CONSTANT_STRING_FIELD,
+  AUROCHS_VALUE_CONSTANT_COUNT
+};
+
+enum {
+  AUROCHS_VALUE_SUBSTRING_START_FIELD,
+  AUROCHS_VALUE_SUBSTRING_END_FIELD,
+  AUROCHS_VALUE_SUBSTRING_COUNT
+};
+
+#define AUROCHS_VALUE_SUBSTRING_TAG 0
+#define AUROCHS_VALUE_CONSTANT_TAG 1
 
 static value create_token(int begin, int end)
 {
@@ -163,14 +176,35 @@ static value create_token(int begin, int end)
   CAMLreturn(treev);
 }
 
-static value create_attribute(int id, int begin, int end)
+static value create_string_attribute(int id, unsigned char *u, int length)
 {
   CAMLparam0();
-  CAMLlocal1(attrv);
+  CAMLlocal3(stringv, valuev, attrv);
+
+  stringv = caml_alloc_string(length);
+  memcpy(String_val(stringv), u, length);
+
+  valuev = caml_alloc(AUROCHS_VALUE_CONSTANT_COUNT, AUROCHS_VALUE_CONSTANT_TAG);
+  Store_field(valuev, AUROCHS_VALUE_CONSTANT_STRING_FIELD, stringv);
 
   attrv = caml_alloc(AUROCHS_ATTRIBUTE_COUNT, AUROCHS_ATTRIBUTE_TAG);
-  Store_field(attrv, AUROCHS_ATTRIBUTE_START_FIELD, Val_int(begin));
-  Store_field(attrv, AUROCHS_ATTRIBUTE_END_FIELD, Val_int(end));
+  Store_field(attrv, AUROCHS_ATTRIBUTE_VALUE_FIELD, valuev);
+  Store_field(attrv, AUROCHS_ATTRIBUTE_NAME_FIELD, Val_int(id));
+
+  CAMLreturn(attrv);
+}
+
+static value create_substring_attribute(int id, int begin, int end)
+{
+  CAMLparam0();
+  CAMLlocal2(valuev, attrv);
+
+  valuev = caml_alloc(AUROCHS_VALUE_SUBSTRING_COUNT, AUROCHS_VALUE_SUBSTRING_TAG);
+  Store_field(valuev, AUROCHS_VALUE_SUBSTRING_START_FIELD, Val_int(begin));
+  Store_field(valuev, AUROCHS_VALUE_SUBSTRING_END_FIELD, Val_int(end));
+
+  attrv = caml_alloc(AUROCHS_ATTRIBUTE_COUNT, AUROCHS_ATTRIBUTE_TAG);
+  Store_field(attrv, AUROCHS_ATTRIBUTE_VALUE_FIELD, valuev);
   Store_field(attrv, AUROCHS_ATTRIBUTE_NAME_FIELD, Val_int(id));
 
   CAMLreturn(attrv);
@@ -243,12 +277,24 @@ static bool add_token(info a, construction c, int t_begin, int t_end)
   CAMLreturnT(bool, true);
 }
 
+static bool add_constant_attribute(info a, construction c, int id, unsigned char *u, int length)
+{
+  CAMLparam0();
+  CAMLlocal2(attrv, attrsv);
+
+  attrv = create_string_attribute(id, u, length);
+  attrsv = cons(attrv, Field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD));
+  Store_field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD, attrsv);
+
+  CAMLreturnT(bool, true);
+}
+
 static bool add_attribute(info a, construction c, int id, unsigned char *name, int v_begin, int v_end)
 {
   CAMLparam0();
   CAMLlocal2(attrv, attrsv);
 
-  attrv = create_attribute(id, v_begin, v_end);
+  attrv = create_substring_attribute(id, v_begin, v_end);
   attrsv = cons(attrv, Field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD));
   Store_field(c->cons_value, AUROCHS_P_NODE_ATTRS_FIELD, attrsv);
 
@@ -350,6 +396,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   builder.pb_start_construction = start_construction;
   builder.pb_add_children = add_children;
   builder.pb_add_attribute = add_attribute;
+  builder.pb_add_constant_attribute = add_constant_attribute;
   builder.pb_add_token = add_token;
   builder.pb_finish_construction = finish_construction;
 

@@ -350,6 +350,15 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
         }
         break;
 
+      case NOG_STRATTR:
+        {
+          int id;
+
+          id = arg0();
+          if(!c->bd->pb_add_constant_attribute(c->bi, current, id, ip->ni_arg[1].na_string.ns_chars, ip->ni_arg[1].na_string.ns_length)) return 0;
+        }
+        break;
+
       case NOG_POSATTR:
         {
           int id;

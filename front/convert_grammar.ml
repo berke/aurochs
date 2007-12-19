@@ -203,6 +203,7 @@ let rec convert_expression ~(modifier:'a Peg.pe modifier) = function
   | Node(N_Chars, [], l) -> C(B.Or(List.map convert_chars l))
   | Node(N_NotChars, [], l) -> C(B.Not(B.Or(List.map convert_chars l)))
   | Node(N_Tokenize, [], [x]) -> Tokenize(convert_expression ~modifier x)
+  | Node(N_Constant, [A_value,value], []) -> Constant(unescape_string ~quotes:['"'] value)
   | Node(N_Ascribe, [A_name,name], [x]) ->
       let y = convert_expression ~modifier x in
       Ascribe(name, y)

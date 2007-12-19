@@ -10,6 +10,7 @@ type arg =
 | Char
 | Label
 | Labels
+| String
 ;;
 
 type kind =
@@ -23,6 +24,7 @@ let arg_of_char = function
 | 'n' -> Node
 | 'c' -> Char
 | 'l' -> Label
+| 's' -> String
 | c -> invalid_arg (sf "Unknown attribute %C" c)
 ;;
 
@@ -112,7 +114,7 @@ let gen_c_unpacker ops fn =
             begin fun i x ->
               match x with
               | Labels ->         fp occ "      alloc_free(alloc, ins->ni_arg[%d].na_table.nt_elements);\n" i
-              | Int|Char|Label|Node|Attribute -> ()
+              | Int|Char|Label|Node|Attribute|String -> ()
             end
             args;
 
@@ -131,6 +133,8 @@ let gen_c_unpacker ops fn =
       fp occ "{\n";
       fp occ "  int opcode;\n";
       fp occ "  u64 arg;\n";
+      fp occ "  size_t size;\n";
+      fp occ "  unsigned char *u;\n";
       fp occ "\n";
       fp occ "  if(!pack_read_int(pk, &opcode)) return false;\n";
       fp occ "  switch(opcode) {\n";
@@ -167,6 +171,10 @@ let gen_c_unpacker ops fn =
                   fp occ "          if(!pack_read_uint(pk, ins->ni_arg[%d].na_table.nt_elements + i)) return false;\n" i;
                   fp occ "        }\n";
                   fp occ "      }\n"
+              | String ->
+                  fp occ "      if(!pack_read_string(pk, &u, &size, alloc)) return false;\n";
+                  fp occ "      ins->ni_arg[%d].na_string.ns_chars = u;\n" i;
+                  fp occ "      ins->ni_arg[%d].na_string.ns_length = size;\n" i
               | Int|Char|Label|Node|Attribute ->
                   fp occ "      if(!pack_read_uint64(pk, &arg)) return false;\n";
                   fp occ "      ins->ni_arg[%d].na_int = arg;\n" i
@@ -241,6 +249,7 @@ let gen_ocaml_packer ops fn =
             | Label ->          fp oc "      Pack.write_uint pk (resolve_label %s);\n" (string_of_arg !i)
             | Node ->           fp oc "      Pack.write_uint pk (resolve_node %s);\n" (string_of_arg !i)
             | Attribute ->      fp oc "      Pack.write_uint pk (resolve_attribute %s);\n" (string_of_arg !i)
+            | String ->         fp oc "      Pack.write_string pk %S;\n" (string_of_arg !i)
           end
           args;
         fp oc "      ()\n"

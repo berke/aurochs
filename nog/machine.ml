@@ -62,6 +62,7 @@ type ('nd,'at) unlabelable_instruction =
   (* %opcode{U41a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
   (* %opcode{U42} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
   (* %opcode{U45ii} *) | TSSEQ of int * int         (** Scan, translate and push true if result in equal *)
+  (* %opcode{U46as} *) | STRATTR of 'at * string    (** Add an attribute of the given name whose value is the given constant string *)
 ;;
 
 type ('nd,'at,'label) instruction =
@@ -129,6 +130,7 @@ let print_unlabelable ~print_node ~print_attr oc = function
   | ATTR a -> fp oc "ATTR %a" print_attr a
   | POSATTR a -> fp oc "POSATTR %a" print_attr a
   | TOKEN -> fp oc "TOKEN"
+  | STRATTR(a, u) -> fp oc "STRATTR(%a, %S)" print_attr a u
 ;;
 
 let print_poly_instruction ~print_node ~print_attr oc = function

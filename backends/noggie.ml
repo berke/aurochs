@@ -306,7 +306,7 @@ let generate_code ~root ~start peg =
   let have_action_set = Peg.compute_active_terminals peg in
   (*** build_names *)
   let rec bexpr ?number ?choice_number = function
-    | BOF | EOF | Position | Epsilon | And _ | Not _ -> empty
+    | BOF | EOF | Position | Epsilon | And _ | Not _ | Constant _ -> empty
     | Opt _ | Star _ | Plus _ -> invalid_arg "Unremoved internal Opt, Star or Plus"
     | Ax(u, _) | A u -> It(U(RIGHT (String.length u)))
     | C _ -> It(U(RIGHT 1))
@@ -322,6 +322,7 @@ let generate_code ~root ~start peg =
           Seq(List.map bexpr xl);
           It(U FNODE)
         ]
+    | Ascribe(n, Constant u) -> It(U(STRATTR(n, u)))
     | Ascribe(n, Position) -> It(U(POSATTR n))
     | Ascribe(n, x) ->
         let number' =

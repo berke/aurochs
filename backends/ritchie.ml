@@ -77,8 +77,11 @@ let generate fn ?(start="start") peg =
                   tk = create_token(i, r); i = r;\n\
                   add_children(nd, tk); }\n";
         fp oc "/* End token */\n"
+    | Constant _ -> fp oc "/* Constant */\n"
     | Ascribe(n, Position) ->
         fp oc "attach_position_attribute(nd, %S, i);\n" n;
+    | Ascribe(n, Constant u) ->
+        fp oc "/* Constant attribute */\n";
     | Ascribe(n, x) ->
         fp oc "{ int saved_i;\n\
                  \n\
@@ -147,6 +150,7 @@ let generate fn ?(start="start") peg =
         fp oc "/* Start token */\n";
         gexpr x;
         fp oc "/* End token */\n"
+    | Constant _ -> fp oc "/* Constant */\n"
     | Ascribe(n, x) ->
         fp oc "/* Ascribe %s */\n" n;
         gexpr x;

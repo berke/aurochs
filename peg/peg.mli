@@ -8,13 +8,13 @@ type char_set =
 type match_options =
   | Exact
   | Case_insensitive
-;;
 
 type 'a pe =
   | Epsilon
   | Position
   | Tokenize of 'a pe
   | Ascribe of string * 'a pe
+  | Constant of string
   | A of string (* Atom *)
   | Ax of string * match_options
   | C of char_set Boolean.t
@@ -37,8 +37,12 @@ type proto_tree =
   | Token_ of string
   | Pseudo_ of proto_tree list
 
+type value =
+  | V_Substring of int * int
+  | V_Constant of string
+
 type ('node, 'attribute) poly_positioned_tree =
-  | P_Node of int * int * 'node * (int * int * 'attribute) list * ('node, 'attribute) poly_positioned_tree list (* Node (name, attributes_list, children *)
+  | P_Node of int * int * 'node * (value * 'attribute) list * ('node, 'attribute) poly_positioned_tree list (* Node (name, attributes_list, children *)
   | P_Token of int * int
 
 type ('node, 'attribute) poly_tree =

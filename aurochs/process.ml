@@ -76,11 +76,14 @@ let colorize ?(default_acolor=Ansi.black) ?(default_bcolor=Ansi.white) (builds_t
         List.iter loop_attributes al;
         List.iter loop_build bl
     | P_Token(_, _) -> ()
-  and loop_attributes (i, j, an) =
-    let c = get_attribute_color an in
-    for k = i to j - 1 do
-      ac.(k) <- c
-    done
+  and loop_attributes (v, an) =
+    match v with
+    | V_Constant _ -> ()
+    | V_Substring(i, j) ->
+        let c = get_attribute_color an in
+        for k = i to j - 1 do
+          ac.(k) <- c
+        done
   in
   loop_build pt;
   (ac, bc)
