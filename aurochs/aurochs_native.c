@@ -277,7 +277,7 @@ static bool add_token(info a, construction c, int t_begin, int t_end)
   CAMLreturnT(bool, true);
 }
 
-static bool add_constant_attribute(info a, construction c, int id, unsigned char *u, int length)
+static bool add_constant_attribute(info a, construction c, int id, unsigned char *name, unsigned char *u, int length)
 {
   CAMLparam0();
   CAMLlocal2(attrv, attrsv);

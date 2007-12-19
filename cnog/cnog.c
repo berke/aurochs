@@ -353,9 +353,12 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
       case NOG_STRATTR:
         {
           int id;
+          unsigned char *name;
 
           id = arg0();
-          if(!c->bd->pb_add_constant_attribute(c->bi, current, id, ip->ni_arg[1].na_string.ns_chars, ip->ni_arg[1].na_string.ns_length)) return 0;
+          name = c->pg->np_attributes[id].ns_chars;
+
+          if(!c->bd->pb_add_constant_attribute(c->bi, current, id, name, ip->ni_arg[1].na_string.ns_chars, ip->ni_arg[1].na_string.ns_length)) return 0;
         }
         break;
 

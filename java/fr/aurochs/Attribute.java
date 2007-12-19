@@ -16,6 +16,14 @@ public class Attribute {
   int start;
   int end;
 
+  Attribute(String name, int length, byte[] value)
+  {
+    this.name = name;
+    this.start = -2;
+    this.end = -1;
+    this.value = new String(value, 0, length);
+  }
+
   Attribute(String name, int start, int end, byte[] exp) {
     this.name = name;
     this.start = start;
@@ -26,7 +34,7 @@ public class Attribute {
   void print(PrintStream out, String input) {
      out.printf("%s=\"", name);
      if(start < end) {
-       out.printf("%s\"", input.substring(start, end));
+       out.printf("%s\"", value);
      } else {
        out.printf("%d\"", start);
      }

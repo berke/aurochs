@@ -19,6 +19,7 @@ typedef struct {
   jmethodID i_constructor_mid;
   jmethodID i_add_token_mid;
   jmethodID i_add_attribute_mid;
+  jmethodID i_add_constant_attribute_mid;
   jmethodID i_add_children_mid;
 
   jobject exc;
@@ -97,13 +98,26 @@ static bool add_attribute(info in, construction c, int id, unsigned char *name, 
   (*env)->CallVoidMethod(env, c, in->i_add_attribute_mid, jname, v_begin, v_end, in->exp);
   return true;
 }
+static bool add_constant_attribute(info in, construction c, int id, unsigned char *name, unsigned char *u, int length)
+{
+  JNIEnv *env;
+  jstring jname;
+  jstring ju;
+
+  env = in->i_jnienv;
+  jname = (*env)->NewStringUTF(env, (char *) name);
+  ju = (*env)->NewStringUTF(env, (char *) u);
+  if(!jname || !ju) return 0;
+  (*env)->CallVoidMethod(env, c, in->i_add_constant_attribute_mid, jname, ju, in->exp);
+  return true;
+}
 
 JNIEXPORT jlong JNICALL Java_fr_aurochs_Parser_unpack (JNIEnv *env, jobject obj, jbyteArray nog)
 {
   uint8_t *binary;
   size_t length;
   packer_t pk;
-  stack_t *s;
+  aurochs_stack_t *s;
   nog_program_t *pg;
 
   binary = (uint8_t *) (*env)->GetByteArrayElements(env, nog, 0);
@@ -130,7 +144,7 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
   size_t input_length;
   nog_program_t *pg;
   peg_context_t *cx;
-  stack_t *s;
+  aurochs_stack_t *s;
   peg_builder_t builder;
   info_t builder_info;
   tree tree;
@@ -197,6 +211,9 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
   builder_info.i_add_attribute_mid = (*env)->GetMethodID(env, builder_info.i_node_class, "addAttribute", JFUN(JSTR JINT JINT JBARR, JVOID));
   if(!builder_info.i_add_attribute_mid) { fail(env, "Can't find addAttribute method"); goto bye; }
 
+  builder_info.i_add_constant_attribute_mid = (*env)->GetMethodID(env, builder_info.i_node_class, "addConstantAttribute", JFUN(JSTR JINT JBARR, JVOID));
+  if(!builder_info.i_add_constant_attribute_mid) { fail(env, "Can't find addConstantAttribute method"); goto bye; }
+
   builder_info.i_add_children_mid  = (*env)->GetMethodID(env, builder_info.i_node_class, "addChildren",  JFUN(JTREE, JVOID));
   if(!builder_info.i_add_children_mid) { fail(env, "Can't find addChildren method"); goto bye; }
 
@@ -204,6 +221,7 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
   builder.pb_start_construction = start_construction;
   builder.pb_add_children = add_children;
   builder.pb_add_attribute = add_attribute;
+  builder.pb_add_constant_attribute = add_constant_attribute;
   builder.pb_add_token = add_token;
   builder.pb_finish_construction = finish_construction;
 

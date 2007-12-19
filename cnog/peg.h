@@ -42,7 +42,7 @@ typedef struct {
   bool (*pb_add_children)(info a, construction c, tree tr2);
   bool (*pb_add_token)(info a, construction c, int t_begin, int t_end);
   bool (*pb_add_attribute)(info a, construction c, int id, unsigned char *name, int v_begin, int v_end);
-  bool (*pb_add_constant_attribute)(info a, construction c, int id, unsigned char *name, int size);
+  bool (*pb_add_constant_attribute)(info a, construction c, int id, unsigned char *name, unsigned char *value, int size);
   tree (*pb_finish_construction)(info a, construction t, int n_end);
 } peg_builder_t;
 

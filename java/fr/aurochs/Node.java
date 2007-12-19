@@ -20,8 +20,12 @@ public class Node extends Tree {
     children.add(new Token(begin, end, exp));
   }
 
-  void addAttribute(String name, int start, int end, byte[] exp) {
-    attributes.add(new Attribute(name, start, end, exp));
+  void addAttribute(String name, int start, int end, byte[] value) {
+    attributes.add(new Attribute(name, start, end, value));
+  }
+
+  void addConstantAttribute(String name, int length, byte[] value) {
+    attributes.add(new Attribute(name, length, value));
   }
 
   void addChildren(Tree t) {
