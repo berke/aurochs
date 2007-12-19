@@ -212,7 +212,12 @@ let compute ~grammar ~input ?example () =
     err [paragraph [D"Input too big for on-line version"]]
   else
     try
-      let bin = !Aurochs.compiler grammar in
+      let bin = 
+        try
+          !Aurochs.compiler grammar
+        with
+        | x -> raise (Aurochs.Compile_error x)
+      in
       let prog = Aurochs.program_of_binary bin in
       let w = workload prog input in
       bf info "Total %d productions\n" (Aurochs.get_production_count prog);
