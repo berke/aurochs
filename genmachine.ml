@@ -249,7 +249,7 @@ let gen_ocaml_packer ops fn =
             | Label ->          fp oc "      Pack.write_uint pk (resolve_label %s);\n" (string_of_arg !i)
             | Node ->           fp oc "      Pack.write_uint pk (resolve_node %s);\n" (string_of_arg !i)
             | Attribute ->      fp oc "      Pack.write_uint pk (resolve_attribute %s);\n" (string_of_arg !i)
-            | String ->         fp oc "      Pack.write_string pk %S;\n" (string_of_arg !i)
+            | String ->         fp oc "      Pack.write_string pk %s;\n" (string_of_arg !i)
           end
           args;
         fp oc "      ()\n"

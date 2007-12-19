@@ -119,13 +119,15 @@ module Spec =
           Set show_memo,
           " Show memo table after parsing";
 
-        "-nog",
-          Set parse_with_nog,
-          " Parse by interpreting Nog code (default)";
-
-        "-expi",
-          Clear parse_with_nog,
-          " Parse by direct interpretation";
+        "-using",
+        Symbol(["nog";"mlnog";"exp"],
+                 begin function
+                   | "nog"           -> interpreter := `nog
+                   | "mlnog"         -> interpreter := `mlnog
+                   | "exp"           -> interpreter := `exp
+                   | _               -> raise (Bad "Invalid interpreter")
+                 end),
+          " interpreter to use (default nog)";
 
         "-trace",
           Set trace,

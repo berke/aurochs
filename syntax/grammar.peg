@@ -38,7 +38,7 @@ op_tightstar ::= space ".*" space;
 op_plus ::= space '+' space;
 op_tightplus ::= space ".+" space;
 op_option ::= space '?' space;
-op_eq ::= space "=" space;
+op_sharp ::= space "#" space;
 op_produces ::= space "::=" space;
 op_prod_pref ::= space ":(" space;
 op_prod_suf ::= space "):=" space;
@@ -91,7 +91,7 @@ simple_expr ::=
 | <BOF>op_bof</BOF>
 | <Sigma>op_sigma</Sigma>
 | <Ascribe>ident op_colon suffixable_expr</Ascribe>
-| <Constant>op_eq string_expr</Constant>
+| <Constant>op_sharp string_expr</Constant>
 | <Insensitive>string_expr '^' 'i'</Insensitive>
 | <String>string_expr</String>
 | <Char>space ('\'' value:(char_escape | ((~ char_escape) sigma)) '\'') space</Char>

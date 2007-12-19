@@ -130,7 +130,7 @@ let print_unlabelable ~print_node ~print_attr oc = function
   | ATTR a -> fp oc "ATTR %a" print_attr a
   | POSATTR a -> fp oc "POSATTR %a" print_attr a
   | TOKEN -> fp oc "TOKEN"
-  | STRATTR(a, u) -> fp oc "STRATTR(%a, %S)" print_attr a u
+  | STRATTR(a, u) -> fp oc "STRATTR %a %S" print_attr a u
 ;;
 
 let print_poly_instruction ~print_node ~print_attr oc = function

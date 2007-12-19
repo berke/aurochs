@@ -139,7 +139,7 @@ let generate_code ~root ~start peg =
   (*** compile_pexpr *)
   let rec compile_pexpr ?choice_number ~fail x =
     match x with
-    | Epsilon | Position -> Seq[]
+    | Epsilon | Position | Constant _ -> Seq[]
     | EOF -> It(L(fail, BNEOF))
     | BOF -> It(L(fail, BNBOF))
     | Tokenize x|Ascribe(_, x) -> compile_pexpr ?choice_number ~fail x (* Ignore tokenization/ascriptions *)

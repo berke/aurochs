@@ -90,13 +90,14 @@ let rec relativize u = function
 (*** iter_over_n *)
 let rec iter_over_n f = function
   | N x -> f x
-  | Epsilon|EOF|BOF|Position|A _|Ax _|C _ -> ()
+  | Epsilon|EOF|BOF|Position|A _|Ax _|C _|Constant _ -> ()
   | Tokenize x|Ascribe(_,x)|And x|Not x|Opt x|Star x|Plus x -> iter_over_n f x
   | S xl|Build(_, xl)|Or xl -> List.iter (iter_over_n f) xl
 (* ***)
 (*** map_over_n *)
 let rec map_over_n f = function
   | N x -> N(f x)
+  | Constant u -> Constant u
   | Epsilon -> Epsilon
   | Position -> Position
   | EOF -> EOF
@@ -117,14 +118,14 @@ let rec map_over_n f = function
 (* ***)
 (*** iter_over_builds *)
 let rec iter_over_builds f = function
-  | N _ | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> ()
+  | N _ | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ | Constant _ -> ()
   | And x | Not x | Opt x | Star x | Plus x | Tokenize x | Ascribe(_, x) -> iter_over_builds f x
   | Build(n, xl) -> f n; List.iter (iter_over_builds f) xl
   | S xl | Or xl -> List.iter (iter_over_builds f) xl
 (* ***)
 (*** iter_over_attributes *)
 let rec iter_over_attributes f = function
-  | N _ | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> ()
+  | N _ | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ | Constant _ -> ()
   | And x | Not x | Opt x | Star x | Plus x | Tokenize x -> iter_over_attributes f x
   | Ascribe(a, x) -> f a; iter_over_attributes f x
   | Build(_, xl) | S xl | Or xl -> List.iter (iter_over_attributes f) xl
@@ -169,7 +170,7 @@ let compute_active_terminals peg =
     begin fun (n, x) ->
       let rec loop = function
         | N n' -> is_genitor n n'
-        | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> ()
+        | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ | Constant _ -> ()
         | And x | Not x | Opt x | Star x | Plus x | Tokenize x | Ascribe(_, x) -> loop x
         | Build(_, xl) | S xl | Or xl -> List.iter loop xl
       in
@@ -204,7 +205,7 @@ let compute_active_terminals peg =
   
   let rec active_root = function
     | N n' -> false
-    | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ -> false
+    | Epsilon | Position | EOF | BOF | A _ | Ax _ | C _ | Constant _ -> false
     | And x | Not x | Opt x | Star x | Plus x -> active_root x
     | Tokenize _ | Ascribe(_, _) | Build(_, _)-> true
     | S xl | Or xl -> List.exists active_root xl
@@ -369,6 +370,8 @@ let process resolve peg u =
                   (j, Token_(String.sub u i (j - i)))
               | Ascribe(n, Position) ->
                   (i, Attribute_(n, Printf.sprintf "%d" i))
+              | Constant _ -> (i, Empty_)
+              | Ascribe(n, Constant u) -> (i, Attribute_(n, u))
               | Ascribe(n, pe) ->
                   if false then
                     begin

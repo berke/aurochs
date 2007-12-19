@@ -1,6 +1,7 @@
 (* Opt *)
 
 let targets : [`nog|`ml|`mli|`ml_classic|`c] list ref = ref []
+let interpreter : [`exp|`mlnog|`nog] ref = ref `nog
 let dump_grammar : string option ref = ref None
 let dump_canonified : string option ref = ref None
 let dump_xml : string option ref = ref None

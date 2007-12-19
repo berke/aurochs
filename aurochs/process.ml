@@ -431,16 +431,16 @@ let process fno =
     | something ->
         List.iter
           begin fun fn' ->
-            if !Opt.parse_with_nog then
-              begin
-                info `Normal "Parsing file %s using Nog interpreter" fn';
-                parse_file_with_prog (!< prog) fn'
-              end
-            else
-              begin
-                info `Normal "Parsing file %s using expression interpreter" fn';
-                parse_file (!< peg) fn'
-              end
+            match !Opt.interpreter with
+             | `nog ->
+                  info `Normal "Parsing file %s using Nog interpreter" fn';
+                  parse_file_with_prog (!< prog) fn'
+             | `mlnog ->
+                  info `Normal "Parsing file %s using Ocaml Nog interpreter" fn';
+                  parse_file_with_nog (!< pg) fn'
+             | `exp ->
+                  info `Normal "Parsing file %s using expression interpreter" fn';
+                  parse_file (!< peg) fn'
           end
           (List.rev something)
   end;
