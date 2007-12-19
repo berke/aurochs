@@ -1,0 +1,27 @@
+<Root>
+  <add>
+    <number value="1"/>
+    <add>
+      <mul>
+        <number value="2"/>
+        <number value="3"/>
+      </mul>
+      <add>
+        <mul>
+          <number value="4"/>
+          <mul>
+            <number value="5"/>
+            <number value="6"/>
+          </mul>
+        </mul>
+        <sub>
+          <number value="7"/>
+          <add>
+            <number value="2"/>
+            <number value="334"/>
+          </add>
+        </sub>
+      </add>
+    </add>
+  </add>
+</Root>

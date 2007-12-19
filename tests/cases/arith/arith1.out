@@ -1,0 +1,6 @@
+<Root>
+  <add>
+    <number value="1"/>
+    <number value="2"/>
+  </add>
+</Root>

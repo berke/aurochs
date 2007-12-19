@@ -1,0 +1,37 @@
+(* Arithmetic expressions *)
+
+(* Tokens *)
+float ::= '-'? decimal+ ('.' decimal+)? ('e' ('-'|'+')? decimal+)?;
+integer ::= '-'? decimal+;
+decimal ::= [0-9]; 
+space ::= (' '|'\n'|'\r'|'\t')*;
+
+s ::= space;
+
+(* Operands *)
+op_plus   ::= s'+'s;
+op_minus  ::= s'-'s;
+op_mul    ::= s'*'s;
+op_lparen ::= s'('s;
+op_rparen ::= s')'s;
+
+  start ::= space? sum space? EOF;
+  expression ::= sum;
+
+  sum ::=
+           <add> term op_plus sum </add>
+         | <sub> term op_minus sum </sub>
+         | term;
+
+  term ::= 
+           <mul> simple_term op_mul term </mul>
+         | <neg> op_minus simple_term </neg>
+         | simple_term
+         ;
+
+  simple_term ::= 
+           number
+         | op_lparen expression op_rparen
+         ;
+
+  number ::= <number> value:(float|integer) </number>;
