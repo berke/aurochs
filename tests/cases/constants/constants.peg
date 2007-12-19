@@ -1,0 +1,8 @@
+start ::= foo '\n' EOF;
+
+foo ::=
+  <Foo>
+    name:#"bar"
+    "baz"
+  </Foo>
+;
