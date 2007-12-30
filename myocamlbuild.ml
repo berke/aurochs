@@ -74,7 +74,7 @@ let aurochslib_description = {
 }
 
 let aurochs_lib_description = {
-  od_path = "";
+  od_path = ""; (* (Lazy.force ocaml_local_dir)^"/aurochs_lib/";*)
   od_name = "aurochs";
   od_headers = [ "cnog/cnog.h";
                  "cnog/peg.h";
@@ -106,13 +106,13 @@ let ocamllib old =
    flag ["compile"; "c"; "cstuff"; "optimize"] & S[A"-ccopt";A"-O3"];
 
    flag ["link"; "library"; "ocaml"; "byte"; "use_"^u]
-   (S[A"-dllpath";A(old.od_path);A"-dllib";A("-l"^u); A"-cclib";A("-L"^old.od_path);A"-cclib";A("-l"^u)]);
+   (S[A"-dllpath";A(old.od_path);A"-dllib";A("-l"^u); (*A"-cclib";A("-L"^old.od_path);*)A"-cclib";A("-l"^u)]);
 
    flag ["link"; "ocaml"; "byte"; "use_"^u]
-   (S[A"-dllpath";A(old.od_path);A"-dllib";A("-l"^u); A"-cclib";A("-L"^old.od_path);A"-cclib";A("-l"^u)]);
+   (S[A"-dllpath";A(old.od_path);A"-dllib";A("-l"^u); (*A"-cclib";A("-L"^old.od_path);*)A"-cclib";A("-l"^u)]);
 
    flag ["link"; "library"; "ocaml"; "native"; "use_lib"^u]
-        (S[A"-cclib";A("-L"^old.od_path);A"-cclib"; A("-l"^u)]);
+        (S[(*A"-cclib";A("-L"^old.od_path);*)A"-cclib"; A("-l"^u)]);
 
    (* When ocaml link something that use the libX
       then one need that file to be up to date. *)
