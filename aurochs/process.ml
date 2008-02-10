@@ -190,6 +190,9 @@ let parse_file_with_nog pg fn =
             info `Important "PARSE ERROR IN FILE %s AT CHARACTER %d" fn i;
             exit 1
           end
+    | x ->
+      info `Important "EXCEPTION %s" (Printexc.to_string x);
+      if not (!Opt.line) then exit 2
   in
   if !Opt.line then
     with_file_input fn
@@ -238,7 +241,7 @@ let parse_file_with_prog prog fn =
       else
         info `Important "RESULT OK"
     with
-    | Nog.Parse_error i ->
+    | Aurochs.Parse_error i ->
         if !Opt.line then
           info `Important "PARSE ERROR AT CHARACTER %d IN LINE %d OF FILE %s" i !line fn
         else
@@ -246,6 +249,9 @@ let parse_file_with_prog prog fn =
             info `Important "PARSE ERROR IN FILE %s AT CHARACTER %d" fn i;
             exit 1
           end
+    | x ->
+        info `Important "EXCEPTION %s" (Printexc.to_string x);
+        if not (!Opt.line) then exit 2
   in
   if !Opt.line then
     with_file_input fn
