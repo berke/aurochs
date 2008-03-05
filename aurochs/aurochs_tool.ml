@@ -66,6 +66,10 @@ module Spec =
           Clear Opt.tree,
           " Don't dump the syntax tree after parsing";
 
+        "-terse",
+          Set terse,
+          " Dump tree in terse format";
+
         "-parse",
           String(append parse),
           "<file> Parse the given file using the grammar and dump the XML parse tree on stdout";

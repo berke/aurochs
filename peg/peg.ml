@@ -238,43 +238,83 @@ let print_escaping oc u =
 (* ***)
 (*** print_tree, print_tree_list *)
 let print_string oc x = fp oc "%s" x
-let rec print_poly_tree ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc t =
+
+let has_two = function
+| _ :: _ :: _ -> true
+| _ -> false
+
+let rec print_poly_tree ?(terse=false) ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc t =
+  let terse_head n al l =
+    fp oc "%a%a" print_indent depth print_node n;
+    if al <> [] then
+      begin
+        fp oc "(";
+        let x = ref false in
+        List.iter
+          begin fun (name, value) ->
+            if !x then fp oc " " else x := true;
+            fp oc "%a=\"%a\"" print_attribute name print_escaping value
+          end
+          al;
+        fp oc ")"
+      end;
+     if has_two l then fp oc "{\n" else fp oc "\n"
+  in
   match t with
   | Node(n, al, (_::_ as l)) ->
-      if short then fp oc "<%a" print_node n else fp oc "%a<%a" print_indent depth print_node n;
-      List.iter
-        begin fun (name, value) ->
-          fp oc " %a=\"%a\"" print_attribute name print_escaping value
-        end
-        al;
-      if short then fp oc ">" else fp oc ">\n";
-      print_poly_tree_list ~depth:(depth + 1) ~short ~print_node ~print_attribute () oc l;
-      if short then
-        fp oc "</%a>" print_node n
+      if terse then
+        terse_head n al l
       else
-        fp oc "%a</%a>\n" print_indent depth print_node n
+        begin
+          if short then fp oc "<%a" print_node n else fp oc "%a<%a" print_indent depth print_node n;
+          List.iter
+            begin fun (name, value) ->
+              fp oc " %a=\"%a\"" print_attribute name print_escaping value
+            end
+            al;
+          if short then fp oc ">" else fp oc ">\n";
+        end;
+      print_poly_tree_list ~terse ~depth:(depth + 1) ~short ~print_node ~print_attribute () oc l;
+      if terse then
+        if has_two l then
+          fp oc "%a}\n" print_indent depth
+        else
+          ()
+      else
+        if short then
+          fp oc "</%a>" print_node n
+        else
+          fp oc "%a</%a>\n" print_indent depth print_node n
   | Node(n, al, []) ->
-      if short then fp oc "<%a" print_node n else fp oc "%a<%a" print_indent depth print_node n;
-      List.iter
-        begin fun (name, value) ->
-          fp oc " %a=\"%a\"" print_attribute name print_escaping value
+      if terse then
+        terse_head n al []
+      else
+        begin
+          if short then
+            fp oc "<%a" print_node n
+          else
+            fp oc "%a<%a" print_indent depth print_node n;
+          List.iter
+            begin fun (name, value) ->
+              fp oc " %a=\"%a\"" print_attribute name print_escaping value
+            end
+            al;
+          if short then fp oc "/>" else fp oc "/>\n"
         end
-        al;
-      if short then fp oc "/>" else fp oc "/>\n"
   | Token u ->
       if short then
         print_escaping oc u
       else
         fp oc "%a%a\n" print_indent depth print_escaping u
-and print_poly_tree_list ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc l =
+and print_poly_tree_list ?terse ?(depth=0) ?(short=false) ~print_node ~print_attribute () oc l =
   List.iter
     begin fun t ->
-      print_poly_tree ~depth ~short ~print_node ~print_attribute () oc t
+      print_poly_tree ?terse ~depth ~short ~print_node ~print_attribute () oc t
     end
     l
 
-let print_tree ?depth ?short () oc t = print_poly_tree ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc t
-let print_tree_list ?depth ?short () oc l = print_poly_tree_list ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc l
+let print_tree ?terse ?depth ?short () oc t = print_poly_tree ?terse ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc t
+let print_tree_list ?terse ?depth ?short () oc l = print_poly_tree_list ?terse ?depth ?short ~print_node:print_string ~print_attribute:print_string () oc l
 (* ***)
 (*** collect *)
 exception Bad_tree

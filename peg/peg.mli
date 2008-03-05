@@ -70,6 +70,7 @@ val compute_active_terminals : (string * string pe) list -> Set.Make(String).t
 
 val print_indent : out_channel -> int -> unit
 val print_poly_tree :
+  ?terse:bool ->
   ?depth:int ->
   ?short:bool ->
   print_node:(out_channel -> 'node -> unit) ->
@@ -77,6 +78,7 @@ val print_poly_tree :
   unit ->
   out_channel -> ('node, 'attribute) poly_tree -> unit
 val print_poly_tree_list :
+  ?terse:bool ->
   ?depth:int ->
   ?short:bool ->
   print_node:(out_channel -> 'node -> unit) ->
@@ -84,11 +86,13 @@ val print_poly_tree_list :
   unit ->
   out_channel -> ('node, 'attribute) poly_tree list -> unit
 val print_tree :
+  ?terse:bool ->
   ?depth:int ->
   ?short:bool ->
   unit ->
   out_channel -> tree -> unit
 val print_tree_list :
+  ?terse:bool ->
   ?depth:int ->
   ?short:bool ->
   unit ->

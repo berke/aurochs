@@ -30,7 +30,7 @@ let bootstrap fn =
           | None -> ()
           | Some fn ->
               info `Normal "Dumping XML grammar to file %s" fn;
-              with_file_output fn (fun oc -> Peg.print_tree () oc t)
+              with_file_output fn (fun oc -> Peg.print_tree ~terse:!Opt.terse () oc t)
         end;
         Convert_grammar_original.convert_grammar t
       end
@@ -176,7 +176,7 @@ let parse_file_with_nog pg fn =
       if !Opt.tree then
         begin
           info `Important "RESULT";
-          Peg.print_tree () stdout t;
+          Peg.print_tree ~terse:!Opt.terse () stdout t;
           flush stdout
         end
       else
@@ -232,7 +232,7 @@ let parse_file_with_prog prog fn =
       if !Opt.tree then
         begin
           info `Important "RESULT";
-          Peg.print_tree () stdout t;
+          Peg.print_tree ~terse:!Opt.terse () stdout t;
           flush stdout
         end
       else
@@ -301,7 +301,7 @@ let parse_file peg fn =
       if q then
         begin
           info `Normal "%05d RESULT OK" !count;
-          Peg.print_tree () stdout (Peg.Node(!Opt.root_node,[],[t]))
+          Peg.print_tree ~terse:!Opt.terse () stdout (Peg.Node(!Opt.root_node,[],[t]))
         end
       else
         info `Normal "%05d RESULT PREFIX %d" !count i
