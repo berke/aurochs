@@ -103,10 +103,10 @@ typedef struct {
   nog_instruction_t *np_program;
 } nog_program_t;
 
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result);
-int cnog_error_position(peg_context_t *cx, nog_program_t *pg);
-nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk);
-void cnog_free_program(alloc_t *alloc, nog_program_t *pg);
+EXPORT bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result);
+EXPORT int cnog_error_position(peg_context_t *cx, nog_program_t *pg);
+EXPORT nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk);
+EXPORT void cnog_free_program(alloc_t *alloc, nog_program_t *pg);
 
 #define NOG_SIGNATURE 0xABBE55E5
 

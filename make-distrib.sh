@@ -15,7 +15,6 @@ cd _build
 
 mkdir -p $TARGET
 mkdir -p $TARGET/bin
-mkdir -p $TARGET/dyn
 mkdir -p $TARGET/obj
 mkdir -p $TARGET/src
 mkdir -p $TARGET/lib
@@ -28,9 +27,9 @@ cp ../Makefile.java $TARGET/Makefile.java
 
 cp aurochs/aurochs_tool.native $TARGET/bin/aurochs
 cp libaurochs.a $TARGET/lib
-cp cnog/*.h cpack/*.h cutil/*.h include/*.h $TARGET/include
-cp cnog/*.c cpack/*.c cutil/*.c $TARGET/src
+cp include/*.h $TARGET/include
 cp ../cnog/check.c $TARGET/src
+cp aurochs/*.c cnog/*.c cpack/*.c cutil/*.c $TARGET/src
 cp ../java/*.c ../java/Makefile $TARGET/java
 cp ../java/fr/aurochs/*.java $TARGET/java/fr/aurochs
 cp ../java/arith.peg $TARGET/java

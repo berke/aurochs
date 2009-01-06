@@ -76,16 +76,16 @@ let aurochslib_description = {
 let aurochs_lib_description = {
   od_path = ""; (* (Lazy.force ocaml_local_dir)^"/aurochs_lib/";*)
   od_name = "aurochs";
-  od_headers = [ "cnog/cnog.h";
-                 "cnog/peg.h";
-                 "cnog/peg_lib.h";
-                 "cnog/parse_tree.h";
-                 "cpack/pack.h";
-                 "cutil/stack.h";
-                 "cutil/alloc.h";
-                 "cnog/parse_tree.h";
+  od_headers = [ "include/cnog.h";
+                 "include/peg.h";
+                 "include/peg_lib.h";
+                 "include/parse_tree.h";
+                 "include/pack.h";
+                 "include/stack.h";
+                 "include/alloc.h";
+                 "include/parse_tree.h";
                  "include/base_types.h" ];
-  od_incdirs = [ "cnog"; "cpack"; "cutil"; "include" ];
+  od_incdirs = [ "include"; "_build/include" ];
 }
 
 (*** ocamllib *)
@@ -173,7 +173,7 @@ dispatch
 
 
         rule "Generation"
-          ~prods:["cnog/cnog_unpack.c";"cnog/cnog_unpack.h";"backends/nog_packer.ml"]
+          ~prods:["cnog/cnog_unpack.c";"include/cnog_unpack.h";"backends/nog_packer.ml"]
           ~deps:["genmachine.byte";"nog/machine.ml"]
           begin fun env _build ->
             Cmd(S[A"./genmachine.byte"])

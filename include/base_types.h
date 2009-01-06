@@ -1,4 +1,4 @@
-/* ola_types.h
+/* base_types.h
  *
  * Base types
  *
@@ -35,4 +35,8 @@ typedef signed short s32;
 typedef signed long s64;
 #endif
 
+#endif
+
+#ifndef EXPORT
+#define EXPORT
 #endif

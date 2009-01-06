@@ -7,6 +7,8 @@ Requested
 * Better reporting of syntax errors in parsing grammar
 * Wide chars / unicode / character classes
 * Canonify is not idempotent
+* Case-insensitive matching
+* Use a threaded interpreter
 
 Granted
 =======
