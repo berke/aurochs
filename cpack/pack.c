@@ -76,7 +76,6 @@ bool pack_read_string(packer_t *pk, uint8_t **result, size_t *length, alloc_t *a
   *result = 0;
 
   if(!pack_read_uint64(pk, &m)) return false;
-  if(m < 0) return false;
   *length = m;
   if(!m) return true;
   *result = alloc_malloc(alloc, m + 1);

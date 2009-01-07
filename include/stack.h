@@ -26,8 +26,8 @@ typedef struct {
   alloc_t s_alloc; /* Allocator for allocating IN this stack */
 } aurochs_stack_t;
 
-aurochs_stack_t *stack_create(alloc_t *);
-void stack_dispose(aurochs_stack_t *);
-void *stack_alloc(aurochs_stack_t *, size_t);
+EXPORT aurochs_stack_t *stack_create(alloc_t *);
+EXPORT void stack_dispose(aurochs_stack_t *);
+EXPORT void *stack_alloc(aurochs_stack_t *, size_t);
 
 #endif

@@ -8,6 +8,10 @@
 #ifndef BASE_TYPES_H
 #define BASE_TYPES_H
 
+#ifdef AUROCHS_PLUGGABLE_INCLUDE_DIRECTIVE
+#include "aurochs_pluggable_include.h"
+#endif
+
 typedef enum { false = 0, true = 1 } bool;
 
 #if 1

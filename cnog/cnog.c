@@ -27,7 +27,7 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
   m = cx->cx_input_length;
 
   for(j = 0; j < m; j ++) {
-    for(k = 0; k < pg->np_num_productions; k ++) {
+    for(k = 0; k < (int) pg->np_num_productions; k ++) {
       i = cx->cx_results[k][j];
       if(i >= R_EOF) {
         if(i > max_j)
@@ -190,7 +190,8 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
         break;
 
       case NOG_TSSEQ:
-        boolean_push(c, c->head < c->eof && c->pg->np_tables[arg0()].nt_entries[*c->head] == arg1());
+        boolean_push(c, c->head < c->eof &&
+              c->pg->np_tables[arg0()].nt_entries[*c->head] == (letter_t) arg1());
         break;
 
       case NOG_SSIR:
@@ -414,7 +415,7 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   uint64_t signature, version; 
   size_t size;
-  int i, j;
+  unsigned int i, j;
 
   DEBUGF("Unpacking\n");
   result = 0;
@@ -511,7 +512,7 @@ finish:
 }/*}}}*/
 void cnog_free_program(alloc_t *alloc, nog_program_t *pg)/*{{{*/
 {
-  int i;
+  unsigned int i;
 
   if(pg) {
     if(pg->np_program) {

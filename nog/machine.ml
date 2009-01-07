@@ -61,7 +61,7 @@ type ('nd,'at) unlabelable_instruction =
                                                        and the head position to the current construction *)
   (* %opcode{U41a} *)  | POSATTR of 'at             (** Add an attribute of the given name whose value is the current input position *)
   (* %opcode{U42} *)   | TOKEN                      (** Build a token between the memo register and the head position and add it to the current construction *)
-  (* %opcode{U45ii} *) | TSSEQ of int * int         (** Scan, translate and push true if result in equal *)
+  (* %opcode{U45ii} *) | TSSEQ of int * int         (** Scan, translate and push true if result is equal *)
   (* %opcode{U46as} *) | STRATTR of 'at * string    (** Add an attribute of the given name whose value is the given constant string *)
 ;;
 

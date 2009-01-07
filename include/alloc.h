@@ -20,8 +20,8 @@ typedef struct {
   void (*a_free)(void *info, void *free);
 } alloc_t;
 
-void *alloc_malloc(alloc_t *, size_t);
-void alloc_free(alloc_t *, void *);
+EXPORT void *alloc_malloc(alloc_t *, size_t);
+EXPORT void alloc_free(alloc_t *, void *);
 extern alloc_t alloc_stdlib;
 
 #endif
