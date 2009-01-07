@@ -9,13 +9,7 @@
 #include <assert.h>
 #include <alloc.h>
 
-#if 0
-#define DEBUGF(x, y...) printf(x, ##y);
-#undef assert
-#define assert(x) do { if(!(x)) { DEBUGF("Fuck: " #x "\n"); } } while(0)
-#else
-#define DEBUGF(x,...)
-#endif
+#define CNOG_DEBUG 0
 
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 {
@@ -112,7 +106,7 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
     assert(c->pg->np_program <= ip && ip < c->pg->np_program + c->pg->np_count);
     assert(c->bof <= c->head && c->head <= c->eof);
     /*printf("pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip - c->pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
-    DEBUGF("%ld %ld %d\n", ip - c->pg->np_program, c->head - c->bof, c->fail);
+    DEBUGIF(CNOG_DEBUG,"%ld %ld %d\n", ip - c->pg->np_program, c->head - c->bof, c->fail);
 
     ip_next = ip + 1;
 
@@ -417,45 +411,45 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   size_t size;
   unsigned int i, j;
 
-  DEBUGF("Unpacking\n");
+  DEBUGIF(CNOG_DEBUG,"Unpacking\n");
   result = 0;
   
   pg = alloc_malloc(alloc, sizeof(nog_program_t));
 
   /* Welcome to C allocation hell! */
   if(!pg) goto finish;
-  DEBUGF("Allocated program\n");
+  DEBUGIF(CNOG_DEBUG,"Allocated program\n");
 
   if(!pack_read_uint64(pk, &signature)) goto finish;
-  DEBUGF("Read signature %lx\n", signature);
+  DEBUGIF(CNOG_DEBUG,"Read signature %lx\n", signature);
 
   if(signature != NOG_SIGNATURE) goto finish;
-  DEBUGF("Signature OK\n");
+  DEBUGIF(CNOG_DEBUG,"Signature OK\n");
 
   if(!pack_read_uint64(pk, &version)) goto finish;
   if(version <= CNOG_VERSION) {
-    DEBUGF("Version too recent\n");
+    DEBUGIF(CNOG_DEBUG,"Version too recent\n");
     goto finish;
   }
-  DEBUGF("Version OK\n");
+  DEBUGIF(CNOG_DEBUG,"Version OK\n");
 
   if(!pack_read_uint(pk, &pg->np_start_pc)) goto finish;
-  DEBUGF("Start pc is %d\n", pg->np_start_pc);
+  DEBUGIF(CNOG_DEBUG,"Start pc is %d\n", pg->np_start_pc);
 
   if(!pack_read_uint(pk, &pg->np_build_pc)) goto finish;
-  DEBUGF("Build pc is %d\n", pg->np_build_pc);
+  DEBUGIF(CNOG_DEBUG,"Build pc is %d\n", pg->np_build_pc);
 
   if(!pack_read_uint(pk, &pg->np_root_constructor)) goto finish;
-  DEBUGF("Root constructor is %d\n", pg->np_root_constructor);
+  DEBUGIF(CNOG_DEBUG,"Root constructor is %d\n", pg->np_root_constructor);
 
   if(!pack_read_uint(pk, &pg->np_num_productions)) goto finish;
-  DEBUGF("Num_productions is %d\n", pg->np_num_productions);
+  DEBUGIF(CNOG_DEBUG,"Num_productions is %d\n", pg->np_num_productions);
 
   if(!pack_read_uint(pk, &pg->np_num_choices)) goto finish;
-  DEBUGF("Num_choices is %d\n", pg->np_num_choices);
+  DEBUGIF(CNOG_DEBUG,"Num_choices is %d\n", pg->np_num_choices);
 
   if(!pack_read_uint(pk, &pg->np_num_constructors)) goto finish;
-  DEBUGF("Num_constructors is %d\n", pg->np_num_constructors);
+  DEBUGIF(CNOG_DEBUG,"Num_constructors is %d\n", pg->np_num_constructors);
 
   pg->np_constructors = alloc_malloc(alloc, sizeof(nog_string_t) * pg->np_num_constructors);
   if(!pg->np_constructors) goto finish;
@@ -463,24 +457,24 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   for(i = 0; i < pg->np_num_constructors; i ++) {
     if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size, alloc)) goto finish;
     pg->np_constructors[i].ns_length = size;
-    DEBUGF("  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
+    DEBUGIF(CNOG_DEBUG,"  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
   }
 
   if(!pack_read_uint(pk, &pg->np_num_attributes)) goto finish;
 
-  DEBUGF("Num_attributes is %d\n", pg->np_num_attributes);
+  DEBUGIF(CNOG_DEBUG,"Num_attributes is %d\n", pg->np_num_attributes);
   pg->np_attributes = alloc_malloc(alloc, sizeof(nog_string_t) * pg->np_num_attributes);
   if(!pg->np_attributes) goto finish;
 
   for(i = 0; i < pg->np_num_attributes; i ++) {
     if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size, alloc)) goto finish;
     pg->np_attributes[i].ns_length = size;
-    DEBUGF("  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
+    DEBUGIF(CNOG_DEBUG,"  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
   }
 
   if(!pack_read_uint(pk, &pg->np_num_tables)) goto finish;
 
-  DEBUGF("Num_tables is %d\n", pg->np_num_tables);
+  DEBUGIF(CNOG_DEBUG,"Num_tables is %d\n", pg->np_num_tables);
   pg->np_tables = alloc_malloc(alloc, sizeof(nog_table_t) * pg->np_num_tables);
   if(!pg->np_tables) goto finish;
 
@@ -493,7 +487,7 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   }
   
   if(!pack_read_uint(pk, &pg->np_count)) goto finish;
-  DEBUGF("Program size is %d\n", pg->np_count);
+  DEBUGIF(CNOG_DEBUG,"Program size is %d\n", pg->np_count);
 
   pg->np_program = alloc_malloc(alloc, sizeof(nog_instruction_t) * pg->np_count);
   if(!pg->np_program) goto finish;
