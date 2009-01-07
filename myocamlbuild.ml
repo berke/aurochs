@@ -176,7 +176,10 @@ dispatch
           ~prods:["cnog/cnog_unpack.c";"include/cnog_unpack.h";"backends/nog_packer.ml"]
           ~deps:["genmachine.byte";"nog/machine.ml"]
           begin fun env _build ->
-            Cmd(S[A"./genmachine.byte"])
+            Seq[
+              Cmd(S[A"mkdir"; A"-p"; A"include"]);
+              Cmd(S[A"./genmachine.byte"])
+            ]
           end;
           
         rule "Program"

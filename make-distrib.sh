@@ -25,8 +25,11 @@ mkdir -p $TARGET/java/fr/aurochs
 cp ../Makefile.distrib $TARGET/Makefile
 cp ../Makefile.java $TARGET/Makefile.java
 
-cp aurochs/aurochs_tool.native $TARGET/bin/aurochs
-cp libaurochs.a $TARGET/lib
+if [ "x$NOBIN" != "x" ]; then
+  cp aurochs/aurochs_tool.native $TARGET/bin/aurochs
+  cp libaurochs.a $TARGET/lib
+fi
+
 cp include/*.h $TARGET/include
 cp ../cnog/check.c $TARGET/src
 cp aurochs/*.c cnog/*.c cpack/*.c cutil/*.c $TARGET/src
