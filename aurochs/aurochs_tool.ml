@@ -66,6 +66,10 @@ module Spec =
           Clear Opt.tree,
           " Don't dump the syntax tree after parsing";
 
+        "-dont-indent",
+          Clear Opt.indent,
+          " Don't indent the dumper tree";
+
         "-terse",
           Set terse,
           " Dump tree in terse format";

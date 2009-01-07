@@ -9,8 +9,8 @@
 #define BASE_TYPES_H
 
 #ifdef AUROCHS_PLUGGABLE_INCLUDE_DIRECTIVE
-#include "aurochs_pluggable_include.h"
-#endif
+#include <aurochs_pluggable_include.h>
+#else
 
 typedef enum { false = 0, true = 1 } bool;
 
@@ -39,8 +39,14 @@ typedef signed short s32;
 typedef signed long s64;
 #endif
 
+#ifndef DEBUGIF
+#define DEBUGIF(cond,x, y...) do{if((cond)) printf(x, ##y);}while(0)
 #endif
 
 #ifndef EXPORT
 #define EXPORT
+#endif
+
+#endif
+
 #endif

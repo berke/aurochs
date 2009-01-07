@@ -176,7 +176,7 @@ let parse_file_with_nog pg fn =
       if !Opt.tree then
         begin
           info `Important "RESULT";
-          Peg.print_tree ~terse:!Opt.terse () stdout t;
+          Peg.print_tree ~short:(not !Opt.indent) ~terse:!Opt.terse () stdout t;
           flush stdout
         end
       else

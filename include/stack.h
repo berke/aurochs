@@ -15,7 +15,8 @@
 typedef struct stack_chunk {
   struct stack_chunk *sc_next;  /* Next chunk */
   size_t sc_size;               /* Size of this chunk */
-  u8 sc_data[0];
+  /* Used as pointer for end of structure */
+  u8 sc_data[1];
 } aurochs_stack_chunk_t;
 
 typedef struct {

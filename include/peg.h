@@ -31,9 +31,9 @@ typedef int symbol_t;
 
 /* Builder callbacks */
 #if !BUILDER_TYPES_DEFINED
-typedef struct { }* info;
-typedef struct { }* tree;
-typedef struct { }* construction;
+typedef struct { int dummy; }* info;
+typedef struct { int dummy; }* tree;
+typedef struct { int dummy; }* construction;
 #endif
 
 typedef struct {

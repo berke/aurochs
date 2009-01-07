@@ -33,6 +33,7 @@ let quick = ref false
 let profile : string option ref = ref None
 let quiet = ref false
 let terse = ref false
+let indent = ref true
 
 let warning : Talk_level.level ref = ref `Normal
 let info    : Talk_level.level ref = ref `Normal
