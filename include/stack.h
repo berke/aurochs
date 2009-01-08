@@ -10,7 +10,7 @@
 
 #define STACK_DEFAULT_CHUNK_SIZE 900
 
-#define STACK_ALIGN (sizeof(uint64_t))
+#define STACK_ALIGN (sizeof(u64))
 
 typedef struct stack_chunk {
   struct stack_chunk *sc_next;  /* Next chunk */

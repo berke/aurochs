@@ -46,7 +46,7 @@ bool pack_resplenish(packer_t *pk)/*{{{*/
     return true;
   }
 }/*}}}*/
-bool pack_read_uint8(packer_t *pk, uint8_t *result)/*{{{*/
+bool pack_read_uint8(packer_t *pk, u8 *result)/*{{{*/
 {
   if(!(pk->p_index < pk->p_length || pack_resplenish(pk))) return false;
 
@@ -54,7 +54,7 @@ bool pack_read_uint8(packer_t *pk, uint8_t *result)/*{{{*/
 
   return true;
 }/*}}}*/
-bool pack_read_bytes(packer_t *pk, uint8_t *result, size_t count)/*{{{*/
+bool pack_read_bytes(packer_t *pk, u8 *result, size_t count)/*{{{*/
 {
   size_t chunk;
 
@@ -69,9 +69,9 @@ bool pack_read_bytes(packer_t *pk, uint8_t *result, size_t count)/*{{{*/
   }
   return true;
 }/*}}}*/
-bool pack_read_string(packer_t *pk, uint8_t **result, size_t *length, alloc_t *alloc)/*{{{*/
+bool pack_read_string(packer_t *pk, u8 **result, size_t *length, alloc_t *alloc)/*{{{*/
 {
-  uint64_t m;
+  u64 m;
   
   *result = 0;
 
@@ -88,11 +88,11 @@ bool pack_read_string(packer_t *pk, uint8_t **result, size_t *length, alloc_t *a
     return false;
   }
 }/*}}}*/
-bool pack_read_int64(packer_t *pk, int64_t *result)/*{{{*/
+bool pack_read_int64(packer_t *pk, s64 *result)/*{{{*/
 {
   int i;
-  int64_t x;
-  uint8_t y;
+  s64 x;
+  u8 y;
   bool positive;
 
   x = 0;
@@ -112,11 +112,11 @@ bool pack_read_int64(packer_t *pk, int64_t *result)/*{{{*/
   *result = positive ? x : -x-1;
   return true;
 }/*}}}*/
-bool pack_read_uint64(packer_t *pk, uint64_t *result)/*{{{*/
+bool pack_read_uint64(packer_t *pk, u64 *result)/*{{{*/
 {
   int i;
-  uint64_t x;
-  uint8_t y;
+  u64 x;
+  u8 y;
 
   x = 0;
 
@@ -130,7 +130,7 @@ bool pack_read_uint64(packer_t *pk, uint64_t *result)/*{{{*/
   return true;
 }/*}}}*/
 bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
-  int64_t x;
+  s64 x;
 
   if(pack_read_int64(pk, &x)) {
     *result = x;
@@ -140,7 +140,7 @@ bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
   }
 }/*}}}*/
 bool pack_read_uint(packer_t *pk, unsigned int *result) {/*{{{*/
-  uint64_t x;
+  u64 x;
 
   if(pack_read_uint64(pk, &x)) {
     *result = x;

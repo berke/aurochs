@@ -22,6 +22,6 @@ typedef struct {
 
 EXPORT void *alloc_malloc(alloc_t *, size_t);
 EXPORT void alloc_free(alloc_t *, void *);
-extern alloc_t alloc_stdlib;
+EXPORT alloc_t alloc_stdlib;
 
 #endif
