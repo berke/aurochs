@@ -494,6 +494,20 @@ let put_program pg peg sk =
   Pack.write_uint64 sk !sum64
 (* ***)
 (*** save_program *)
+let save_program_ascii ~prologue ~epilogue fn pg peg =
+  Util.with_file_output fn (fun oc ->
+    let u = Bytes.with_buffer_sink (put_program pg peg) in
+    let m = String.length u in
+    output_string oc prologue;
+    for i = 0 to m - 1 do
+      let c = Char.code u.[i] in
+      if i mod 32 = 0 then
+        fp oc "\n  ";
+      fp oc "%3d," c
+    done;
+    output_string oc epilogue)
+(* ***)
+(*** save_program *)
 let save_program fn pg peg = Util.with_binary_file_output fn (fun oc -> put_program pg peg (Bytes.sink_of_out_channel oc))
 (* ***)
 (*** generate *)

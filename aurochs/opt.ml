@@ -1,17 +1,17 @@
 (* Opt *)
 
-let targets : [`nog|`ml|`mli|`ml_classic|`c] list ref = ref []
+let targets : [`nog|`c_table_nog|`ml|`mli|`ml_classic|`c] list ref = ref []
 let interpreter : [`exp|`mlnog|`nog] ref = ref `nog
 let dump_grammar : string option ref = ref None
 let dump_canonified : string option ref = ref None
 let dump_xml : string option ref = ref None
 let dump_nog : string option ref = ref None
-
 let load_nog : string option ref = ref None
 let ml_load_nog : string option ref = ref None
 let ml_save_nog : string option ref = ref None
-
 let nog_file : string option ref = ref None
+let prologue = ref "unsigned char nog[] = {"
+let epilogue = ref "};"
 let dump_colorized : string option ref = ref None
 let colorize_background = ref false
 let tree = ref true

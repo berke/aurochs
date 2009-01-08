@@ -27,9 +27,10 @@ module Spec =
     let specs =
       Arg.align [
         "-target",
-        Symbol(["nog";"ml";"mli";"ml_classic";"c"],
+        Symbol(["nog";"ml";"mli";"ml_classic";"c";"c_table_nog"],
                  begin function
                    | "nog"           -> targets += `nog
+                   | "c_table_nog"   -> targets += `c_table_nog
                    | "ml"            -> targets += `ml
                    | "mli"           -> targets += `mli
                    | "ml_classic"    -> targets += `ml_classic
@@ -53,6 +54,14 @@ module Spec =
         "-base",
           String(aor base),
           "<name> Set the base for output files";
+
+        "-prologue",
+          Set_string prologue,
+          "<string> Set prologue for C table output format";
+
+        "-epilogue",
+          Set_string epilogue,
+          "<string> Set prologue for C table output format";
 
         "-function-prefix",
           Set_string function_prefix,

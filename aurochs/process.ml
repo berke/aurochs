@@ -480,6 +480,10 @@ let process fno =
           | `nog ->
               info `Normal "Generating NOG parser";
               Noggie.save_program (fn'^".nog") (!< pg) (!< peg)
+          | `c_table_nog ->
+              let fn'' = fn'^".h" in
+              info `Normal "Generating NOG parser as C table into file %s" fn'';
+              Noggie.save_program_ascii ~prologue:!Opt.prologue ~epilogue:!Opt.epilogue fn'' (!< pg) (!< peg)
         )
         targets
 
