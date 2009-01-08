@@ -405,14 +405,29 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
   }
   return false;
 }/*}}}*/
+/*{{{*/static inline void cnog_add_to_checksum(void *info, u8 *data, size_t size)
+{
+  u64 sum;
+
+  sum = *((u64 *) info);
+  while(size > 0) {
+    sum += *(data ++);
+    size --;
+  }
+  *((u64 *) info) = sum;
+}/*}}}*/
 nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
   nog_program_t *pg, *result;
   u64 signature, version; 
   size_t size;
   unsigned int i, j;
+  u64 checksum, checksum2;
 
   DEBUGIF(CNOG_DEBUG,"Unpacking\n");
   result = 0;
+
+  checksum = 0;
+  pack_set_observer(pk, &checksum, cnog_add_to_checksum);
   
   pg = alloc_malloc(alloc, sizeof(nog_program_t));
 
@@ -494,11 +509,20 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
 
   for(i = 0; i < pg->np_count; i ++) {
     if(!cnog_unpack_instruction(alloc, pk, pg->np_program + i)) {
-      fprintf(stderr, "Unpack error at instruction %d\n", i);
+      DEBUGIF(CNOG_DEBUG, "Unpack error at instruction %d\n", i);
       goto finish;
     }
   }
+  
+  if(!pack_finish_observing(pk)) goto finish;
 
+  if(!pack_read_uint64(pk, &checksum2)) goto finish;
+  if(checksum != checksum2) {
+    DEBUGIF(CNOG_DEBUG, "Bad checksum, residual 0x%lx recorded 0x%lx\n", checksum, checksum2);
+    goto finish;
+  } else {
+    DEBUGIF(CNOG_DEBUG, "Checksum OK 0x%lx\n", checksum2);
+  }
   result = pg;
 
 finish:

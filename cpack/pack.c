@@ -16,6 +16,7 @@ bool pack_init_from_string(packer_t *pk, u8 *data, size_t size)/*{{{*/
   pk->p_index = 0;
   pk->p_length = size;
   pk->p_extra = 0;
+  pk->p_observer = 0;
   pk->p_resplenish = 0;
   pk->p_data = data;
   return true;
@@ -26,6 +27,8 @@ bool pack_init(packer_t *pk, u8 *block_buffer, size_t block_size, void *extra, p
   pk->p_index = 0;
   pk->p_length = 0;
   pk->p_extra = extra;
+  pk->p_observer = 0;
+  pk->p_observer_extra = 0;
   pk->p_resplenish = resplenish;
   pk->p_data = block_buffer;
   return true;
@@ -33,16 +36,32 @@ bool pack_init(packer_t *pk, u8 *block_buffer, size_t block_size, void *extra, p
 void pack_shutdown(packer_t *pk)/*{{{*/
 {
 }/*}}}*/
+static inline void pack_observe(packer_t *pk) {/*{{{*/
+  if(pk->p_observer && pk->p_index) pk->p_observer(pk->p_observer_extra, pk->p_data, pk->p_index);
+}/*}}}*/
+bool pack_finish_observing(packer_t *pk) {/*{{{*/
+  pack_observe(pk);
+  pk->p_observer = 0;
+  return true;
+}/*}}}*/
+bool pack_set_observer(packer_t *pk, void *observer_extra, pack_observer_t observe)/*{{{*/
+{
+  pk->p_observer = observe;
+  pk->p_observer_extra = observer_extra;
+  return true;
+}/*}}}*/
 bool pack_resplenish(packer_t *pk)/*{{{*/
 {
   size_t m;
 
+  pack_observe(pk);
   m = pk->p_resplenish ? pk->p_resplenish(pk->p_extra, pk->p_data, pk->p_block_size) : 0;
   if(m <= 0)
     return false;
   else {
     pk->p_length = m;
     pk->p_index = 0;
+    pack_observe(pk);
     return true;
   }
 }/*}}}*/

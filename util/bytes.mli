@@ -44,6 +44,9 @@ val counter : int ref -> sink -> sink
     channel [oc] *)
 val logger : out_channel -> sink -> sink
 
+(** [checksum64 sum sk] creates a sink [t] that adds the bytes it receives to [sum] and passes them to [sk] *)
+val checksum64 : int64 ref -> sink -> sink
+
 (** [measure f] runs [f] on a fresh sink and returns the number of bytes [f] writes to the sink *)
 val measure : (sink -> unit) -> int
 

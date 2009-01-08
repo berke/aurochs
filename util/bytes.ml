@@ -63,6 +63,18 @@ let with_buffer_sink f =
   Buffer.contents b
 ;;
 
+let checksum64 sum sk =
+  { sk_put_byte = (fun b ->
+      sum := Int64.add !sum (Int64.of_int b);
+      put_byte sk b);
+    sk_put_string = (fun u ->
+      for i = 0 to String.length u - 1 do
+        let c = Char.code u.[i] in
+        sum := Int64.add !sum (Int64.of_int c);
+      done;
+      put_string sk u) }
+;;
+
 let logger oc sk =
   let fp = Printf.fprintf in
   { sk_put_byte = (fun b ->

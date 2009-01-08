@@ -487,9 +487,14 @@ let put_program pg peg sk =
   let resolve_attribute = Hashtbl.find attributes in
   Array.iter (Nog_packer.pack_instruction ~resolve_label ~resolve_node ~resolve_attribute sk) pg.pg_code
 
+let put_program pg peg sk =
+  let sum64 = ref 0L in
+  let sk_sum64 = Bytes.checksum64 sum64 sk in
+  put_program pg peg sk_sum64;
+  Pack.write_uint64 sk !sum64
 (* ***)
 (*** save_program *)
-let save_program fn pg peg = Util.with_binary_file_output fn (fun oc -> let sk = Bytes.sink_of_out_channel oc in put_program pg peg sk)
+let save_program fn pg peg = Util.with_binary_file_output fn (fun oc -> put_program pg peg (Bytes.sink_of_out_channel oc))
 (* ***)
 (*** generate *)
 let generate fn ?(start="start") peg =
