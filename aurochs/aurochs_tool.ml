@@ -38,6 +38,10 @@ module Spec =
                  end),
           " target language";
 
+        "-load-nog",
+          String(aor load_nog),
+          "<file> Load NOG bytecode from binary file";
+
         "-start",
           Set_string start,
           "<string> Set start symbol (default \"start\")";
@@ -82,14 +86,6 @@ module Spec =
           String(fun fn -> Util.with_file_input fn (fun ic -> Util.iter_over_lines ic (fun u -> append parse u))),
           "<file> Add a -parse <fn> option for each line in given file";
 
-        "-save-nog",
-          String(aor save_nog),
-          "<file> Save NOG into file";
-
-        "-load-nog",
-          String(aor load_nog),
-          "<file> Load NOG from file";
-
         "-dump-grammar",
           String(aor dump_grammar),
           "<file> Dump grammar into file";
@@ -110,10 +106,17 @@ module Spec =
           Set colorize_background,
           " Colorize background in addition to foreground";
 
-
-        "-dump-nog",
+        "-disassemble-nog",
           String(aor dump_nog),
-          "<file> Dump NOG bytecode into file";
+          "<file> Dump NOG bytecode disassembly into given file";
+
+        "-ml-save-nog",
+          String(aor ml_save_nog),
+          "<file> Save NOG into Ocaml binary file";
+
+        "-ml-load-nog",
+          String(aor ml_load_nog),
+          "<file> Load NOG from Ocaml binary file";
 
         "-build-only",
           Set build_only,

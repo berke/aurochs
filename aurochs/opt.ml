@@ -6,8 +6,11 @@ let dump_grammar : string option ref = ref None
 let dump_canonified : string option ref = ref None
 let dump_xml : string option ref = ref None
 let dump_nog : string option ref = ref None
+
 let load_nog : string option ref = ref None
-let save_nog : string option ref = ref None
+let ml_load_nog : string option ref = ref None
+let ml_save_nog : string option ref = ref None
+
 let nog_file : string option ref = ref None
 let dump_colorized : string option ref = ref None
 let colorize_background = ref false

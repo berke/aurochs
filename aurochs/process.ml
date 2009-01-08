@@ -403,7 +403,7 @@ let process fno =
 
   let pg =
     lazy begin
-      match !Opt.load_nog with
+      match !Opt.ml_load_nog with
       | None ->
           info `Minor "Generating NOG code";
           Noggie.generate (!< base_name) ~root:!Opt.root_node ~start:!Opt.start (!< peg_canonified)
@@ -419,15 +419,23 @@ let process fno =
         with_file_output fn (fun oc -> Noggie.print_code oc (!< pg).Nog.pg_code)
   end;
 
-  let bin = lazy (Bytes.with_buffer_sink (Noggie.put_program (!< pg) (!< peg))) in
+  let bin = lazy (
+    match !Opt.load_nog with
+    | Some fn ->
+        info `Normal "Loading NOG bytecode from file %s" fn;
+        Aurochs.load (`File fn)
+    | None ->
+        Bytes.with_buffer_sink (Noggie.put_program (!< pg) (!< peg))
+    )
+  in
 
   let prog = lazy (Aurochs.program_of_binary (!< bin)) in
 
   begin
-    match !Opt.save_nog with
+    match !Opt.ml_save_nog with
     | None -> ()
     | Some fn ->
-        info `Normal "Saving NOG program to %s" fn;
+        info `Normal "Marshalling NOG to %s" fn;
         with_file_output fn (fun oc -> Marshal.to_channel oc (!< pg) [])
   end;
 
