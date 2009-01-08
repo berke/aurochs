@@ -1,4 +1,4 @@
-.PHONY: all aurochs clean test_grammar test_arith install lib distrib
+.PHONY: all aurochs clean test_grammar test_arith install lib distrib tgz
 
 VERSION=$(shell sed -n -e 's:^let version = (\([0-9]*\),\([0-9]*\),\([0-9]*\))*$$:\1.\2.\3:p' aurochs/version.ml)
 PREFIX?=/usr/local
@@ -28,3 +28,6 @@ install: targets
 	  _build/libaurochs.a \
 	  _build/dllaurochs.so \
 	  $(TARGET)
+
+tgz:
+	hg archive -t tgz ~/pub/aurochs.tar.gz
