@@ -11,90 +11,118 @@
 
 #define CNOG_DEBUG 0
 
-static inline void set_comemo(alloc_t *alloc, comemo_t *table, int position, int key, int value)
+static inline void set_comemo_non_compact(alloc_t *alloc, comemo_t *table, int position, u32 key, u32 value)
+{
+  comemo_t r;
+
+  r = table[position];
+  big_comemo_t *head, *current;
+
+  current = (big_comemo_t *) r;
+
+  /* Check if there already is an entry. */
+  while(current) {
+    if(current->key == key) {
+      current->value = value;
+      return;
+    }
+    current = current->next;
+  }
+
+  /* Not already present.  Append it to the beginning of the list. */
+  head = (big_comemo_t *) r;
+
+  current = alloc_malloc(alloc, sizeof(big_comemo_t));
+  current->next = head;
+  current->key = key;
+  current->value = value;
+  table[position] = (comemo_t) current;
+}
+
+static inline void set_comemo(alloc_t *alloc, comemo_t *table, int position, u32 key, u32 value)
 {
   comemo_t r;
   int n;
+  bool small;
+  bool compact;
+  bool present;
+  int index;
   
   r = table[position];
   n = r & MASK(COMEMO_TAG_BITS);
 
-  if((!r || n < COMEMO_MAX_SHORTS) && key < COMEMO_MAX_KEY && value < COMEMO_MAX_VALUE) {
-    int offset;
-    comemo_t r_orig;
-    int n_orig;
+  compact = !r || n;
+
+  small = key < COMEMO_MAX_KEY && value < COMEMO_MAX_VALUE;
+
+  /* r = 0          -> no entries
+   * r <> 0 & n = 0 -> extended
+   * n <> 0         -> from 1 to COMEMO_MAX_SHORTS entries */
+
+  index = -1;
+  if(n) {
+    /* We are in compact mode and there is at least one entry.  Check if the entry is already present. */
+
+    comemo_t r_copy;
+    int n_copy;
     int r_key;
-    int r_val;
-    int target_slot;
 
-    target_slot = n;
-    r_orig = r;
-    n_orig = n;
+    r_copy = r;
+    n_copy = n;
+    r_copy >>= COMEMO_TAG_BITS;
 
-    /* Check if the entry is already present */
-    r >>= COMEMO_TAG_BITS;
+    while(n_copy --) {
+      r_copy >>= COMEMO_VALUE_BITS;
+      r_key = r_copy & MASK(COMEMO_KEY_BITS);
+      r_copy >>= COMEMO_KEY_BITS;
 
-    while(n--) {
-      r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
-      r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
       if(r_key == key) {
-        target_slot = n_orig - n - 1;
+        index = n - n_copy - 1;
         break;
       }
     }
+  }
+  present = index >= 0;
 
-    /* Add or replace short entry */
-    offset = target_slot * (COMEMO_KEY_BITS + COMEMO_VALUE_BITS) + COMEMO_TAG_BITS;
-    r &= ~ ((1 << (COMEMO_KEY_BITS + COMEMO_VALUE_BITS)) - 1) << offset;
-    r |= key << (COMEMO_VALUE_BITS + offset);
-    r |= value << offset;
-
-    if(target_slot != n_orig) r++; /* Won't overflow, by hypothesis */
-
-    table[position] = r;
-  } else {
+  /* */
+  if(!compact || !small || (!present && n == COMEMO_MAX_SHORTS)) {
     /* Cannot add short entry. */
     if(n) { 
       int r_key;
       int r_val;
 
-      /* Comemo is short.  We'll need to convert them to a table. */
+      /* Entries are in compact form.  We'll need to convert them to a table. */
       table[position] = 0;
 
       r >>= COMEMO_TAG_BITS;
       while(n--) {
-        r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
         r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
+        r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
         if(r_key != key) {
-          set_comemo(alloc, table, position, r_key, r_val);
+          set_comemo_non_compact(alloc, table, position, r_key, r_val);
         }
       }
+      r = 0;
     }
     
-    {
-      /* Comemo is already long. */
-      big_comemo_t *head, *current;
+    /* Add entry to long table. */
+    set_comemo_non_compact(alloc, table, position, key, value);
+  } else {
+    int offset;
 
-      current = (big_comemo_t *) r;
+    /* Add or replace short entry */
+    if(index < 0) index = n;
+    offset = index * (COMEMO_KEY_BITS + COMEMO_VALUE_BITS) + COMEMO_TAG_BITS;
+    r &= ~((MASK(COMEMO_KEY_BITS + COMEMO_VALUE_BITS)) << offset);
+    r |= ((u64) key) << (COMEMO_VALUE_BITS + offset);
+    r |= ((u64) value) << offset;
 
-      /* Check if there already is an entry. */
-      while(current) {
-        if(current->key == key) {
-          current->value = value;
-          return;
-        }
-        current = current->next;
-      }
-
-      /* Not already present.  Append it to the beginning of the list. */
-      head = (big_comemo_t *) r;
-      current = alloc_malloc(alloc, sizeof(big_comemo_t));
-      current->next = head;
-      current->key = key;
-      current->value = value;
-      table[position] = (comemo_t) current;
-    }
+    if(!present) r++; /* Won't overflow, by hypothesis */
+    assert((r & MASK(COMEMO_TAG_BITS)));
+    table[position] = r;
   }
+
+  return;
 }
 
 static inline int get_comemo(comemo_t *table, int position, int key, unsigned int default_value)
@@ -111,14 +139,13 @@ static inline int get_comemo(comemo_t *table, int position, int key, unsigned in
     r >>= COMEMO_TAG_BITS;
 
     while(n--) {
-      r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
       r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
+      r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
       if(r_key == key) {
         return r_val;
       }
     }
-    return default_value;
-  } else {
+  } else if(r) {
     big_comemo_t *br;
 
     br = (big_comemo_t *) r;
@@ -129,8 +156,8 @@ static inline int get_comemo(comemo_t *table, int position, int key, unsigned in
         br = br->next;
       }
     }
-    return default_value;
   }
+  return default_value;
 }
 
 static inline int get_choice(peg_context_t *cx, int position, int alternative)
@@ -149,15 +176,13 @@ static inline int get_result(peg_context_t *cx, int position, int production)
 
   v = (int) get_comemo(cx->cx_results, position, production, R_UNKNOWN - R_MIN);
   v += R_MIN;
-  printf("%d %d %d GET\n", position, production, v);
   return v;
 }
 
 static inline void set_result(peg_context_t *cx, int position, int production, int result)
 {
-  printf("%d %d %d SET\n", position, production, result);
   result -= R_MIN;
-  set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_choices, position, production, result);
+  set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_results, position, production, result);
 }
 
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)

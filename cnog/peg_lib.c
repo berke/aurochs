@@ -79,12 +79,12 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
 
   cx->cx_choices = alloc_malloc(alloc, sizeof(comemo_t *) * (input_length + 1));
 
-  for(i = 0; i <= input_length + 1; i ++) {
+  for(i = 0; i <= input_length; i ++) {
     cx->cx_choices[i] = COMEMO_ZERO;
   }
 
   cx->cx_results = alloc_malloc(alloc, sizeof(comemo_t *) * (input_length + 1));
-  for(i = 0; i <= input_length + 1; i ++) {
+  for(i = 0; i <= input_length; i ++) {
     cx->cx_results[i] = COMEMO_ZERO;
   }
 
