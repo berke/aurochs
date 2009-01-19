@@ -8,6 +8,7 @@
 #include <peg_lib.h>
 #include <cnog.h>
 
+#if 0
 void peg_dump_context(FILE *f, peg_context_t *cx)/*{{{*/
 {
   int i,j;
@@ -54,19 +55,18 @@ void peg_dump_context(FILE *f, peg_context_t *cx)/*{{{*/
     }
   }
 }/*}}}*/
+#endif
 peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length)/*{{{*/
 {
   int i;
   peg_context_t *cx;
-  choice_t *alternatives;
-  result_t *results;
   int num_alternatives;
   int num_productions;
 
   cx = alloc_malloc(alloc, sizeof(peg_context_t));
-  if(!cx) return 0;
 
   cx->cx_alloc = alloc;
+  cx->cx_table_stack = stack_create(alloc);
 
   cx->cx_input = input;
   cx->cx_input_length = input_length;
@@ -77,26 +77,15 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
   cx->cx_num_alternatives = num_alternatives;
   cx->cx_num_productions = num_productions;
 
-  cx->cx_alternatives = alloc_malloc(alloc, sizeof(choice_t *) * num_alternatives);
-  if(!cx->cx_alternatives) return 0;
-  alternatives = alloc_malloc(alloc, sizeof(choice_t) * (input_length + 1) * num_alternatives);
-  if(!alternatives) return 0;
-  for(i = 0; i < num_alternatives * (input_length + 1); i ++) {
-    alternatives[i] = A_UNDEFINED;
-  }
-  for(i = 0; i < num_alternatives; i ++) {
-    cx->cx_alternatives[i] = alternatives + i * (input_length + 1);
+  cx->cx_choices = alloc_malloc(alloc, sizeof(comemo_t *) * (input_length + 1));
+
+  for(i = 0; i <= input_length + 1; i ++) {
+    cx->cx_choices[i] = COMEMO_ZERO;
   }
 
-  cx->cx_results = alloc_malloc(alloc, sizeof(result_t *) * num_productions);
-  if(!cx->cx_results) return 0;
-  results = alloc_malloc(alloc, sizeof(result_t) * (input_length + 1) * num_productions);
-  if(!results) return 0;
-  for(i = 0; i < num_productions * (input_length + 1); i ++) {
-    results[i] = R_UNKNOWN;
-  }
-  for(i = 0; i < num_productions; i ++) {
-    cx->cx_results[i] = results + i * (input_length + 1);
+  cx->cx_results = alloc_malloc(alloc, sizeof(comemo_t *) * (input_length + 1));
+  for(i = 0; i <= input_length + 1; i ++) {
+    cx->cx_results[i] = COMEMO_ZERO;
   }
 
   cx->cx_builder = pb;
@@ -111,9 +100,8 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
 void peg_delete_context(peg_context_t *cx)/*{{{*/
 {
   if(cx) {
-    if(cx->cx_num_alternatives) alloc_free(cx->cx_alloc, (*cx->cx_alternatives));
-    alloc_free(cx->cx_alloc, (*cx->cx_results));
-    alloc_free(cx->cx_alloc, (cx->cx_alternatives));
+    stack_dispose(cx->cx_table_stack);
+    alloc_free(cx->cx_alloc, (cx->cx_choices));
     alloc_free(cx->cx_alloc, (cx->cx_results));
     alloc_free(cx->cx_alloc, (cx->cx_stack));
     alloc_free(cx->cx_alloc, (cx));

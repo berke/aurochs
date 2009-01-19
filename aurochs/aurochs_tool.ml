@@ -136,8 +136,12 @@ module Spec =
           " Bootstrap grammar";
 
         "-show-memo",
-          Set show_memo,
-          " Show memo table after parsing";
+          String(fun fn -> show_memo := Some fn; interpreter := `mlnog),
+          "<file> Dump memo table into file after parsing (implies -using mlnog)";
+
+        "-show-choices",
+          String(fun fn -> show_choices := Some fn; interpreter := `mlnog),
+          "<file> Dump choices table into file after parsing (implies -using mlnog)";
 
         "-using",
         Symbol(["nog";"mlnog";"exp"],
@@ -150,12 +154,12 @@ module Spec =
           " interpreter to use (default nog)";
 
         "-trace",
-          Set trace,
-          " Trace execution";
+          Unit(fun () -> trace := true; interpreter := `mlnog),
+          " Trace execution (implies mlnog)";
 
         "-debug",
-          Set debug,
-          " Interactively debug execution";
+          Unit(fun () -> debug := true; interpreter := `mlnog),
+          " Interactively debug execution (implies mlnog)";
 
         "-log-calls",
           String(aor log_calls),
@@ -200,9 +204,18 @@ module Spec =
   end
 
 let _ =
+  let progname = Sys.argv.(0) in
   let did_something = ref false in
   Arg.parse
     Spec.specs
     (fun x -> did_something := true; Process.process (Some x))
-    (sf "Usage: %s [options] <grammar-file>" (Filename.basename Sys.argv.(0)));
+    (sf "Usage: %s [options] <grammar-file>" progname);
+
+  (* Consistency checks *)
+  if (!Opt.debug || !Opt.trace) && !Opt.interpreter != `mlnog then
+    begin
+      ef "%s: -debug, -trace or -show-memo can only be used with mlnog interpreter\n" progname;
+      exit 1
+    end;
+
   if not !did_something then Process.process None

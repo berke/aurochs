@@ -368,7 +368,8 @@ let execute_positioned_quick program
 (*** execute_positioned *)
 let execute_positioned program
   ?(quick=false)
-  ?(show_memo=false)
+  ?show_memo
+  ?show_choices
   ?(trace=false)
   ?log_calls
   ?record
@@ -659,15 +660,33 @@ let execute_positioned program
         done
       in
 
-      let finish () =
-        if show_memo then print_memo_table stdout;
+      let show_memo_table oc =
+        for j = 0 to m do
+          for i = 0 to num_productions - 1 do
+            match Memo.get c.memo i j with
+            | Jump j' -> fp oc "%d %d %d\n" i j j'
+            | Failure -> fp oc "%d %d -1\n" i j
+            | Busy -> fp oc "%d %d -2\n" i j
+            | Unknown -> ()
+          done;
+        done
       in
 
       let root () =
         Peg.P_Node(0, m, root, List.rev c.cons.cons_attributes, List.rev c.cons.cons_children)
       in
 
-      let show_choices i =
+      let show_choice_table oc =
+        for j = 0 to m do
+          for k = 0 to num_choices - 1 do
+            match Choices.get c.choices k j with
+            | None -> ()
+            | Some l -> fp oc "%d %d %d\n" j k l
+          done
+        done
+      in
+
+      let print_choices i =
         pf "Choices:\n";
         for k = 0 to num_choices - 1 do
           pf "%16s (%d) -> " program.pg_choices.(k) k;
@@ -675,6 +694,11 @@ let execute_positioned program
           | None -> pf "No choice\n"
           | Some j -> pf "Choice %d\n" j
         done
+      in
+
+      let finish () =
+        Util.optional (fun fn -> Util.with_file_output fn show_memo_table) show_memo;
+        Util.optional (fun fn -> Util.with_file_output fn show_choice_table) show_choices;
       in
 
       let run pc =
@@ -717,11 +741,11 @@ let execute_positioned program
                     (*| ["cons"] ->
                         let t = root () in
                         Peg.print_tree () stdout t*)
-                    | ["ch"] -> show_choices c.head
+                    | ["ch"] -> print_choices c.head
                     | ["ch"; k'] ->
                         begin
                           let k = int_of_string k' in
-                          show_choices k
+                          print_choices k
                         end
                     | ["b"; point] ->
                         let pc = breakpoint IS.add point in

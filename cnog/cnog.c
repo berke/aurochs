@@ -11,7 +11,156 @@
 
 #define CNOG_DEBUG 0
 
-int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
+static inline void set_comemo(alloc_t *alloc, comemo_t *table, int position, int key, int value)
+{
+  comemo_t r;
+  int n;
+  
+  r = table[position];
+  n = r & MASK(COMEMO_TAG_BITS);
+
+  if((!r || n < COMEMO_MAX_SHORTS) && key < COMEMO_MAX_KEY && value < COMEMO_MAX_VALUE) {
+    int offset;
+    comemo_t r_orig;
+    int n_orig;
+    int r_key;
+    int r_val;
+    int target_slot;
+
+    target_slot = n;
+    r_orig = r;
+    n_orig = n;
+
+    /* Check if the entry is already present */
+    r >>= COMEMO_TAG_BITS;
+
+    while(n--) {
+      r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
+      r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
+      if(r_key == key) {
+        target_slot = n_orig - n - 1;
+        break;
+      }
+    }
+
+    /* Add or replace short entry */
+    offset = target_slot * (COMEMO_KEY_BITS + COMEMO_VALUE_BITS) + COMEMO_TAG_BITS;
+    r &= ~ ((1 << (COMEMO_KEY_BITS + COMEMO_VALUE_BITS)) - 1) << offset;
+    r |= key << (COMEMO_VALUE_BITS + offset);
+    r |= value << offset;
+
+    if(target_slot != n_orig) r++; /* Won't overflow, by hypothesis */
+
+    table[position] = r;
+  } else {
+    /* Cannot add short entry. */
+    if(n) { 
+      int r_key;
+      int r_val;
+
+      /* Comemo is short.  We'll need to convert them to a table. */
+      table[position] = 0;
+
+      r >>= COMEMO_TAG_BITS;
+      while(n--) {
+        r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
+        r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
+        if(r_key != key) {
+          set_comemo(alloc, table, position, r_key, r_val);
+        }
+      }
+    }
+    
+    {
+      /* Comemo is already long. */
+      big_comemo_t *head, *current;
+
+      current = (big_comemo_t *) r;
+
+      /* Check if there already is an entry. */
+      while(current) {
+        if(current->key == key) {
+          current->value = value;
+          return;
+        }
+        current = current->next;
+      }
+
+      /* Not already present.  Append it to the beginning of the list. */
+      head = (big_comemo_t *) r;
+      current = alloc_malloc(alloc, sizeof(big_comemo_t));
+      current->next = head;
+      current->key = key;
+      current->value = value;
+      table[position] = (comemo_t) current;
+    }
+  }
+}
+
+static inline int get_comemo(comemo_t *table, int position, int key, unsigned int default_value)
+{
+  comemo_t r;
+  int n;
+  
+  r = table[position];
+  n = r & MASK(COMEMO_TAG_BITS);
+
+  if(n) {
+    int r_key;
+    int r_val;
+    r >>= COMEMO_TAG_BITS;
+
+    while(n--) {
+      r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
+      r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
+      if(r_key == key) {
+        return r_val;
+      }
+    }
+    return default_value;
+  } else {
+    big_comemo_t *br;
+
+    br = (big_comemo_t *) r;
+    while(br) {
+      if(br->key == key) {
+        return br->value;
+      } else {
+        br = br->next;
+      }
+    }
+    return default_value;
+  }
+}
+
+static inline int get_choice(peg_context_t *cx, int position, int alternative)
+{
+  return get_comemo(cx->cx_choices, position, alternative, 0);
+}
+
+static inline void set_choice(peg_context_t *cx, int position, int alternative, int choice)
+{
+  return set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_choices, position, alternative, choice);
+}
+
+static inline int get_result(peg_context_t *cx, int position, int production)
+{
+  int v;
+
+  v = (int) get_comemo(cx->cx_results, position, production, R_UNKNOWN - R_MIN);
+  v += R_MIN;
+  printf("%d %d %d GET\n", position, production, v);
+  return v;
+}
+
+static inline void set_result(peg_context_t *cx, int position, int production, int result)
+{
+  printf("%d %d %d SET\n", position, production, result);
+  result -= R_MIN;
+  set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_choices, position, production, result);
+}
+
+int cnog_error_position(peg_context_t *cx, nog_program_t *pg)
 {
   int i, j, k;
   int m;
@@ -22,7 +171,7 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
 
   for(j = 0; j < m; j ++) {
     for(k = 0; k < (int) pg->np_num_productions; k ++) {
-      i = cx->cx_results[k][j];
+      i = get_result(cx, j, k);
       if(i >= R_EOF) {
         if(i > max_j)
           max_j = i;
@@ -31,7 +180,8 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)/*{{{*/
   }
 
   return max_j;
-}/*}}}*/
+}
+
 
 typedef struct {
   peg_context_t *cx;
@@ -48,7 +198,7 @@ typedef struct {
 } cnog_closure_t;
 
 /* Initialize to defined values */
-static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *result) {/*{{{*/
+static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *result) {
   c->cx = cx;
   c->pg = pg;
   c->result = result;
@@ -62,39 +212,45 @@ static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *
   c->bd = cx->cx_builder;
   c->bi = cx->cx_builder_info;
   c->sp = cx->cx_stack;
-}/*}}}*/
+}
+
 /* Boolean stack manipulation */
-static void boolean_push(cnog_closure_t *c, bool x) {/*{{{*/
+static void boolean_push(cnog_closure_t *c, bool x) {
   c->boolean <<= 1;
   c->boolean |= x ? 1 : 0;
-}/*}}}*/
-static bool boolean_pop(cnog_closure_t *c) {/*{{{*/
+}
+
+static bool boolean_pop(cnog_closure_t *c) {
   bool result;
 
   result = c->boolean & 1;
   c->boolean >>= 1;
   return result;
-}/*}}}*/
+}
+
 /* Regular stack manipulation */
-static void stack_push(cnog_closure_t *c, symbol_t x) {/*{{{*/
+static void stack_push(cnog_closure_t *c, symbol_t x) {
   assert(c->sp - c->cx->cx_stack < c->cx->cx_stack_size);
   *(c->sp ++) = x;
-}/*}}}*/
-static symbol_t stack_pop(cnog_closure_t *c) {/*{{{*/
+}
+
+static symbol_t stack_pop(cnog_closure_t *c) {
   assert(c->sp > c->cx->cx_stack);
   return *(-- c->sp);
-}/*}}}*/
-static symbol_t stack_top(cnog_closure_t *c) {/*{{{*/
+}
+
+static symbol_t stack_top(cnog_closure_t *c) {
   assert(c->sp > c->cx->cx_stack);
   return c->sp[-1];
-}/*}}}*/
+}
+
 /* Execution loop */
 #define arg0() (ip->ni_arg[0].na_int)
 #define arg1() (ip->ni_arg[1].na_int)
 #define jump_to(pc) do { ip_next = c->pg->np_program + pc; } while(0)
 #define jump() do { jump_to(arg0()); } while(0)
 
-static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instruction_t *ip_next, tree *result_tree) {/*{{{*/
+static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instruction_t *ip_next, tree *result_tree) {
   nog_instruction_t *ip;
 
   /*printf("run pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip_next - pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
@@ -254,12 +410,12 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
 
       case NOG_LDMEM:
         assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
-        c->memo = c->cx->cx_results[arg0()][c->head - c->bof];
+        c->memo = get_result(c->cx, c->head - c->bof, arg0());
         break;
 
       case NOG_LDCH:
         assert(0 <= arg0() && arg0() < c->cx->cx_num_alternatives);
-        c->choice = c->cx->cx_alternatives[arg0()][c->head - c->bof];
+        c->choice = get_choice(c->cx, c->head - c->bof, arg0());
         break;
 
       case NOG_POPSTMEMJ:
@@ -268,18 +424,18 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
 
           position = stack_pop(c);
           assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
-          c->cx->cx_results[arg0()][position] = c->head - c->bof;
+          set_result(c->cx, position, arg0(), c->head - c->bof);
         }
         break;
 
       case NOG_STMEMB:
         assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
-        c->cx->cx_results[arg0()][c->head - c->bof] = R_BUSY;
+        set_result(c->cx, c->head - c->bof, arg0(), R_BUSY);
         break;
 
       case NOG_STMEMF:
         assert(0 <= arg0() && arg0() < c->cx->cx_num_productions);
-        c->cx->cx_results[arg0()][c->head - c->bof] = R_FAIL;
+        set_result(c->cx, c->head - c->bof, arg0(), R_FAIL);
         break;
 
       case NOG_TOPSTCH:
@@ -288,7 +444,7 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
 
           position = stack_top(c);
           assert(0 <= arg0() && arg0() < c->cx->cx_num_alternatives);
-          c->cx->cx_alternatives[arg0()][position] = arg1();
+          set_choice(c->cx, position, arg0(), arg1());
         }
         break;
 
@@ -375,7 +531,8 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
 
     }
   }
-}/*}}}*/
+}
+
 
 #undef arg0
 #undef arg1
@@ -384,7 +541,7 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
 
 #define CNOG_VERSION 0x00010001
 
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
+bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
 {
   cnog_closure_t c;
 
@@ -404,8 +561,9 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
     }
   }
   return false;
-}/*}}}*/
-/*{{{*/static inline void cnog_add_to_checksum(void *info, u8 *data, size_t size)
+}
+
+static inline void cnog_add_to_checksum(void *info, u8 *data, size_t size)
 {
   u64 sum;
 
@@ -415,8 +573,9 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)/*{{{*/
     size --;
   }
   *((u64 *) info) = sum;
-}/*}}}*/
-nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
+}
+
+nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {
   nog_program_t *pg, *result;
   u64 signature, version; 
   size_t size;
@@ -527,8 +686,9 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {/*{{{*/
 
 finish:
   return result;
-}/*}}}*/
-void cnog_free_program(alloc_t *alloc, nog_program_t *pg)/*{{{*/
+}
+
+void cnog_free_program(alloc_t *alloc, nog_program_t *pg)
 {
   unsigned int i;
 
@@ -541,4 +701,4 @@ void cnog_free_program(alloc_t *alloc, nog_program_t *pg)/*{{{*/
     }
     alloc_free(alloc, pg);
   }
-}/*}}}*/
+}

@@ -14,7 +14,10 @@ void alloc_free(alloc_t *a, void *ptr)/*{{{*/
   a->a_free(a->a_info, ptr);
 }/*}}}*/
 static void *do_malloc(void *info, size_t bytes) {/*{{{*/
-  return malloc(bytes);
+  void *result;
+  result = malloc(bytes);
+  if(!result) abort();
+  return result;
 }/*}}}*/
 static void do_free(void *info, void *ptr) {/*{{{*/
   if(ptr) free(ptr);

@@ -155,7 +155,8 @@ let parse_file_with_nog pg fn =
           ~quick:!Opt.quick
           ?log_calls:!Opt.log_calls
           ?record:!Opt.record
-          ~show_memo:!Opt.show_memo
+          ?show_memo:!Opt.show_memo
+          ?show_choices:!Opt.show_choices
           ~root:!Opt.root_node
           ~trace
           ~interactive
