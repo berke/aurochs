@@ -118,7 +118,7 @@ static inline void set_comemo(alloc_t *alloc, comemo_t *table, int position, u32
     r |= ((u64) value) << offset;
 
     if(!present) r++; /* Won't overflow, by hypothesis */
-    assert((r & MASK(COMEMO_TAG_BITS)));
+    /* assert((r & MASK(COMEMO_TAG_BITS))); */
     table[position] = r;
   }
 
@@ -147,11 +147,32 @@ static inline int get_comemo(comemo_t *table, int position, int key, unsigned in
     }
   } else if(r) {
     big_comemo_t *br;
+    big_comemo_t *head;
 
-    br = (big_comemo_t *) r;
+    head = (big_comemo_t *) r;
+    br = head;
+
     while(br) {
       if(br->key == key) {
+#if 0
+        int head_val, head_key;
+
+        /* Move to head */
+        if(br != head) {
+          head_key = head->key;
+          head_val = head->value;
+
+          head->key = key;
+          head->value = br->value;
+
+          br->key = head_key;
+          br->value = head_val;
+        }
+        return head->value;
+#else
         return br->value;
+#endif
+
       } else {
         br = br->next;
       }
@@ -175,13 +196,22 @@ static inline int get_result(peg_context_t *cx, int position, int production)
   int v;
 
   v = (int) get_comemo(cx->cx_results, position, production, R_UNKNOWN - R_MIN);
-  v += R_MIN;
+
+  if(v < - R_MIN) {
+    v += R_MIN;
+  } else {
+    v += R_MIN + position;
+  }
   return v;
 }
 
 static inline void set_result(peg_context_t *cx, int position, int production, int result)
 {
-  result -= R_MIN;
+  if(result < 0) {
+    result = result - R_MIN; /* -4 -> 0 ; -3 -> 1 ; -2 -> 2 ; -1 -> 3 */
+  } else {
+    result = result - position - R_MIN; /* position+0 -> 4 ; position+1 -> 5 ... */
+  }
   set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_results, position, production, result);
 }
 
@@ -240,12 +270,12 @@ static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *
 }
 
 /* Boolean stack manipulation */
-static void boolean_push(cnog_closure_t *c, bool x) {
+static inline void boolean_push(cnog_closure_t *c, bool x) {
   c->boolean <<= 1;
   c->boolean |= x ? 1 : 0;
 }
 
-static bool boolean_pop(cnog_closure_t *c) {
+static inline bool boolean_pop(cnog_closure_t *c) {
   bool result;
 
   result = c->boolean & 1;
@@ -254,17 +284,17 @@ static bool boolean_pop(cnog_closure_t *c) {
 }
 
 /* Regular stack manipulation */
-static void stack_push(cnog_closure_t *c, symbol_t x) {
+static inline void stack_push(cnog_closure_t *c, symbol_t x) {
   assert(c->sp - c->cx->cx_stack < c->cx->cx_stack_size);
   *(c->sp ++) = x;
 }
 
-static symbol_t stack_pop(cnog_closure_t *c) {
+static inline symbol_t stack_pop(cnog_closure_t *c) {
   assert(c->sp > c->cx->cx_stack);
   return *(-- c->sp);
 }
 
-static symbol_t stack_top(cnog_closure_t *c) {
+static inline symbol_t stack_top(cnog_closure_t *c) {
   assert(c->sp > c->cx->cx_stack);
   return c->sp[-1];
 }
@@ -575,6 +605,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
     if(!c.fail) {
       /* Input parses.  Now construct a tree. */
       construction root;
+      /*printf("Run: %ld bytes\n", alloc_stdlib_total());*/
 
       if(c.result) {
         init(&c, cx, pg, result);
@@ -582,6 +613,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
         (void) run(&c, root, pg->np_program + pg->np_build_pc, 0);
         *result = c.bd->pb_finish_construction(c.bi, root, c.head - c.bof);
       }
+      /*printf("And construct: %ld bytes\n", alloc_stdlib_total());*/
       return true; /* Can't fail (?) XXX */
     }
   }

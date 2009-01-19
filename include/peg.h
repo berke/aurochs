@@ -50,11 +50,11 @@ typedef u64 comemo_t;
 #define MASK(x) ((1l << (x)) - 1l)
 
 #define COMEMO_ZERO 0
-#define COMEMO_KEY_BITS 10
-#define COMEMO_VALUE_BITS 10
-#define COMEMO_TAG_BITS 2
+#define COMEMO_KEY_BITS 8
+#define COMEMO_VALUE_BITS 7
+#define COMEMO_TAG_BITS 3
 #define COMEMO_BITS 64
-#define COMEMO_MAX_SHORTS 3
+#define COMEMO_MAX_SHORTS 4
 #define COMEMO_MAX_VALUE ((1l << COMEMO_VALUE_BITS) - 1l)
 #define COMEMO_MAX_KEY ((1l << COMEMO_KEY_BITS) - 1l)
 

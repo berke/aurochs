@@ -92,7 +92,7 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
   cx->cx_builder_info = bi;
 
   /* XXX: Give a reasonable upper bound on the stack size */
-  cx->cx_stack_size = (input_length + 1) * num_productions;
+  cx->cx_stack_size = (input_length + 1) * 1; /* * num_productions; */
   cx->cx_stack = alloc_malloc(alloc, sizeof(symbol_t) * cx->cx_stack_size);
 
   return cx;

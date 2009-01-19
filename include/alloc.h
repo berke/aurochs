@@ -23,5 +23,6 @@ typedef struct {
 EXPORT void *alloc_malloc(alloc_t *, size_t);
 EXPORT void alloc_free(alloc_t *, void *);
 EXPORT alloc_t alloc_stdlib;
+EXPORT size_t alloc_stdlib_total(void);
 
 #endif
