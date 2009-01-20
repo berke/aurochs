@@ -11,9 +11,9 @@ CC=gcc
 CFLAGS=-Wall -O3
 DYNCFLAGS=$(CFLAGS) -fPIC
 INCDIRS=-Iinclude
-HEADERS=include/base_types.h include/stack.h include/alloc.h include/pack.h include/peg_prelude.h include/peg_lib.h include/peg.h include/parse_tree.h include/cnog.h
-OBJS=$(addprefix $(OBJ)/, stack.o alloc.o pack.o peg_lib.o parse_tree.o cnog.o cnog_unpack.o)
-DYNOBJS=$(addprefix $(DYNOBJ)/, stack.o alloc.o pack.o peg_lib.o parse_tree.o cnog.o cnog_unpack.o)
+HEADERS=include/base_types.h include/staloc.h include/alloc.h include/pack.h include/peg_prelude.h include/peg_lib.h include/peg.h include/parse_tree.h include/cnog.h
+OBJS=$(addprefix $(OBJ)/, staloc.o alloc.o pack.o parse_tree.o cnog.o cnog_unpack.o)
+DYNOBJS=$(addprefix $(DYNOBJ)/, staloc.o alloc.o pack.o parse_tree.o cnog.o cnog_unpack.o)
 
 .PHONY: all clean
 

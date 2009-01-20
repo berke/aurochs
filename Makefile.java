@@ -9,7 +9,7 @@ SRC=src
 JAVASRC=$(addprefix $(DIR)/, fr/aurochs/Aurochs.java fr/aurochs/Test.java)
 JAVAJNI=fr.aurochs.Parser
 JNIHEADER=$(DIR)/fr_aurochs_Parser.h
-OBJS=$(addprefix $(DYNOBJ)/, aurochs_stub.o cnog.o pack.o parse_tree.o peg_lib.o cnog_unpack.o alloc.o stack.o)
+OBJS=$(addprefix $(DYNOBJ)/, aurochs_stub.o cnog.o pack.o parse_tree.o cnog_unpack.o alloc.o stack.o)
 
 #VERSION=1.5.0.11
 VERSION=1.6.0

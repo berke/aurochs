@@ -1,8 +1,7 @@
 cnog/cnog.o
 cpack/pack.o
 cnog/parse_tree.o
-cnog/peg_lib.o
 cnog/cnog_unpack.o
 cutil/alloc.o
-cutil/stack.o
+cutil/staloc.o
 aurochs/aurochs_native.o

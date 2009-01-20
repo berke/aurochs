@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <base_types.h>
 #include <alloc.h>
-#include <stack.h>
+#include <staloc.h>
 
 typedef enum {
   R_EOF = -1,
@@ -45,26 +45,23 @@ typedef int choice_t;
  * m : 10-bit value
  */
 
-typedef u64 comemo_t;
+typedef struct {
+  int key;
+  int value;
+} memo_cell_t;
 
 #define MASK(x) ((1l << (x)) - 1l)
 
-#define COMEMO_ZERO 0
-#define COMEMO_KEY_BITS 8
-#define COMEMO_VALUE_BITS 7
-#define COMEMO_TAG_BITS 3
-#define COMEMO_BITS 64
-#define COMEMO_MAX_SHORTS 4
-#define COMEMO_MAX_VALUE ((1l << COMEMO_VALUE_BITS) - 1l)
-#define COMEMO_MAX_KEY ((1l << COMEMO_KEY_BITS) - 1l)
+#define CHOICE_CELLS_PER_BLOCK 1
+#define RESULT_CELLS_PER_BLOCK 7
+#define MEMO_INVALID_KEY (-1)
 
-struct big_comemo {
-  u32 key;
-  u32 value;
-  struct big_comemo *next;
+struct memo_block {
+  struct memo_block *next;
+  memo_cell_t cells[1];
 };
 
-typedef struct big_comemo big_comemo_t;
+typedef struct memo_block memo_block_t;
 
 #if LONG_LETTERS
 typedef unsigned int letter_t;
@@ -104,9 +101,9 @@ void (*pb_dump_tree)(info *a, FILE *f, unsigned char *input, tree *tr, int inden
 typedef struct {
   alloc_t *cx_alloc;
   letter_t *cx_input;
-  comemo_t *cx_results;
-  comemo_t *cx_choices;
-  aurochs_stack_t *cx_table_stack; 
+  memo_block_t **cx_results;
+  memo_block_t **cx_choices;
+  staloc_t *cx_table_staloc; 
   symbol_t *cx_stack;
   int cx_stack_size;
   int cx_input_length;

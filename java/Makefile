@@ -5,7 +5,7 @@ LIBNAME=aurochsjava
 JAVASRC=fr/aurochs/Attribute.java fr/aurochs/Node.java fr/aurochs/Parser.java fr/aurochs/Token.java fr/aurochs/Tree.java fr/aurochs/Test.java
 JAVAJNI=fr.aurochs.Parser
 JNIHEADERS=fr_aurochs_Parser.h
-OBJS=aurochs_stub.o $(addprefix ../_build/, cnog/cnog.o cpack/pack.o cnog/parse_tree.o cnog/peg_lib.o cnog/cnog_unpack.o cutil/alloc.o cutil/stack.o)
+OBJS=aurochs_stub.o $(addprefix ../_build/, cnog/cnog.o cpack/pack.o cnog/parse_tree.o cnog/cnog_unpack.o cutil/alloc.o cutil/staloc.o)
 
 JAVA=/opt/sun-jdk-$(VERSION)/bin/java
 JAVAFLAGS=-cp .

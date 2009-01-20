@@ -10,7 +10,7 @@
 
 #include <pack.h>
 
-bool pack_init_from_string(packer_t *pk, u8 *data, size_t size)/*{{{*/
+bool pack_init_from_string(packer_t *pk, u8 *data, size_t size)
 {
   pk->p_block_size = size;
   pk->p_index = 0;
@@ -20,8 +20,9 @@ bool pack_init_from_string(packer_t *pk, u8 *data, size_t size)/*{{{*/
   pk->p_resplenish = 0;
   pk->p_data = data;
   return true;
-}/*}}}*/
-bool pack_init(packer_t *pk, u8 *block_buffer, size_t block_size, void *extra, pack_resplenisher_t resplenish)/*{{{*/
+}
+
+bool pack_init(packer_t *pk, u8 *block_buffer, size_t block_size, void *extra, pack_resplenisher_t resplenish)
 {
   pk->p_block_size = block_size;
   pk->p_index = 0;
@@ -32,25 +33,30 @@ bool pack_init(packer_t *pk, u8 *block_buffer, size_t block_size, void *extra, p
   pk->p_resplenish = resplenish;
   pk->p_data = block_buffer;
   return true;
-}/*}}}*/
-void pack_shutdown(packer_t *pk)/*{{{*/
+}
+
+void pack_shutdown(packer_t *pk)
 {
-}/*}}}*/
-static inline void pack_observe(packer_t *pk) {/*{{{*/
+}
+
+static inline void pack_observe(packer_t *pk) {
   if(pk->p_observer && pk->p_index) pk->p_observer(pk->p_observer_extra, pk->p_data, pk->p_index);
-}/*}}}*/
-bool pack_finish_observing(packer_t *pk) {/*{{{*/
+}
+
+bool pack_finish_observing(packer_t *pk) {
   pack_observe(pk);
   pk->p_observer = 0;
   return true;
-}/*}}}*/
-bool pack_set_observer(packer_t *pk, void *observer_extra, pack_observer_t observe)/*{{{*/
+}
+
+bool pack_set_observer(packer_t *pk, void *observer_extra, pack_observer_t observe)
 {
   pk->p_observer = observe;
   pk->p_observer_extra = observer_extra;
   return true;
-}/*}}}*/
-bool pack_resplenish(packer_t *pk)/*{{{*/
+}
+
+bool pack_resplenish(packer_t *pk)
 {
   size_t m;
 
@@ -64,16 +70,18 @@ bool pack_resplenish(packer_t *pk)/*{{{*/
     pack_observe(pk);
     return true;
   }
-}/*}}}*/
-bool pack_read_uint8(packer_t *pk, u8 *result)/*{{{*/
+}
+
+bool pack_read_uint8(packer_t *pk, u8 *result)
 {
   if(!(pk->p_index < pk->p_length || pack_resplenish(pk))) return false;
 
   *result = pk->p_data[pk->p_index ++];
 
   return true;
-}/*}}}*/
-bool pack_read_bytes(packer_t *pk, u8 *result, size_t count)/*{{{*/
+}
+
+bool pack_read_bytes(packer_t *pk, u8 *result, size_t count)
 {
   size_t chunk;
 
@@ -87,8 +95,9 @@ bool pack_read_bytes(packer_t *pk, u8 *result, size_t count)/*{{{*/
     result += chunk;
   }
   return true;
-}/*}}}*/
-bool pack_read_string(packer_t *pk, u8 **result, size_t *length, alloc_t *alloc)/*{{{*/
+}
+
+bool pack_read_string(packer_t *pk, u8 **result, size_t *length, alloc_t *alloc)
 {
   u64 m;
   
@@ -106,8 +115,9 @@ bool pack_read_string(packer_t *pk, u8 **result, size_t *length, alloc_t *alloc)
     alloc_free(alloc, *result);
     return false;
   }
-}/*}}}*/
-bool pack_read_int64(packer_t *pk, s64 *result)/*{{{*/
+}
+
+bool pack_read_int64(packer_t *pk, s64 *result)
 {
   int i;
   s64 x;
@@ -130,8 +140,9 @@ bool pack_read_int64(packer_t *pk, s64 *result)/*{{{*/
   }
   *result = positive ? x : -x-1;
   return true;
-}/*}}}*/
-bool pack_read_uint64(packer_t *pk, u64 *result)/*{{{*/
+}
+
+bool pack_read_uint64(packer_t *pk, u64 *result)
 {
   int i;
   u64 x;
@@ -147,8 +158,9 @@ bool pack_read_uint64(packer_t *pk, u64 *result)/*{{{*/
   }
   *result = x;
   return true;
-}/*}}}*/
-bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
+}
+
+bool pack_read_int(packer_t *pk, int *result) {
   s64 x;
 
   if(pack_read_int64(pk, &x)) {
@@ -157,8 +169,9 @@ bool pack_read_int(packer_t *pk, int *result) {/*{{{*/
   } else {
     return false;
   }
-}/*}}}*/
-bool pack_read_uint(packer_t *pk, unsigned int *result) {/*{{{*/
+}
+
+bool pack_read_uint(packer_t *pk, unsigned int *result) {
   u64 x;
 
   if(pack_read_uint64(pk, &x)) {
@@ -167,4 +180,5 @@ bool pack_read_uint(packer_t *pk, unsigned int *result) {/*{{{*/
   } else {
     return false;
   }
-}/*}}}*/
+}
+

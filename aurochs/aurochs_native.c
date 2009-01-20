@@ -13,7 +13,7 @@
 
 #include <base_types.h>
 #include <alloc.h>
-#include <stack.h>
+#include <staloc.h>
 
 #if 0
 #define DEBUGF(x, y...) printf("DEBUG " __FILE__ ":" x "\n", ##y);
@@ -37,7 +37,7 @@ typedef construction_t *construction;
 
 typedef struct {
   nog_program_t *p_nog;
-  aurochs_stack_t *p_stack;
+  staloc_t *p_staloc;
 } program_t;
 
 #define program_val(v) (*((program_t *) Data_custom_val(v)))
@@ -55,14 +55,14 @@ static struct custom_operations program_ops = {
 
 static void program_finalize(value pgv)
 {
-  stack_dispose(program_val(pgv).p_stack);
+  staloc_dispose(program_val(pgv).p_staloc);
 }
 
-static value program_alloc(nog_program_t *pg, aurochs_stack_t *s)
+static value program_alloc(nog_program_t *pg, staloc_t *s)
 {
   value v = alloc_custom(&program_ops, sizeof(program_t), pg->np_count, 1000000);
   program_val(v).p_nog = pg;
-  program_val(v).p_stack = s;
+  program_val(v).p_staloc = s;
   return v;
 }
 
@@ -100,7 +100,7 @@ value caml_aurochs_program_of_binary(value binaryv)
   uint8_t *binary;
   size_t length;
   packer_t pk;
-  aurochs_stack_t *s;
+  staloc_t *s;
   nog_program_t *pg;
   const char *error;
 
@@ -109,15 +109,15 @@ value caml_aurochs_program_of_binary(value binaryv)
   error = 0;
 
   if(pack_init_from_string(&pk, binary, length)) {
-    s = stack_create(&alloc_stdlib);
+    s = staloc_create(&alloc_stdlib);
     if(s) {
       pg = cnog_unpack_program(&s->s_alloc, &pk);
       if(pg) {
         programv = program_alloc(pg, s);
         CAMLreturn(programv);
       } else error = "Can't initialize program";
-      stack_dispose(s);
-    } else error = "Can't initialize stack";
+      staloc_dispose(s);
+    } else error = "Can't initialize staloc";
     pack_shutdown(&pk);
   } else error = "Can't initialize packer";
 
@@ -304,7 +304,7 @@ static bool add_attribute(info a, construction c, int id, unsigned char *name, i
 #define ROOT_NODE_ID 0
 #define ROOT_NODE_NAME "Foo"
 
-static value some(value x)/*{{{*/
+static value some(value x)
 {
   CAMLparam1(x);
   CAMLlocal1(somev);
@@ -313,35 +313,39 @@ static value some(value x)/*{{{*/
   Store_field(somev, 0, x);
 
   CAMLreturn(somev);
-}/*}}}*/
+}
+
 
 #define none (Val_int(0))
 
-value caml_aurochs_get_production_count(value programv)/*{{{*/
+value caml_aurochs_get_production_count(value programv)
 {
   CAMLparam1(programv);
   nog_program_t *pg;
 
   pg = program_val(programv).p_nog;
   CAMLreturn(Val_int(pg->np_num_productions));
-}/*}}}*/
-value caml_aurochs_get_choice_count(value programv)/*{{{*/
+}
+
+value caml_aurochs_get_choice_count(value programv)
 {
   CAMLparam1(programv);
   nog_program_t *pg;
 
   pg = program_val(programv).p_nog;
   CAMLreturn(Val_int(pg->np_num_choices));
-}/*}}}*/
-value caml_aurochs_get_constructor_count(value programv)/*{{{*/
+}
+
+value caml_aurochs_get_constructor_count(value programv)
 {
   CAMLparam1(programv);
   nog_program_t *pg;
 
   pg = program_val(programv).p_nog;
   CAMLreturn(Val_int(pg->np_num_constructors));
-}/*}}}*/
-value caml_aurochs_get_constructor_name(value programv, value iv)/*{{{*/
+}
+
+value caml_aurochs_get_constructor_name(value programv, value iv)
 {
   CAMLparam2(programv, iv);
   nog_program_t *pg;
@@ -351,16 +355,18 @@ value caml_aurochs_get_constructor_name(value programv, value iv)/*{{{*/
   pg = program_val(programv).p_nog;
   if(i < 0 || i >= pg->np_num_constructors) caml_invalid_argument("Constructor index out of range");
   CAMLreturn(caml_copy_string((char *) pg->np_constructors[i].ns_chars));
-}/*}}}*/
-value caml_aurochs_get_attribute_count(value programv)/*{{{*/
+}
+
+value caml_aurochs_get_attribute_count(value programv)
 {
   CAMLparam1(programv);
   nog_program_t *pg;
 
   pg = program_val(programv).p_nog;
   CAMLreturn(Val_int(pg->np_num_attributes));
-}/*}}}*/
-value caml_aurochs_get_attribute_name(value programv, value iv)/*{{{*/
+}
+
+value caml_aurochs_get_attribute_name(value programv, value iv)
 {
   CAMLparam2(programv, iv);
   nog_program_t *pg;
@@ -370,8 +376,9 @@ value caml_aurochs_get_attribute_name(value programv, value iv)/*{{{*/
   pg = program_val(programv).p_nog;
   if(i < 0 || i >= pg->np_num_attributes) caml_invalid_argument("attribute index out of range");
   CAMLreturn(caml_copy_string((char *) pg->np_attributes[i].ns_chars));
-}/*}}}*/
-value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
+}
+
+value caml_aurochs_parse(value programv, value uv, value errorv)
 {
   CAMLparam3(programv, uv, errorv);
   CAMLlocal1(treev);
@@ -379,7 +386,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   size_t input_length;
   nog_program_t *pg;
   peg_context_t *cx;
-  aurochs_stack_t *s;
+  staloc_t *s;
   peg_builder_t builder;
   info builder_info;
 
@@ -388,8 +395,8 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   input = (uint8_t *) String_val(uv);
   input_length = string_length(uv);
 
-  s = stack_create(&alloc_stdlib);
-  if(!s) caml_failwith("Can't allocate stack");
+  s = staloc_create(&alloc_stdlib);
+  if(!s) caml_failwith("Can't allocate staloc");
   builder_info = &s->s_alloc;
 
   builder.pb_info = builder_info;
@@ -403,13 +410,13 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
   cx = peg_create_context(&alloc_stdlib, pg, &builder, builder_info, input, input_length);
   DEBUGF("Created context of input length %ld", input_length);
   if(!cx) {
-    stack_dispose(s);
+    staloc_dispose(s);
     caml_failwith("Can't allocate context");
   }
 
   if(cnog_execute(cx, pg, &treev)) {
     peg_delete_context(cx);
-    stack_dispose(s);
+    staloc_dispose(s);
     CAMLreturn(some(treev));
   } else {
     /* We've got a parse error, compute its position. */
@@ -418,7 +425,8 @@ value caml_aurochs_parse(value programv, value uv, value errorv)/*{{{*/
     pos = cnog_error_position(cx, pg);
     Store_field(errorv, 0, Val_int(pos));
     peg_delete_context(cx);
-    stack_dispose(s);
+    staloc_dispose(s);
     CAMLreturn(none); /* None */
   }
-}/*}}}*/
+}
+

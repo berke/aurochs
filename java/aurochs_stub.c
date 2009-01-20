@@ -4,8 +4,8 @@
 #include <jni.h>
 
 #include <base_types.h>
-#include <stack.h>
 #include <alloc.h>
+#include <staloc.h>
 
 typedef jobject tree;
 typedef jobject construction;
@@ -117,19 +117,19 @@ JNIEXPORT jlong JNICALL Java_fr_aurochs_Parser_unpack (JNIEnv *env, jobject obj,
   uint8_t *binary;
   size_t length;
   packer_t pk;
-  aurochs_stack_t *s;
+  aurochs_staloc_t *s;
   nog_program_t *pg;
 
   binary = (uint8_t *) (*env)->GetByteArrayElements(env, nog, 0);
   length = (*env)->GetArrayLength(env, nog);
   if(pack_init_from_string(&pk, binary, length)) {
-    s = stack_create(&alloc_stdlib);
+    s = staloc_create(&alloc_stdlib);
     if(s) {
       pg = cnog_unpack_program(&s->s_alloc, &pk);
       (*env)->ReleaseByteArrayElements(env, nog, (jbyte *) binary, JNI_ABORT);
       return (jlong) pg;
     }
-    stack_dispose(s);
+    staloc_dispose(s);
   }
   pack_shutdown(&pk);
 
@@ -144,7 +144,7 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
   size_t input_length;
   nog_program_t *pg;
   peg_context_t *cx;
-  aurochs_stack_t *s;
+  aurochs_staloc_t *s;
   peg_builder_t builder;
   info_t builder_info;
   tree tree;
@@ -176,9 +176,9 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
   input_length = (*env)->GetArrayLength(env, ub);
 
   /* Do stuff */
-  s = stack_create(&alloc_stdlib);
+  s = staloc_create(&alloc_stdlib);
   if(!s) {
-    fail(env, "Can't allocate stack");
+    fail(env, "Can't allocate staloc");
     goto bye;
   }
 
@@ -227,14 +227,14 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
 
   cx = peg_create_context(&alloc_stdlib, pg, &builder, &builder_info, input, input_length);
   if(!cx) {
-    stack_dispose(s);
+    staloc_dispose(s);
     fail(env, "Can't allocate context");
     goto bye;
   }
 
   if(cnog_execute(cx, pg, &tree)) {
     peg_delete_context(cx);
-    stack_dispose(s);
+    staloc_dispose(s);
     return tree;
   } else {
     jclass cls;
@@ -244,7 +244,7 @@ JNIEXPORT jobject JNICALL Java_fr_aurochs_Parser_parse (JNIEnv *env, jobject obj
 
     pos = cnog_error_position(cx, pg);
     peg_delete_context(cx);
-    stack_dispose(s);
+    staloc_dispose(s);
 
     cls = (*env)->FindClass(env, "fr/aurochs/ParseError");
     if(!cls) goto bye;

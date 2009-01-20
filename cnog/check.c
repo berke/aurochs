@@ -12,7 +12,7 @@
 #include <peg_lib.h>
 #include <pack.h>
 #include <alloc.h>
-#include <stack.h>
+#include <staloc.h>
 
 static unsigned char *load_file(char *name, size_t *size)/*{{{*/
 {
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
   size_t peg_data_size;
   nog_program_t *pg;
   packer_t pk;
-  aurochs_stack_t *st;
+  staloc_t *st;
   int rc;
 
   rc = 0;
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
   /* Create a stack allocator */
 
-  st = stack_create(&alloc_stdlib);
+  st = staloc_create(&alloc_stdlib);
   if(!st) {
     printf("Can't create stack allocator.\n");
     exit(EXIT_FAILURE);
@@ -97,9 +97,9 @@ int main(int argc, char **argv)
       for(i = 0; i < argc; i ++) {
         fn = argv[i];
         peg_builder_t pb;
-        aurochs_stack_t *s2;
+        staloc_t *s2;
 
-        s2 = stack_create(&alloc_stdlib);
+        s2 = staloc_create(&alloc_stdlib);
 
         buf = load_file(fn, &m);
         printf("Loaded file %s to %p\n", fn, buf);
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
             peg_delete_context(cx);
           }
         }
-        stack_dispose(s2);
+        staloc_dispose(s2);
         free(buf);
       }
 #if 0
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 #endif
 
       /* cnog_free_program(&st->s_alloc, pg); */
-      stack_dispose(st);
+      staloc_dispose(st);
     }
   }
 

@@ -7,212 +7,133 @@
 #include <peg.h>
 #include <pack.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <alloc.h>
 
 #define CNOG_DEBUG 0
 
-static inline void set_comemo_non_compact(alloc_t *alloc, comemo_t *table, int position, u32 key, u32 value)
+static inline memo_block_t *memo_alloc_block(alloc_t *alloc, int cells_per_block)
 {
-  comemo_t r;
+  int i;
+  memo_block_t *block;
 
-  r = table[position];
-  big_comemo_t *head, *current;
+  block = alloc_malloc(alloc, sizeof(memo_block_t) + (cells_per_block - 1) * sizeof(memo_cell_t));
+  for(i = 0;i < cells_per_block; i ++) {
+    block->cells[i].key = -1;
+  }
+  block->next = 0;
 
-  current = (big_comemo_t *) r;
+  return block;
+}
+
+static int hits = 0;
+static int sets = 0;
+static int allocs = 0;
+static int chains = 0;
+
+static inline void set_memo(alloc_t *alloc, memo_block_t **table, int position, int key, int value, int cells_per_block)
+{
+  int i, j, free_j;
+  int j0;
+  memo_block_t *head, *current, *free;
+
+sets++;
+  assert(key >= 0);
+
+  free = 0;
+  free_j = 0;
+  head = table[position];
+  current = head;
+
+  /* Check if there already is an entry. */
+  j0 = key % cells_per_block;
+  while(current) {
+    j = j0;
+    for(i = 0; i < cells_per_block; i ++) {
+      if(current->cells[j].key == key) {
+        current->cells[j].value = value;
+hits++;
+        return;
+      } else {
+        if(!free && current->cells[j].key < 0) {
+          free = current;
+          free_j = j;
+        }
+      }
+      j ++;
+      if(j == cells_per_block) j = 0;
+    }
+    current = current->next;
+chains++;
+  }
+
+  /* No such entry. If we have found a free cell, place it there. */
+  if(free) {
+    free->cells[free_j].key = key;
+    free->cells[free_j].value = value;
+    return;
+  }
+
+allocs++;
+  /* No free cell.  Create a new block. */
+  current = memo_alloc_block(alloc, cells_per_block);
+  current->cells[j0].key = key;
+  current->cells[j0].value = value;
+  current->next = head;
+  table[position] = current;
+}
+
+static inline int get_memo(memo_block_t **table, int position, int key, int default_value, int cells_per_block)
+{
+  int i, j;
+  memo_block_t *current;
+
+  current = table[position];
 
   /* Check if there already is an entry. */
   while(current) {
-    if(current->key == key) {
-      current->value = value;
-      return;
+    j = key % cells_per_block;
+    for(i = 0; i < cells_per_block; i ++) {
+      if(current->cells[j].key == key) {
+        return current->cells[j].value;
+      }
+      j ++;
+      if(j == cells_per_block) j = 0;
     }
     current = current->next;
   }
 
-  /* Not already present.  Append it to the beginning of the list. */
-  head = (big_comemo_t *) r;
-
-  current = alloc_malloc(alloc, sizeof(big_comemo_t));
-  current->next = head;
-  current->key = key;
-  current->value = value;
-  table[position] = (comemo_t) current;
-}
-
-static inline void set_comemo(alloc_t *alloc, comemo_t *table, int position, u32 key, u32 value)
-{
-  comemo_t r;
-  int n;
-  bool small;
-  bool compact;
-  bool present;
-  int index;
-  
-  r = table[position];
-  n = r & MASK(COMEMO_TAG_BITS);
-
-  compact = !r || n;
-
-  small = key < COMEMO_MAX_KEY && value < COMEMO_MAX_VALUE;
-
-  /* r = 0          -> no entries
-   * r <> 0 & n = 0 -> extended
-   * n <> 0         -> from 1 to COMEMO_MAX_SHORTS entries */
-
-  index = -1;
-  if(n) {
-    /* We are in compact mode and there is at least one entry.  Check if the entry is already present. */
-
-    comemo_t r_copy;
-    int n_copy;
-    int r_key;
-
-    r_copy = r;
-    n_copy = n;
-    r_copy >>= COMEMO_TAG_BITS;
-
-    while(n_copy --) {
-      r_copy >>= COMEMO_VALUE_BITS;
-      r_key = r_copy & MASK(COMEMO_KEY_BITS);
-      r_copy >>= COMEMO_KEY_BITS;
-
-      if(r_key == key) {
-        index = n - n_copy - 1;
-        break;
-      }
-    }
-  }
-  present = index >= 0;
-
-  /* */
-  if(!compact || !small || (!present && n == COMEMO_MAX_SHORTS)) {
-    /* Cannot add short entry. */
-    if(n) { 
-      int r_key;
-      int r_val;
-
-      /* Entries are in compact form.  We'll need to convert them to a table. */
-      table[position] = 0;
-
-      r >>= COMEMO_TAG_BITS;
-      while(n--) {
-        r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
-        r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
-        if(r_key != key) {
-          set_comemo_non_compact(alloc, table, position, r_key, r_val);
-        }
-      }
-      r = 0;
-    }
-    
-    /* Add entry to long table. */
-    set_comemo_non_compact(alloc, table, position, key, value);
-  } else {
-    int offset;
-
-    /* Add or replace short entry */
-    if(index < 0) index = n;
-    offset = index * (COMEMO_KEY_BITS + COMEMO_VALUE_BITS) + COMEMO_TAG_BITS;
-    r &= ~((MASK(COMEMO_KEY_BITS + COMEMO_VALUE_BITS)) << offset);
-    r |= ((u64) key) << (COMEMO_VALUE_BITS + offset);
-    r |= ((u64) value) << offset;
-
-    if(!present) r++; /* Won't overflow, by hypothesis */
-    /* assert((r & MASK(COMEMO_TAG_BITS))); */
-    table[position] = r;
-  }
-
-  return;
-}
-
-static inline int get_comemo(comemo_t *table, int position, int key, unsigned int default_value)
-{
-  comemo_t r;
-  int n;
-  
-  r = table[position];
-  n = r & MASK(COMEMO_TAG_BITS);
-
-  if(n) {
-    int r_key;
-    int r_val;
-    r >>= COMEMO_TAG_BITS;
-
-    while(n--) {
-      r_val = r & MASK(COMEMO_VALUE_BITS); r >>= COMEMO_VALUE_BITS;
-      r_key = r & MASK(COMEMO_KEY_BITS); r >>= COMEMO_KEY_BITS;
-      if(r_key == key) {
-        return r_val;
-      }
-    }
-  } else if(r) {
-    big_comemo_t *br;
-    big_comemo_t *head;
-
-    head = (big_comemo_t *) r;
-    br = head;
-
-    while(br) {
-      if(br->key == key) {
-#if 0
-        int head_val, head_key;
-
-        /* Move to head */
-        if(br != head) {
-          head_key = head->key;
-          head_val = head->value;
-
-          head->key = key;
-          head->value = br->value;
-
-          br->key = head_key;
-          br->value = head_val;
-        }
-        return head->value;
-#else
-        return br->value;
-#endif
-
-      } else {
-        br = br->next;
-      }
-    }
-  }
   return default_value;
 }
 
 static inline int get_choice(peg_context_t *cx, int position, int alternative)
 {
-  return get_comemo(cx->cx_choices, position, alternative, 0);
+  return get_memo(cx->cx_choices, position, alternative, 0, CHOICE_CELLS_PER_BLOCK);
+}
+
+static void statistics(peg_context_t *cx) {
+  printf("S %ldM sets=%d hits=%d allocs=%d chains=%d\n", staloc_total(cx->cx_table_staloc) >> 20, sets, hits, allocs, chains);
 }
 
 static inline void set_choice(peg_context_t *cx, int position, int alternative, int choice)
 {
-  return set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_choices, position, alternative, choice);
+  return set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_choices, position, alternative, choice, CHOICE_CELLS_PER_BLOCK);
 }
 
 static inline int get_result(peg_context_t *cx, int position, int production)
 {
-  int v;
+  int result;
 
-  v = (int) get_comemo(cx->cx_results, position, production, R_UNKNOWN - R_MIN);
+  result = get_memo(cx->cx_results, position, production, R_UNKNOWN, RESULT_CELLS_PER_BLOCK);
+  /*printf("G %d %d %d\n", position, production, result);*/
 
-  if(v < - R_MIN) {
-    v += R_MIN;
-  } else {
-    v += R_MIN + position;
-  }
-  return v;
+  return result;
 }
 
 static inline void set_result(peg_context_t *cx, int position, int production, int result)
 {
-  if(result < 0) {
-    result = result - R_MIN; /* -4 -> 0 ; -3 -> 1 ; -2 -> 2 ; -1 -> 3 */
-  } else {
-    result = result - position - R_MIN; /* position+0 -> 4 ; position+1 -> 5 ... */
-  }
-  set_comemo(&cx->cx_table_stack->s_alloc, cx->cx_results, position, production, result);
+  /*printf("S %d %d %d\n", position, production, result);*/
+  set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_results, position, production, result, RESULT_CELLS_PER_BLOCK);
 }
 
 int cnog_error_position(peg_context_t *cx, nog_program_t *pg)
@@ -237,16 +158,15 @@ int cnog_error_position(peg_context_t *cx, nog_program_t *pg)
   return max_j;
 }
 
-
 typedef struct {
   peg_context_t *cx;
   nog_program_t *pg;
   tree *result;
-  bool fail;                /* Failure register */
-  unsigned int boolean;     /* Small stack for evaluating boolean formulas */
-  memo_t memo;              /* Register for accessing the memo table */
-  choice_t choice;          /* Register for accessing the choice table */
-  symbol_t *sp;             /* Symbol stack pointer (PC stack pointer is host machine stack) */
+  bool fail;                  /* Failure register */
+  unsigned int boolean;       /* Small stack for evaluating boolean formulas */
+  memo_t memo;                /* Register for accessing the memo table */
+  choice_t choice;            /* Register for accessing the choice table */
+  symbol_t *sp;               /* Symbol stack pointer (PC stack pointer is host machine stack) */
   letter_t *head, *bof, *eof; /* Pointers to current position, beginning and end. */
   peg_builder_t *bd;
   info bi;
@@ -757,5 +677,61 @@ void cnog_free_program(alloc_t *alloc, nog_program_t *pg)
       alloc_free(alloc, pg->np_program);
     }
     alloc_free(alloc, pg);
+  }
+}
+
+peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length)
+{
+  int i;
+  peg_context_t *cx;
+  int num_alternatives;
+  int num_productions;
+  alloc_t *salloc;
+
+  cx = alloc_malloc(alloc, sizeof(peg_context_t));
+
+  cx->cx_alloc = alloc;
+  cx->cx_table_staloc = staloc_create(alloc);
+  salloc = &cx->cx_table_staloc->s_alloc;
+
+  cx->cx_input = input;
+  cx->cx_input_length = input_length;
+
+  num_alternatives = pg->np_num_choices;
+  num_productions = pg->np_num_productions;
+
+  cx->cx_num_alternatives = num_alternatives;
+  cx->cx_num_productions = num_productions;
+
+  cx->cx_choices = alloc_malloc(salloc, sizeof(memo_block_t *) * (input_length + 1));
+
+  for(i = 0; i <= input_length; i ++) {
+    cx->cx_choices[i] = 0;
+  }
+
+  cx->cx_results = alloc_malloc(alloc, sizeof(memo_block_t *) * (input_length + 1));
+  for(i = 0; i <= input_length; i ++) {
+    cx->cx_results[i] = 0;
+  }
+
+  cx->cx_builder = pb;
+  cx->cx_builder_info = bi;
+
+  /* XXX: Give a reasonable upper bound on the stack size */
+  cx->cx_stack_size = (input_length + 1) * 1; /* * num_productions; */
+  cx->cx_stack = alloc_malloc(alloc, sizeof(symbol_t) * cx->cx_stack_size);
+
+  return cx;
+}
+
+void peg_delete_context(peg_context_t *cx)
+{
+  if(cx) {
+#if 0
+    statistics(cx);
+#endif
+    staloc_dispose(cx->cx_table_staloc);
+    alloc_free(cx->cx_alloc, (cx->cx_stack));
+    alloc_free(cx->cx_alloc, (cx));
   }
 }

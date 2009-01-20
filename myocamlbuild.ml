@@ -81,7 +81,7 @@ let aurochs_lib_description = {
                  "include/peg_lib.h";
                  "include/parse_tree.h";
                  "include/pack.h";
-                 "include/stack.h";
+                 "include/staloc.h";
                  "include/alloc.h";
                  "include/parse_tree.h";
                  "include/base_types.h" ];
