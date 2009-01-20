@@ -41,13 +41,21 @@ void pushdown_dispose(pushdown_t *p)
 
 void pushdown_push(pushdown_t *p, pushdown_element_t e)
 {
-  if(p->index == PUSHDOWN_ELEMENTS_PER_BLOCK) add_block(p);
+  if(!p->head || p->index == PUSHDOWN_ELEMENTS_PER_BLOCK) add_block(p);
   p->head->elements[p->index ++] = e;
 }
 
 bool pushdown_is_empty(pushdown_t *p)
 {
   return !p->head;
+}
+
+bool pushdown_top(pushdown_t *p, pushdown_element_t *e)
+{
+  if(!p->head) return false;
+  assert(p->index);
+  *e = p->head->elements[p->index - 1];
+  return true;
 }
 
 bool pushdown_pop(pushdown_t *p, pushdown_element_t *e)
@@ -62,7 +70,7 @@ bool pushdown_pop(pushdown_t *p, pushdown_element_t *e)
     alloc_free(p->alloc, p->head);
     p->head = next;
     if(next) {
-      p->index = PUSHDOWN_ELEMENTS_PER_BLOCK - 1;
+      p->index = PUSHDOWN_ELEMENTS_PER_BLOCK;
     }
   }
   return true;

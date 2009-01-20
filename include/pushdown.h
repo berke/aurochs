@@ -29,6 +29,7 @@ EXPORT pushdown_t *pushdown_create(alloc_t *);
 EXPORT void pushdown_dispose(pushdown_t *);
 EXPORT void pushdown_push(pushdown_t *, pushdown_element_t);
 EXPORT bool pushdown_pop(pushdown_t *, pushdown_element_t *);
+EXPORT bool pushdown_top(pushdown_t *, pushdown_element_t *);
 EXPORT bool pushdown_is_empty(pushdown_t *);
 
 #endif

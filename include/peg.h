@@ -10,6 +10,7 @@
 #include <base_types.h>
 #include <alloc.h>
 #include <staloc.h>
+#include <pushdown.h>
 
 typedef enum {
   R_EOF = -1,
@@ -104,7 +105,7 @@ typedef struct {
   memo_block_t **cx_results;
   memo_block_t **cx_choices;
   staloc_t *cx_table_staloc; 
-  symbol_t *cx_stack;
+  pushdown_t *cx_stack;
   int cx_stack_size;
   int cx_input_length;
   int cx_num_productions;

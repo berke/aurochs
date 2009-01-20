@@ -166,7 +166,6 @@ typedef struct {
   unsigned int boolean;       /* Small stack for evaluating boolean formulas */
   memo_t memo;                /* Register for accessing the memo table */
   choice_t choice;            /* Register for accessing the choice table */
-  symbol_t *sp;               /* Symbol stack pointer (PC stack pointer is host machine stack) */
   letter_t *head, *bof, *eof; /* Pointers to current position, beginning and end. */
   peg_builder_t *bd;
   info bi;
@@ -186,7 +185,6 @@ static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *
   c->eof = cx->cx_input + cx->cx_input_length;
   c->bd = cx->cx_builder;
   c->bi = cx->cx_builder_info;
-  c->sp = cx->cx_stack;
 }
 
 /* Boolean stack manipulation */
@@ -205,18 +203,19 @@ static inline bool boolean_pop(cnog_closure_t *c) {
 
 /* Regular stack manipulation */
 static inline void stack_push(cnog_closure_t *c, symbol_t x) {
-  assert(c->sp - c->cx->cx_stack < c->cx->cx_stack_size);
-  *(c->sp ++) = x;
+  pushdown_push(c->cx->cx_stack, x);
 }
 
 static inline symbol_t stack_pop(cnog_closure_t *c) {
-  assert(c->sp > c->cx->cx_stack);
-  return *(-- c->sp);
+  symbol_t s;
+  (void) pushdown_pop(c->cx->cx_stack, &s);
+  return s;
 }
 
 static inline symbol_t stack_top(cnog_closure_t *c) {
-  assert(c->sp > c->cx->cx_stack);
-  return c->sp[-1];
+  symbol_t s;
+  (void) pushdown_top(c->cx->cx_stack, &s);
+  return s;
 }
 
 /* Execution loop */
@@ -717,9 +716,7 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
   cx->cx_builder = pb;
   cx->cx_builder_info = bi;
 
-  /* XXX: Give a reasonable upper bound on the stack size */
-  cx->cx_stack_size = (input_length + 1) * 1; /* * num_productions; */
-  cx->cx_stack = alloc_malloc(alloc, sizeof(symbol_t) * cx->cx_stack_size);
+  cx->cx_stack = pushdown_create(alloc);
 
   return cx;
 }
@@ -731,7 +728,7 @@ void peg_delete_context(peg_context_t *cx)
     statistics(cx);
 #endif
     staloc_dispose(cx->cx_table_staloc);
-    alloc_free(cx->cx_alloc, (cx->cx_stack));
+    pushdown_dispose(cx->cx_stack);
     alloc_free(cx->cx_alloc, (cx));
   }
 }
