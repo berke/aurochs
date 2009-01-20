@@ -104,7 +104,7 @@ static INLINE int get_choice(peg_context_t *cx, int position, int alternative)
 
 static INLINE void set_choice(peg_context_t *cx, int position, int alternative, int choice)
 {
-  return set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_choices, position, alternative, choice, CHOICE_CELLS_PER_BLOCK);
+  set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_choices, position, alternative, choice, CHOICE_CELLS_PER_BLOCK);
 }
 
 static INLINE int get_result(peg_context_t *cx, int position, int production)
