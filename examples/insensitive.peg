@@ -1,0 +1,3 @@
+(* Case-insensitive *)
+
+start ::= ("alpha"^i | "beta"^i)+ EOF;
