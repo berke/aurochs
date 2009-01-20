@@ -19,39 +19,12 @@ typedef enum {
   R_BUSY = -4
 } memo_t;
 
-#define R_MIN R_BUSY
-
-#define A_UNDEFINED 0xff
-
 typedef int choice_t;
-
-/* Packed result or choice word, i.e. compressed memo, a.k.a. "comemo" */
-
-/*  6666555555555544444444443333333333222222222211111111110000000000
- *  3210987654321098765432109876543210987654321098765432109876543210
- * +----------------------------------------------------------------+
- * |                                          kkkkkkkkkkvvvvvvvvvv11| entry1 - 11 - three entries
- * |                     kkkkkkkkkkkvvvvvvvvvv                    11| entry2
- * |kkkkkkkkkkkvvvvvvvvvv                                         11| entry3
- * +----------------------------------------------------------------+
- * |                                          kkkkkkkkkkvvvvvvvvvv10| entry1 - 10 - two entries
- * |                     kkkkkkkkkkkvvvvvvvvvv                    10| entry2
- * +----------------------------------------------------------------+
- * |                                          kkkkkkkkkkvvvvvvvvvv01| entry1 - 01 - one entry
- * +----------------------------------------------------------------+
- * |aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00| 00 - pointer : more than 3 entries, or at least one big entry
- * +----------------------------------------------------------------+
- *
- * p : 10-bit key
- * m : 10-bit value
- */
 
 typedef struct {
   int key;
   int value;
 } memo_cell_t;
-
-#define MASK(x) ((1l << (x)) - 1l)
 
 #define CHOICE_CELLS_PER_BLOCK 1
 #define RESULT_CELLS_PER_BLOCK 7

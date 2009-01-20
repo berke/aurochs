@@ -47,6 +47,8 @@ typedef signed long s64;
 #define EXPORT
 #endif
 
+#define INLINE inline
+
 #endif
 
 #endif

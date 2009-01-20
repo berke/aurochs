@@ -12,7 +12,7 @@
 
 #define CNOG_DEBUG 0
 
-static inline memo_block_t *memo_alloc_block(alloc_t *alloc, int cells_per_block)
+static INLINE memo_block_t *memo_alloc_block(alloc_t *alloc, int cells_per_block)
 {
   int i;
   memo_block_t *block;
@@ -26,18 +26,12 @@ static inline memo_block_t *memo_alloc_block(alloc_t *alloc, int cells_per_block
   return block;
 }
 
-static int hits = 0;
-static int sets = 0;
-static int allocs = 0;
-static int chains = 0;
-
-static inline void set_memo(alloc_t *alloc, memo_block_t **table, int position, int key, int value, int cells_per_block)
+static INLINE void set_memo(alloc_t *alloc, memo_block_t **table, int position, int key, int value, int cells_per_block)
 {
   int i, j, free_j;
   int j0;
   memo_block_t *head, *current, *free;
 
-sets++;
   assert(key >= 0);
 
   free = 0;
@@ -52,7 +46,6 @@ sets++;
     for(i = 0; i < cells_per_block; i ++) {
       if(current->cells[j].key == key) {
         current->cells[j].value = value;
-hits++;
         return;
       } else {
         if(!free && current->cells[j].key < 0) {
@@ -64,7 +57,6 @@ hits++;
       if(j == cells_per_block) j = 0;
     }
     current = current->next;
-chains++;
   }
 
   /* No such entry. If we have found a free cell, place it there. */
@@ -74,7 +66,6 @@ chains++;
     return;
   }
 
-allocs++;
   /* No free cell.  Create a new block. */
   current = memo_alloc_block(alloc, cells_per_block);
   current->cells[j0].key = key;
@@ -83,7 +74,7 @@ allocs++;
   table[position] = current;
 }
 
-static inline int get_memo(memo_block_t **table, int position, int key, int default_value, int cells_per_block)
+static INLINE int get_memo(memo_block_t **table, int position, int key, int default_value, int cells_per_block)
 {
   int i, j;
   memo_block_t *current;
@@ -106,21 +97,17 @@ static inline int get_memo(memo_block_t **table, int position, int key, int defa
   return default_value;
 }
 
-static inline int get_choice(peg_context_t *cx, int position, int alternative)
+static INLINE int get_choice(peg_context_t *cx, int position, int alternative)
 {
   return get_memo(cx->cx_choices, position, alternative, 0, CHOICE_CELLS_PER_BLOCK);
 }
 
-static void statistics(peg_context_t *cx) {
-  printf("S %ldM sets=%d hits=%d allocs=%d chains=%d\n", staloc_total(cx->cx_table_staloc) >> 20, sets, hits, allocs, chains);
-}
-
-static inline void set_choice(peg_context_t *cx, int position, int alternative, int choice)
+static INLINE void set_choice(peg_context_t *cx, int position, int alternative, int choice)
 {
   return set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_choices, position, alternative, choice, CHOICE_CELLS_PER_BLOCK);
 }
 
-static inline int get_result(peg_context_t *cx, int position, int production)
+static INLINE int get_result(peg_context_t *cx, int position, int production)
 {
   int result;
 
@@ -130,7 +117,7 @@ static inline int get_result(peg_context_t *cx, int position, int production)
   return result;
 }
 
-static inline void set_result(peg_context_t *cx, int position, int production, int result)
+static INLINE void set_result(peg_context_t *cx, int position, int production, int result)
 {
   /*printf("S %d %d %d\n", position, production, result);*/
   set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_results, position, production, result, RESULT_CELLS_PER_BLOCK);
@@ -188,12 +175,12 @@ static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *
 }
 
 /* Boolean stack manipulation */
-static inline void boolean_push(cnog_closure_t *c, bool x) {
+static INLINE void boolean_push(cnog_closure_t *c, bool x) {
   c->boolean <<= 1;
   c->boolean |= x ? 1 : 0;
 }
 
-static inline bool boolean_pop(cnog_closure_t *c) {
+static INLINE bool boolean_pop(cnog_closure_t *c) {
   bool result;
 
   result = c->boolean & 1;
@@ -202,17 +189,17 @@ static inline bool boolean_pop(cnog_closure_t *c) {
 }
 
 /* Regular stack manipulation */
-static inline void stack_push(cnog_closure_t *c, symbol_t x) {
+static INLINE void stack_push(cnog_closure_t *c, symbol_t x) {
   pushdown_push(c->cx->cx_stack, x);
 }
 
-static inline symbol_t stack_pop(cnog_closure_t *c) {
+static INLINE symbol_t stack_pop(cnog_closure_t *c) {
   symbol_t s;
   (void) pushdown_pop(c->cx->cx_stack, &s);
   return s;
 }
 
-static inline symbol_t stack_top(cnog_closure_t *c) {
+static INLINE symbol_t stack_top(cnog_closure_t *c) {
   symbol_t s;
   (void) pushdown_top(c->cx->cx_stack, &s);
   return s;
@@ -539,7 +526,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
   return false;
 }
 
-static inline void cnog_add_to_checksum(void *info, u8 *data, size_t size)
+static INLINE void cnog_add_to_checksum(void *info, u8 *data, size_t size)
 {
   u64 sum;
 
@@ -724,7 +711,7 @@ peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder
 void peg_delete_context(peg_context_t *cx)
 {
   if(cx) {
-#if 0
+#if CNOG_SHOW_STATS
     statistics(cx);
 #endif
     staloc_dispose(cx->cx_table_staloc);

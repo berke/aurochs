@@ -39,7 +39,7 @@ void pack_shutdown(packer_t *pk)
 {
 }
 
-static inline void pack_observe(packer_t *pk) {
+static INLINE void pack_observe(packer_t *pk) {
   if(pk->p_observer && pk->p_index) pk->p_observer(pk->p_observer_extra, pk->p_data, pk->p_index);
 }
 

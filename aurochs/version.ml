@@ -1,1 +1,1 @@
-let version = (1,0,91)
+let version = (1,0,92)
