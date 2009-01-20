@@ -82,6 +82,7 @@ let aurochs_lib_description = {
                  "include/parse_tree.h";
                  "include/pack.h";
                  "include/staloc.h";
+                 "include/pushdown.h";
                  "include/alloc.h";
                  "include/parse_tree.h";
                  "include/base_types.h" ];
