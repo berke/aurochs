@@ -4,7 +4,7 @@
 
 #include <cnog.h>
 #include <cnog_unpack.h>
-#include <peg.h>
+#include <peg_lib.h>
 #include <pack.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -526,7 +526,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
   return false;
 }
 
-static INLINE void cnog_add_to_checksum(void *info, u8 *data, size_t size)
+static void cnog_add_to_checksum(void *info, u8 *data, size_t size)
 {
   u64 sum;
 
