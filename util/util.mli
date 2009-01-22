@@ -56,6 +56,7 @@ val save : string -> 'a -> unit
 val load : string -> 'a
 val iter_over_lines : in_channel -> (string -> unit) -> unit
 val unsigned_int64_of_decimal : string -> int64
+val read_file : string -> string
 
 module Syntax :
   sig

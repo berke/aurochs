@@ -1,12 +1,12 @@
 (* Ocamlbuild plugin *)
 
-open Ocamlbuild_pack;;
-open Ocamlbuild_plugin;;
-open Command;;
-open Ocaml_specific;;
-open Outcome;;
+open Ocamlbuild_pack
+open Ocamlbuild_plugin
+open Command
+open Ocaml_specific
+open Outcome
 
-let ( & ) f x = f x;;
+let ( & ) f x = f x
 
 let ocaml_local_dir =
   lazy begin
@@ -19,7 +19,6 @@ let ocaml_local_dir =
           Log.dprintf 5 "Getting Ocaml directory from command %s" cmd;
           input_line ic)
   end
-;;
 
 let cflags =
   lazy begin
@@ -30,9 +29,9 @@ let cflags =
     with
     | Not_found -> S[]
   end
-;;
 
-let local dir = Filename.concat (Lazy.force ocaml_local_dir) dir;;
+
+let local dir = Filename.concat (Lazy.force ocaml_local_dir) dir
 
 type libdep_description = {
   ld_name : string;
@@ -42,16 +41,16 @@ type libdep_description = {
   ld_include : string;
   ld_static : bool;
   ld_c_headers : string list
-};;
+}
 
 type ocaml_lib_description = {
   od_path : string;
   od_name : string;
   od_headers : string list;
   od_incdirs : string list
-};;
+}
 
-let system_lib_dir = "/usr/lib";;
+let system_lib_dir = "/usr/lib"
 
 let zlib_description = {
   ld_name = "zlib";
@@ -76,7 +75,7 @@ let aurochslib_description = {
 let aurochs_lib_description = {
   od_path = ""; (* (Lazy.force ocaml_local_dir)^"/aurochs_lib/";*)
   od_name = "aurochs";
-  od_headers = [ "include/cnog.h";
+  od_headers = [ "include/nog.h";
                  "include/peg.h";
                  "include/peg_lib.h";
                  "include/parse_tree.h";
@@ -85,7 +84,8 @@ let aurochs_lib_description = {
                  "include/pushdown.h";
                  "include/alloc.h";
                  "include/parse_tree.h";
-                 "include/base_types.h" ];
+                 "include/base_types.h";
+                 "include/aurochs.h" ];
   od_incdirs = [ "include"; "_build/include" ];
 }
 
@@ -115,14 +115,10 @@ let ocamllib old =
    flag ["link"; "library"; "ocaml"; "native"; "use_lib"^u]
         (S[(*A"-cclib";A("-L"^old.od_path);*)A"-cclib"; A("-l"^u)]);
 
-   (* When ocaml link something that use the libX
-      then one need that file to be up to date. *)
    dep  ["link"; "ocaml"; "use_lib"^u] [old.od_path^"lib"^u^".a"];
-
-   (* As an approximation all our C files use the headers.
-      Note: This will import headers in the build directory. *)
-   dep  ["compile"; "c"] old.od_headers;
+   dep  ["compile"; "c"] old.od_headers
 ;;
+
 (* ***)
 
 dispatch
@@ -157,24 +153,12 @@ dispatch
           [(* local "java";
               local "compiler" *)];
 
-        (*ocaml_lib "java";
-        ocaml_lib "compiler";*)
-        (*ocaml_lib "float32";*)
-
         Log.dprintf 5 "Ready";
 
         ocamllib aurochs_lib_description;
-        (*flag ["ocaml"; "byte"; "library"; "float32"] (S[A"-Lfloat32";A"-lfloat32"]);*)
-        (*flag ["ocaml"; "native"; "program"; "float32"] (S[A"-cclib"; A"float32/dllfloat32.so"]); WORKS *)
-        (*flag ["ocaml"; "native"; "program"; "float32"] (S[A"-verbose";A"-ccopt";A"-Lfloat32";A"-cclib"; A"float32/dllfloat32.so"]);*)
-        (*flag ["ocaml"; "link"; "native"; "use_float32"] (S[A"-cclib";A"-Lfloat32";A"-cclib"; A"-lfloat32"]);
-        flag ["ocaml"; "link"; "byte"; "use_float32"] (S[A"-dllpath";A"float32";A"-dllib"; A"-lfloat32"]);*)
-        (*dep ["use_float32"] ["float32/libfloat32.so"];*)
-        (*dep ["file:astivore/astivore.native"] ["float32/dllfloat32.so"];*)
-
 
         rule "Generation"
-          ~prods:["cnog/cnog_unpack.c";"include/cnog_unpack.h";"backends/nog_packer.ml"]
+          ~prods:["c/nog_unpack.c";"include/nog_unpack.h";"backends/nog_packer.ml"]
           ~deps:["genmachine.byte";"nog/machine.ml"]
           begin fun env _build ->
             Seq[
@@ -184,10 +168,10 @@ dispatch
           end;
           
         rule "Program"
-          ~prods:["cnog/check"]
-          ~deps:["cnog/check.o"; "libaurochs.a"]
+          ~prods:["c/test/test_nog"]
+          ~deps:["c/test/test_nog.o"; "libaurochs.a"]
           begin fun env _build ->
-            Cmd(S[A"gcc"; A"cnog/check.o"; A"-L."; A"-laurochs"; A"-o"; A"cnog/check"])
+            Cmd(S[A"gcc"; A"c/test/test_nog.o"; A"-L."; A"-laurochs"; A"-o"; A"c/test/test_nog"])
           end;
 
         rule "Bootstrap"
@@ -208,4 +192,3 @@ dispatch
       end
   | _ -> ()
   end
-;;

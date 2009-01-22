@@ -20,9 +20,8 @@ let r_eof = 0
 and r_unknown = 1
 and r_fail = 2
 and r_busy = 3
-;;
 
-(*** print_c_char *)
+(* print_c_char *)
 let print_c_char oc c =
   let k = Char.code c in
   fp oc "/* %d */ " k;
@@ -36,9 +35,8 @@ let print_c_char oc c =
         fp oc "%C" c
       else
         fp oc "'\\%03o'" k
-;;
-(* ***)
-(*** generate *)
+
+(* generate *)
 let generate fn ?(start="start") peg =
   let m = List.length peg in
   let num_alternatives = ref 0 in
@@ -63,7 +61,7 @@ let generate fn ?(start="start") peg =
   end;
   let oc = open_out (fn^".c") in
   let och = open_out (fn^".h") in
-  (*** bexpr *)
+  (* bexpr *)
   let rec bexpr ?choice_number = function
     | BOF -> fp oc "/* BOF */\n"
     | EOF -> fp oc "/* EOF */\n"
@@ -138,9 +136,9 @@ let generate fn ?(start="start") peg =
     | Ax(v, _) | A v -> fp oc "i += %d;\n" (String.length v)
     | C _ -> fp oc "i ++;\n"
     (*| _ -> fp oc "i = c->c_result;\n"*)
-  (* ***)
+
   in
-  (*** gexpr *)
+  (* gexpr *)
   let rec gexpr ?choice_number = function
     | EOF -> fp oc "if(i < 0) i = R_FAIL;\n"
     | BOF -> fp oc "if(i != - cx->cx_input_length) i = R_FAIL;\n"
@@ -233,8 +231,8 @@ let generate fn ?(start="start") peg =
                  else
                    i = saved_i; }\n"
     | Opt _ | Star _ | Plus _ -> invalid_arg "Uncanonical grammar (saw Opt, Star or Plus)"
-  (* ***)
-  (*** gatom *)
+
+  (* gatom *)
   and gatom = function
     | One c -> fp oc "(i < 0 && u[i] == %a)" print_c_char c
     | Range(c1,c2) -> fp oc "(i < 0 && %a <= u[i] && u[i] <= %a)" print_c_char c1 print_c_char c2
@@ -249,8 +247,8 @@ let generate fn ?(start="start") peg =
               fp oc "(i < 0 && u[i] == %a)" print_c_char c
           end
           cl
-  (* ***)
-  (*** gbool *)
+
+  (* gbool *)
   and gbool = function
     | B.True -> fp oc "1"
     | B.False -> fp oc "0"
@@ -286,12 +284,12 @@ let generate fn ?(start="start") peg =
         gbool b;
         fp oc ")"
   in
-  (* ***)
+
   fp oc "#include <stdlib.h>\n";
   fp oc "#include \"peg_prelude.h\"\n";
   let is_static name = name <> start in
   fp oc "#include \"%s.h\"\n" fn;
-  (*** Function prototypes *)
+  (* Function prototypes *)
   List.iter
     begin fun (name, expr) ->
       let st = is_static name in
@@ -301,12 +299,12 @@ let generate fn ?(start="start") peg =
       if not st then fp och "int %sbuild_%s(context *, node *, int);\n" !Opt.function_prefix name;
     end
     peg;
-  (* ***)
-  (*** create_context *)
+
+  (* create_context *)
   fp och "#define NUM_PRODUCTIONS %d\n" !num_productions;
   fp och "#define NUM_ALTERNATIVES %d\n" !num_alternatives;
-  (* ***)
-  (*** Generate parser function bodies *)
+
+  (* Generate parser function bodies *)
   info `Time "Generating parser functions";
   if not !Opt.build_only then
     List.iter
@@ -336,8 +334,8 @@ let generate fn ?(start="start") peg =
         fp oc "}\n"
       end
       peg;
-  (* ***)
-  (*** Generate builder function bodies *)
+
+  (* Generate builder function bodies *)
   List.iter
     begin fun (name, expr) ->
       let (number, choice_number) = Hashtbl.find productions name in
@@ -350,8 +348,7 @@ let generate fn ?(start="start") peg =
       fp oc "}\n";
     end
     peg;
-  (* ***)
+
   fp oc "\n";
   fp och "\n";
-;;
-(* ***)
+

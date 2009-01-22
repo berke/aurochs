@@ -1,12 +1,11 @@
 (* Stringifier *)
 
-open Pffpsf;;
+open Pffpsf
 
 let print_indent oc n =
   for i = 0 to n - 1 do
     output_char oc ' '
   done
-;;
 
 let print_ocaml_string ?(indent=4) ?(cols=32) () oc u =
   let m = String.length u in
@@ -28,4 +27,3 @@ let print_ocaml_string ?(indent=4) ?(cols=32) () oc u =
       end
   in
   loop 0
-;;

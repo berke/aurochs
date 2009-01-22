@@ -8,11 +8,7 @@
 #include <stdio.h>
 
 #include <parse_tree.h>
-#include <cnog.h>
-#include <peg_lib.h>
-#include <pack.h>
-#include <alloc.h>
-#include <staloc.h>
+#include <aurochs.h>
 
 static unsigned char *load_file(char *name, size_t *size)/*{{{*/
 {
@@ -81,7 +77,7 @@ int main(int argc, char **argv)
 
   if(pack_init_from_string(&pk, peg_data, peg_data_size)) {
     printf("peg_data[0] = %d\n", peg_data[0]);
-    pg = cnog_unpack_program(&st->s_alloc, &pk);
+    pg = nog_unpack_program(&st->s_alloc, &pk);
     printf("Unpacked to %p\n", pg);
     if(pg) {
       peg_context_t *cx;
@@ -110,12 +106,12 @@ int main(int argc, char **argv)
           if(cx) {
             tree tr;
 
-            if(cnog_execute(cx, pg, &tr)) {
+            if(nog_execute(cx, pg, &tr)) {
               printf("Parsed as %p.\n", tr);
               ptree_dump_tree(cx->cx_builder_info, stdout, buf, tr, 0);
             } else {
               printf("Doesn't parse.\n");
-              error_pos = cnog_error_position(cx, pg);
+              error_pos = nog_error_position(cx, pg);
               printf("Error at %d\n", error_pos);
             }
 
@@ -155,7 +151,7 @@ int main(int argc, char **argv)
       }
 #endif
 
-      /* cnog_free_program(&st->s_alloc, pg); */
+      /* nog_free_program(&st->s_alloc, pg); */
       staloc_dispose(st);
     }
   }

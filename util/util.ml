@@ -2,10 +2,10 @@
 (* Copyright (C)2004-2006 Berke Durak                               *)
 (* Released under the GNU Lesser General Public License version 2.1 *)
 
-let sf = Printf.sprintf;;
-exception At of string * exn;;
+let sf = Printf.sprintf
 
-(*** first_line *)
+exception At of string * exn
+
 let first_line =
   let b = Buffer.create 256 in
   fun w ->
@@ -20,9 +20,7 @@ let first_line =
         end
     in
     loop 0
-;;
-(* ***)
-(*** limit *)
+
 let limit m w =
   let n = String.length w in
   if n <= m then
@@ -32,9 +30,7 @@ let limit m w =
       String.make m '.'
     else
       (String.sub w 0 (min (m - 3) n))^"..."
-;;
-(* ***)
-(*** limit_left *)
+
 let limit_left m w =
   let n = String.length w in
   if n <= m then
@@ -45,9 +41,7 @@ let limit_left m w =
     else
       let m' = min (m - 3) n in
       "..."^(String.sub w (m - m') m')
-;;
-(* ***)
-(*** for_all_chars *)
+
 let for_all_chars f w =
   let m = String.length w in
   let rec loop i =
@@ -57,9 +51,7 @@ let for_all_chars f w =
       f w.[i] && loop (i + 1)
   in
   loop 0
-;;
-(* ***)
-(*** split_once_at *)
+
 let split_once_at f s =
   let m = String.length s in
   let rec loop1 i =
@@ -82,28 +74,20 @@ let split_once_at f s =
      String.sub s j (m - j))
   with
   | Not_found -> (s, "")
-;;
-(* ***)
-(*** is_alpha *)
+
 let is_alpha = function
 	| 'a'..'z' -> true
 	| 'A'..'Z' -> true
 	| _ -> false
-;;
-(* ***)
-(*** is_digit *)
+
 let is_digit = function
   | '0'..'9' -> true
   | _ -> false
-;;
-(* ***)
-(*** is_space *)
+
 let is_space = function
   | ' '|'\t'|'\n' -> true
   | _ -> false
-;;
-(* ***)
-(*** parse_strings *)
+
 let parse_strings u =
   let m = String.length u in
   let b = Buffer.create m in
@@ -170,9 +154,7 @@ let parse_strings u =
           end
   in
   loop0 [] 0
-;;
-(* ***)
-(*** split_at *)
+
 let split_at c u =
   let m = String.length u in
   let b = Buffer.create m in
@@ -198,18 +180,14 @@ let split_at c u =
       end
   in
   loop0 [] 0
-;;
-(* ***)
-(*** list_intersect *)
+
 let list_intersect l1 l2 =
   let rec loop r = function
     | [] -> r
     | x::y -> loop (if List.mem x l2 then x::r else r) y
   in
   loop [] l1
-;;
-(* ***)
-(*** once *)
+
 let once f =
   let x = ref true in
   fun () ->
@@ -220,15 +198,11 @@ let once f =
       end
     else
       ()
-;;
-(* ***)
-(*** list_has_more_than_one_element *)
+
 let list_has_more_than_one_element = function
   | []|[_] -> false
   | _ -> true
-;;
-(* ***)
-(*** count_lines *)
+
 let count_lines w =
   let m = String.length w in
   let rec loop x i =
@@ -238,9 +212,7 @@ let count_lines w =
       loop (if w.[i] = '\n' then x + 1 else x) (i + 1)
   in
   loop 1 0
-;;
-(* ***)
-(*** first_matching_char_from *)
+
 let first_matching_char_from i f w =
   let m = String.length w in
   let rec loop i =
@@ -253,39 +225,29 @@ let first_matching_char_from i f w =
         loop (i + 1)
   in
   loop i
-;;
-(* ***)
-(*** first_matching_char *)
-let first_matching_char = first_matching_char_from 0;;
-(* ***)
-(*** longest_matching_prefix *)
+
+let first_matching_char = first_matching_char_from 0
 let longest_matching_prefix f w =
   try
     let i = first_matching_char (fun c -> not (f c)) w in
     String.sub w 0 i, String.sub w i (String.length w - i)
   with
   | Not_found -> (w,"")
-;;
-(* ***)
-(*** remove_leading_spaces *)
+
 let remove_leading_spaces w =
   try
     let i = first_matching_char (fun c -> not (is_space c)) w in
     String.sub w i (String.length w - i)
   with
   | Not_found -> w
-;;
-(* ***)
-(*** delete_first_chars *)
+
 let delete_first_chars n w =
   let m = String.length w in
   if m > n then
     String.sub w n (m - n)
   else
     ""
-;;
-(* ***)
-(*** hierarchical *)
+
 let hierarchical x y =
   let m = String.length x
   and n = String.length y
@@ -296,9 +258,7 @@ let hierarchical x y =
     1
   else
     compare x y
-;;
-(* ***)
-(*** wind *)
+
 let wind f x g y =
   begin
     try
@@ -310,25 +270,19 @@ let wind f x g y =
         g y;
         raise z
   end
-;;
-(* ***)
-(*** list_change_nth *)
+
 let rec list_change_nth l n z =
   match l,n with
   | [],_ -> raise Not_found
   | x::y,0 -> z::y
   | x::y,_ -> x::(list_change_nth y (n - 1) z)
-;;
-(* ***)
-(*** list_remove_nth *)
+
 let rec list_remove_nth l n =
   match l,n with
   | [],_ -> raise Not_found
   | x::y,0 -> y
   | x::y,_ -> x::(list_remove_nth y (n - 1))
-;;
-(* ***)
-(*** word_wrap *)
+
 let word_wrap oc ?(columns=75) u =
   let m = String.length u in
   let f c = output_char oc c
@@ -416,9 +370,7 @@ let word_wrap oc ?(columns=75) u =
       loop2 i0 (i + 1) j k
   in
   loop0 0 0
-;;
-(* ***)
-(*** reg_of_string *)
+
 let reg_of_string w =
   let m = String.length w in
   let b = Buffer.create m in
@@ -429,9 +381,7 @@ let reg_of_string w =
     | c -> Buffer.add_char b c
   done;
   Buffer.contents b
-;;
-(* ***)
-(*** flip_array *)
+
 let flip_array a =
   let m = Array.length a in
   for i = 0 to m / 2 - 1 do
@@ -439,25 +389,19 @@ let flip_array a =
     a.(i) <- a.(m - 1 - i);
     a.(m - 1 - i) <- t
   done
-;;
-(* ***)
-(*** substitute_variables *)
+
 let substitute_variables env w =
   let b = Buffer.create (String.length w) in
   Buffer.add_substitute b (fun v -> List.assoc v env) w;
   Buffer.contents b
-;;
-(* ***)
-(*** list_sub_rev *)
+
 let list_sub_rev l start length =
   let rec loop r j = function
     | [] -> r (* shall we raise an exception ? *)
     | x::y -> loop (if j < start or j >= start + length then r else x::r) (j + 1) y
   in
   loop [] 0 l
-;;
-(* ***)
-(*** is_prefix *)
+
 let is_prefix u v =
   let m = String.length u
   and n = String.length v
@@ -465,18 +409,14 @@ let is_prefix u v =
   m <= n &&
     let rec loop i = i = m or u.[i] = v.[i] && loop (i + 1) in
     loop 0
-;;
-(* ***)
-(*** remove_prefix *)
+
 let remove_prefix u v =
   if is_prefix u v then
     let m = String.length u in
     String.sub v m (String.length v - m)
   else
     v
-;;
-(* ***)
-(*** is_suffix *)
+
 let is_suffix u v =
   let m = String.length u
   and n = String.length v
@@ -484,18 +424,14 @@ let is_suffix u v =
   m <= n &&
     let rec loop i = i = m or u.[m - 1 - i] = v.[n - 1 - i] && loop (i + 1) in
     loop 0
-;;
-(* ***)
-(*** remove_suffix *)
+
 let remove_suffix u v =
   if is_suffix u v then
     let m = String.length u in
     String.sub v 0 (String.length v - m)
   else
     v
-;;
-(* ***)
-(*** lowercase_compare *)
+
 let lowercase_compare u v =
   let m = String.length u
   and n = String.length v
@@ -505,29 +441,21 @@ let lowercase_compare u v =
   else
     let rec loop i = i = m || (Char.lowercase u.[i] = Char.lowercase v.[i] && loop (i + 1)) in
     loop 0
-;;
-(* ***)
-(*** call_if *)
+
 let call_if f x =
   match f with
   | None -> ()
   | Some g -> g x
-;;
-(* ***)
-(*** optional *)
+
 let optional f x =
   match x with
   | None -> ()
   | Some y -> f y
-;;
-(* ***)
-(*** mandatory *)
+
 let mandatory = function
   | None -> raise Not_found
   | Some x -> x
-;;
-(* ***)
-(*** wrap *)
+
 let wrap x g f =
   begin
     try
@@ -539,9 +467,7 @@ let wrap x g f =
         g x;
         raise z
   end
-;;
-(* ***)
-(*** binary_search *)
+
 let binary_search compare a x =
   let m = Array.length a in
   let rec loop i0 m =
@@ -568,9 +494,7 @@ let binary_search compare a x =
       end
   in
   loop 0 m
-;;
-(* ***)
-(*** randomize *)
+
 let randomize a =
   let m = Array.length a in
   let swap i j =
@@ -582,9 +506,7 @@ let randomize a =
     let j = i + 1 + Random.int (m - i - 1) in
     swap i j
   done
-;;
-(* ***)
-(*** array_mem_assoc *)
+
 let array_mem_assoc x a =
   let m = Array.length a in
   let rec loop i =
@@ -594,9 +516,7 @@ let array_mem_assoc x a =
       x = y or loop (i + 1)
   in
   loop 0
-;;
-(* ***)
-(*** array_assoc *)
+
 let array_assoc x a =
   let m = Array.length a in
   let rec loop i =
@@ -609,25 +529,19 @@ let array_assoc x a =
         loop (i + 1)
   in
   loop 0
-;;
-(* ***)
-(*** inside *)
+
 let inside msg f x =
   try
     f x
   with
   | x -> raise (At(msg, x))
-;;
-(* ***)
-(*** display_exception *)
+
 let rec display_exception = function
 | At(location, x) ->
     Printf.eprintf "  At %s:\n" location;
     display_exception x
 | x -> Printf.eprintf "  %s.\n" (Printexc.to_string x)
-;;
-(* ***)
-(*** catch *)
+
 let catch f =
   try
     f ()
@@ -636,10 +550,8 @@ let catch f =
       Printf.eprintf "Caught exception:\n";
       display_exception x;
       Printf.eprintf "%!";
-      exit 1;
-;;
-(* ***)
-(*** sanitize_filename *)
+      exit 1
+
 let sanitize_filename
   ?(is_safe=
     (function
@@ -659,9 +571,7 @@ let sanitize_filename
       Printf.bprintf b "%%%02x" (Char.code c)
   done;
   Buffer.contents b
-;;
-(* ***)
-(*** unsanitize_filename *)
+
 let unsanitize_filename ?(buffer=Buffer.create 256) ?(prefix="") fn =
   if not (is_prefix prefix fn) then invalid_arg "unsanitize_filename: no prefix";
   let b = buffer in
@@ -693,9 +603,7 @@ let unsanitize_filename ?(buffer=Buffer.create 256) ?(prefix="") fn =
       end
   in
   loop (String.length prefix)
-;;
-(* ***)
-(*** with_file_input *)
+
 let with_file_input fn f =
   let ic = open_in fn in
   try
@@ -704,9 +612,7 @@ let with_file_input fn f =
   | x ->
       close_in ic;
       raise x
-;;
-(* ***)
-(*** with_file_output *)
+
 let with_file_output fn f =
   let oc = open_out fn in
   try
@@ -717,9 +623,7 @@ let with_file_output fn f =
   | x ->
       close_out oc;
       raise x
-;;
-(* ***)
-(*** with_binary_file_output *)
+
 let with_binary_file_output fn f =
   let oc = open_out_bin fn in
   try
@@ -730,9 +634,7 @@ let with_binary_file_output fn f =
   | x ->
       close_out oc;
       raise x
-;;
-(* ***)
-(*** with_binary_file_input *)
+
 let with_binary_file_input fn f =
   let ic = open_in_bin fn in
   try
@@ -741,15 +643,9 @@ let with_binary_file_input fn f =
   | x ->
       close_in ic;
       raise x
-;;
-(* ***)
-(*** save *)
-let save fn x = with_binary_file_output fn (fun oc -> Marshal.to_channel oc x []);;
-(* ***)
-(*** load *)
-let load fn = with_binary_file_input fn (fun ic -> Marshal.from_channel ic);;
-(* ***)
-(*** iter_over_lines *)
+
+let save fn x = with_binary_file_output fn (fun oc -> Marshal.to_channel oc x [])
+let load fn = with_binary_file_input fn (fun ic -> Marshal.from_channel ic)
 let iter_over_lines ic f =
   try
     while true do
@@ -759,9 +655,7 @@ let iter_over_lines ic f =
     assert false
   with
   | End_of_file -> ()
-;;
-(* ***)
-(*** unsigned_int64_of_decimal *)
+
 let unsigned_int64_of_decimal u =
   let m = String.length u in
   let rec loop q i =
@@ -772,15 +666,19 @@ let unsigned_int64_of_decimal u =
       loop (Int64.add (Int64.mul q 10L) (Int64.of_int x)) (i + 1)
   in
   loop 0L 0
-;;
-(* ***)
-(*** Syntax *)
+
 module Syntax =
   struct
-    let (&) f x = f x;; (* From Nicolas Pouillard *)
-    let ( += ) l x = l := x :: !l;;
-    let ( |> ) x f = f x;;
-    let ( <? ) x f = f; x;;
+    let (&) f x = f x (* From Nicolas Pouillard *)
+    let ( += ) l x = l := x :: !l
+    let ( |> ) x f = f x
+    let ( <? ) x f = f; x
   end
-;;
-(* ***)
+
+let read_file fn =
+  let ic = open_in fn in
+  let m = in_channel_length ic in
+  let u = String.create m in
+  really_input ic u 0 m;
+  close_in ic;
+  u

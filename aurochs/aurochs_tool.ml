@@ -37,7 +37,8 @@ module Spec =
                    | "c"             -> targets += `c
                    | _               -> raise (Bad "Invalid target")
                  end),
-          " target language";
+          " Type of parser to generate. (nog: Aurochs parsing automaton as a binary file; c_table_nog: nog as a C table;
+          ml: nog as ML string; c: direct parsing using C code";
 
         "-load-nog",
           String(aor load_nog),
@@ -209,7 +210,14 @@ let _ =
   Arg.parse
     Spec.specs
     (fun x -> did_something := true; Process.process (Some x))
-    (sf "Usage: %s [options] <grammar-file>" progname);
+    (sf
+      "Usage:\n\
+      \  1. %s -parse file grammar.peg\n\
+      \  2. %s -target nog grammar.peg\n\
+      \  3. %s -load-nog grammar.nog -parse file\n\
+      \n\
+      Options:\n"
+      progname progname progname);
 
   (* Consistency checks *)
   if (!Opt.debug || !Opt.trace) && !Opt.interpreter != `mlnog then

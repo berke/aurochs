@@ -68,15 +68,15 @@ let gen_c_unpacker ops cfn hfn =
       fp och " *\n";
       fp och " */\n";
       fp och "\n";
-      fp och "#ifndef CNOG_UNPACK_H\n";
-      fp och "#define CNOG_UNPACK_H\n";
+      fp och "#ifndef NOG_UNPACK_H\n";
+      fp och "#define NOG_UNPACK_H\n";
       fp och "\n";
       fp och "#include <alloc.h>\n";
       fp och "#include <pack.h>\n";
-      fp och "#include <cnog.h>\n";
+      fp och "#include <nog.h>\n";
       fp och "\n";
-      fp och "bool cnog_unpack_instruction(alloc_t *alloc, packer_t *pk, nog_instruction_t *ins);\n";
-      fp och "void cnog_free_instruction(alloc_t *alloc, nog_instruction_t *ins);\n";
+      fp och "bool nog_unpack_instruction(alloc_t *alloc, packer_t *pk, nog_instruction_t *ins);\n";
+      fp och "void nog_free_instruction(alloc_t *alloc, nog_instruction_t *ins);\n";
       fp och "\n";
       fp och "#endif\n";
       (* ***)
@@ -88,11 +88,11 @@ let gen_c_unpacker ops cfn hfn =
       fp occ " */\n";
       fp occ "\n";
       fp occ "#include <stdlib.h>\n";
-      fp occ "#include <cnog_unpack.h>\n";
+      fp occ "#include <nog_unpack.h>\n";
       fp occ "\n";
 
       (*** Free *)
-      fp occ "void cnog_free_instruction(alloc_t *alloc, nog_instruction_t *ins)\n";
+      fp occ "void nog_free_instruction(alloc_t *alloc, nog_instruction_t *ins)\n";
       fp occ "{\n";
       fp occ "  switch(ins->ni_opcode) {\n";
 
@@ -129,7 +129,7 @@ let gen_c_unpacker ops cfn hfn =
       fp occ "\n";
       (* ***)
       (*** Unpack *)
-      fp occ "bool cnog_unpack_instruction(alloc_t *alloc, packer_t *pk, nog_instruction_t *ins)\n";
+      fp occ "bool nog_unpack_instruction(alloc_t *alloc, packer_t *pk, nog_instruction_t *ins)\n";
       fp occ "{\n";
       fp occ "  int opcode;\n";
       fp occ "  u64 arg;\n";
@@ -260,8 +260,8 @@ let gen_ocaml_packer ops fn =
 ;;
 
 let _ =
-  List.iter Unix_util.mkdirhier ["nog"; "backends"; "cnog"];
+  List.iter Unix_util.mkdirhier ["nog"; "backends"; "c"];
   let ops = load_opcodes "nog/machine.ml" in
   gen_ocaml_packer ops "backends/nog_packer.ml";
-  gen_c_unpacker ops "cnog/cnog_unpack.c" "include/cnog_unpack.h"
+  gen_c_unpacker ops "c/nog_unpack.c" "include/nog_unpack.h"
 ;;

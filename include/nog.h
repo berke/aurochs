@@ -1,11 +1,10 @@
-/* cnog.h
+/* nog.h
  *
  */
 
-#ifndef CNOG_H
-#define CNOG_H
+#ifndef NOG_H
+#define NOG_H
 
-#include <base_types.h>
 #include <peg.h>
 #include <pack.h>
 
@@ -103,10 +102,10 @@ typedef struct {
   nog_instruction_t *np_program;
 } nog_program_t;
 
-EXPORT bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result);
-EXPORT int cnog_error_position(peg_context_t *cx, nog_program_t *pg);
-EXPORT nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk);
-EXPORT void cnog_free_program(alloc_t *alloc, nog_program_t *pg);
+EXPORT bool nog_execute(peg_context_t *cx, nog_program_t *pg, tree *result);
+EXPORT int nog_error_position(peg_context_t *cx, nog_program_t *pg);
+EXPORT nog_program_t *nog_unpack_program(alloc_t *alloc, packer_t *pk);
+EXPORT void nog_free_program(alloc_t *alloc, nog_program_t *pg);
 
 #define NOG_SIGNATURE 0xABBE55E5
 

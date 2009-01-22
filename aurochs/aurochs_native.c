@@ -11,15 +11,13 @@
 #include <caml/alloc.h>
 #include <caml/custom.h>
 
-#include <base_types.h>
-#include <alloc.h>
-#include <staloc.h>
-
 #if 0
 #define DEBUGF(x, y...) printf("DEBUG " __FILE__ ":" x "\n", ##y);
 #else
 #define DEBUGF(x,...)
 #endif
+
+#include <alloc.h>
 
 typedef value tree;
 typedef value attribute;
@@ -31,9 +29,7 @@ typedef construction_t *construction;
 
 #define BUILDER_TYPES_DEFINED 1
 
-#include <peg.h>
-#include <cnog.h>
-#include <peg_lib.h>
+#include <aurochs.h>
 
 typedef struct {
   nog_program_t *p_nog;
@@ -111,7 +107,7 @@ value caml_aurochs_program_of_binary(value binaryv)
   if(pack_init_from_string(&pk, binary, length)) {
     s = staloc_create(&alloc_stdlib);
     if(s) {
-      pg = cnog_unpack_program(&s->s_alloc, &pk);
+      pg = nog_unpack_program(&s->s_alloc, &pk);
       if(pg) {
         programv = program_alloc(pg, s);
         CAMLreturn(programv);
@@ -414,7 +410,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)
     caml_failwith("Can't allocate context");
   }
 
-  if(cnog_execute(cx, pg, &treev)) {
+  if(nog_execute(cx, pg, &treev)) {
     peg_delete_context(cx);
     staloc_dispose(s);
     CAMLreturn(some(treev));
@@ -422,7 +418,7 @@ value caml_aurochs_parse(value programv, value uv, value errorv)
     /* We've got a parse error, compute its position. */
     int pos;
 
-    pos = cnog_error_position(cx, pg);
+    pos = nog_error_position(cx, pg);
     Store_field(errorv, 0, Val_int(pos));
     peg_delete_context(cx);
     staloc_dispose(s);

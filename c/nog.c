@@ -1,16 +1,16 @@
-/* cnog.c
+/* nog.c
  *
  */
 
-#include <cnog.h>
-#include <cnog_unpack.h>
-#include <peg_lib.h>
+#include <nog.h>
+#include <nog_unpack.h>
+#include <peg.h>
 #include <pack.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <alloc.h>
 
-#define CNOG_DEBUG 0
+#define NOG_DEBUG 0
 
 static INLINE memo_block_t *memo_alloc_block(alloc_t *alloc, int cells_per_block)
 {
@@ -123,7 +123,7 @@ static INLINE void set_result(peg_context_t *cx, int position, int production, i
   set_memo(&cx->cx_table_staloc->s_alloc, cx->cx_results, position, production, result, RESULT_CELLS_PER_BLOCK);
 }
 
-int cnog_error_position(peg_context_t *cx, nog_program_t *pg)
+int nog_error_position(peg_context_t *cx, nog_program_t *pg)
 {
   int i, j, k;
   int m;
@@ -156,10 +156,10 @@ typedef struct {
   letter_t *head, *bof, *eof; /* Pointers to current position, beginning and end. */
   peg_builder_t *bd;
   info bi;
-} cnog_closure_t;
+} nog_closure_t;
 
 /* Initialize to defined values */
-static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *result) {
+static void init(nog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *result) {
   c->cx = cx;
   c->pg = pg;
   c->result = result;
@@ -175,12 +175,12 @@ static void init(cnog_closure_t *c, peg_context_t *cx, nog_program_t *pg, tree *
 }
 
 /* Boolean stack manipulation */
-static INLINE void boolean_push(cnog_closure_t *c, bool x) {
+static INLINE void boolean_push(nog_closure_t *c, bool x) {
   c->boolean <<= 1;
   c->boolean |= x ? 1 : 0;
 }
 
-static INLINE bool boolean_pop(cnog_closure_t *c) {
+static INLINE bool boolean_pop(nog_closure_t *c) {
   bool result;
 
   result = c->boolean & 1;
@@ -189,17 +189,17 @@ static INLINE bool boolean_pop(cnog_closure_t *c) {
 }
 
 /* Regular stack manipulation */
-static INLINE void stack_push(cnog_closure_t *c, symbol_t x) {
+static INLINE void stack_push(nog_closure_t *c, symbol_t x) {
   pushdown_push(c->cx->cx_stack, x);
 }
 
-static INLINE symbol_t stack_pop(cnog_closure_t *c) {
+static INLINE symbol_t stack_pop(nog_closure_t *c) {
   symbol_t s;
   (void) pushdown_pop(c->cx->cx_stack, &s);
   return s;
 }
 
-static INLINE symbol_t stack_top(cnog_closure_t *c) {
+static INLINE symbol_t stack_top(nog_closure_t *c) {
   symbol_t s;
   (void) pushdown_top(c->cx->cx_stack, &s);
   return s;
@@ -211,7 +211,7 @@ static INLINE symbol_t stack_top(cnog_closure_t *c) {
 #define jump_to(pc) do { ip_next = c->pg->np_program + pc; } while(0)
 #define jump() do { jump_to(arg0()); } while(0)
 
-static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instruction_t *ip_next, tree *result_tree) {
+static nog_instruction_t *run(nog_closure_t *c, construction current, nog_instruction_t *ip_next, tree *result_tree) {
   nog_instruction_t *ip;
 
   /*printf("run pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip_next - pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
@@ -223,7 +223,7 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
     assert(c->pg->np_program <= ip && ip < c->pg->np_program + c->pg->np_count);
     assert(c->bof <= c->head && c->head <= c->eof);
     /*printf("pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip - c->pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
-    DEBUGIF(CNOG_DEBUG,"%ld %ld %d\n", ip - c->pg->np_program, c->head - c->bof, c->fail);
+    DEBUGIF(NOG_DEBUG,"%ld %ld %d\n", ip - c->pg->np_program, c->head - c->bof, c->fail);
 
     ip_next = ip + 1;
 
@@ -500,11 +500,11 @@ static nog_instruction_t *run(cnog_closure_t *c, construction current, nog_instr
 #undef jump_to
 #undef jump
 
-#define CNOG_VERSION 0x00010001
+#define NOG_VERSION 0x00010001
 
-bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
+bool nog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
 {
-  cnog_closure_t c;
+  nog_closure_t c;
 
   init(&c, cx, pg, result);
   if(run(&c, 0, pg->np_program + pg->np_start_pc, 0)) {
@@ -526,7 +526,7 @@ bool cnog_execute(peg_context_t *cx, nog_program_t *pg, tree *result)
   return false;
 }
 
-static void cnog_add_to_checksum(void *info, u8 *data, size_t size)
+static void nog_add_to_checksum(void *info, u8 *data, size_t size)
 {
   u64 sum;
 
@@ -538,55 +538,55 @@ static void cnog_add_to_checksum(void *info, u8 *data, size_t size)
   *((u64 *) info) = sum;
 }
 
-nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {
+nog_program_t *nog_unpack_program(alloc_t *alloc, packer_t *pk) {
   nog_program_t *pg, *result;
   u64 signature, version; 
   size_t size;
   unsigned int i, j;
   u64 checksum, checksum2;
 
-  DEBUGIF(CNOG_DEBUG,"Unpacking\n");
+  DEBUGIF(NOG_DEBUG,"Unpacking\n");
   result = 0;
 
   checksum = 0;
-  pack_set_observer(pk, &checksum, cnog_add_to_checksum);
+  pack_set_observer(pk, &checksum, nog_add_to_checksum);
   
   pg = alloc_malloc(alloc, sizeof(nog_program_t));
 
   /* Welcome to C allocation hell! */
   if(!pg) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Allocated program\n");
+  DEBUGIF(NOG_DEBUG,"Allocated program\n");
 
   if(!pack_read_uint64(pk, &signature)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Read signature %lx\n", signature);
+  DEBUGIF(NOG_DEBUG,"Read signature %lx\n", signature);
 
   if(signature != NOG_SIGNATURE) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Signature OK\n");
+  DEBUGIF(NOG_DEBUG,"Signature OK\n");
 
   if(!pack_read_uint64(pk, &version)) goto finish;
-  if(version <= CNOG_VERSION) {
-    DEBUGIF(CNOG_DEBUG,"Version too recent\n");
+  if(version <= NOG_VERSION) {
+    DEBUGIF(NOG_DEBUG,"Version too recent\n");
     goto finish;
   }
-  DEBUGIF(CNOG_DEBUG,"Version OK\n");
+  DEBUGIF(NOG_DEBUG,"Version OK\n");
 
   if(!pack_read_uint(pk, &pg->np_start_pc)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Start pc is %d\n", pg->np_start_pc);
+  DEBUGIF(NOG_DEBUG,"Start pc is %d\n", pg->np_start_pc);
 
   if(!pack_read_uint(pk, &pg->np_build_pc)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Build pc is %d\n", pg->np_build_pc);
+  DEBUGIF(NOG_DEBUG,"Build pc is %d\n", pg->np_build_pc);
 
   if(!pack_read_uint(pk, &pg->np_root_constructor)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Root constructor is %d\n", pg->np_root_constructor);
+  DEBUGIF(NOG_DEBUG,"Root constructor is %d\n", pg->np_root_constructor);
 
   if(!pack_read_uint(pk, &pg->np_num_productions)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Num_productions is %d\n", pg->np_num_productions);
+  DEBUGIF(NOG_DEBUG,"Num_productions is %d\n", pg->np_num_productions);
 
   if(!pack_read_uint(pk, &pg->np_num_choices)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Num_choices is %d\n", pg->np_num_choices);
+  DEBUGIF(NOG_DEBUG,"Num_choices is %d\n", pg->np_num_choices);
 
   if(!pack_read_uint(pk, &pg->np_num_constructors)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Num_constructors is %d\n", pg->np_num_constructors);
+  DEBUGIF(NOG_DEBUG,"Num_constructors is %d\n", pg->np_num_constructors);
 
   pg->np_constructors = alloc_malloc(alloc, sizeof(nog_string_t) * pg->np_num_constructors);
   if(!pg->np_constructors) goto finish;
@@ -594,24 +594,24 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {
   for(i = 0; i < pg->np_num_constructors; i ++) {
     if(!pack_read_string(pk, &pg->np_constructors[i].ns_chars, &size, alloc)) goto finish;
     pg->np_constructors[i].ns_length = size;
-    DEBUGIF(CNOG_DEBUG,"  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
+    DEBUGIF(NOG_DEBUG,"  Constructor #%d: %s\n", i, pg->np_constructors[i].ns_chars);
   }
 
   if(!pack_read_uint(pk, &pg->np_num_attributes)) goto finish;
 
-  DEBUGIF(CNOG_DEBUG,"Num_attributes is %d\n", pg->np_num_attributes);
+  DEBUGIF(NOG_DEBUG,"Num_attributes is %d\n", pg->np_num_attributes);
   pg->np_attributes = alloc_malloc(alloc, sizeof(nog_string_t) * pg->np_num_attributes);
   if(!pg->np_attributes) goto finish;
 
   for(i = 0; i < pg->np_num_attributes; i ++) {
     if(!pack_read_string(pk, &pg->np_attributes[i].ns_chars, &size, alloc)) goto finish;
     pg->np_attributes[i].ns_length = size;
-    DEBUGIF(CNOG_DEBUG,"  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
+    DEBUGIF(NOG_DEBUG,"  Attribute #%d: %s\n", i, pg->np_attributes[i].ns_chars);
   }
 
   if(!pack_read_uint(pk, &pg->np_num_tables)) goto finish;
 
-  DEBUGIF(CNOG_DEBUG,"Num_tables is %d\n", pg->np_num_tables);
+  DEBUGIF(NOG_DEBUG,"Num_tables is %d\n", pg->np_num_tables);
   pg->np_tables = alloc_malloc(alloc, sizeof(nog_table_t) * pg->np_num_tables);
   if(!pg->np_tables) goto finish;
 
@@ -624,14 +624,14 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {
   }
   
   if(!pack_read_uint(pk, &pg->np_count)) goto finish;
-  DEBUGIF(CNOG_DEBUG,"Program size is %d\n", pg->np_count);
+  DEBUGIF(NOG_DEBUG,"Program size is %d\n", pg->np_count);
 
   pg->np_program = alloc_malloc(alloc, sizeof(nog_instruction_t) * pg->np_count);
   if(!pg->np_program) goto finish;
 
   for(i = 0; i < pg->np_count; i ++) {
-    if(!cnog_unpack_instruction(alloc, pk, pg->np_program + i)) {
-      DEBUGIF(CNOG_DEBUG, "Unpack error at instruction %d\n", i);
+    if(!nog_unpack_instruction(alloc, pk, pg->np_program + i)) {
+      DEBUGIF(NOG_DEBUG, "Unpack error at instruction %d\n", i);
       goto finish;
     }
   }
@@ -640,10 +640,10 @@ nog_program_t *cnog_unpack_program(alloc_t *alloc, packer_t *pk) {
 
   if(!pack_read_uint64(pk, &checksum2)) goto finish;
   if(checksum != checksum2) {
-    DEBUGIF(CNOG_DEBUG, "Bad checksum, residual 0x%lx recorded 0x%lx\n", checksum, checksum2);
+    DEBUGIF(NOG_DEBUG, "Bad checksum, residual 0x%lx recorded 0x%lx\n", checksum, checksum2);
     goto finish;
   } else {
-    DEBUGIF(CNOG_DEBUG, "Checksum OK 0x%lx\n", checksum2);
+    DEBUGIF(NOG_DEBUG, "Checksum OK 0x%lx\n", checksum2);
   }
   result = pg;
 
@@ -651,71 +651,17 @@ finish:
   return result;
 }
 
-void cnog_free_program(alloc_t *alloc, nog_program_t *pg)
+void nog_free_program(alloc_t *alloc, nog_program_t *pg)
 {
   unsigned int i;
 
   if(pg) {
     if(pg->np_program) {
       for(i = 0; i < pg->np_count; i ++) {
-        cnog_free_instruction(alloc, pg->np_program + i);
+        nog_free_instruction(alloc, pg->np_program + i);
       }
       alloc_free(alloc, pg->np_program);
     }
     alloc_free(alloc, pg);
-  }
-}
-
-peg_context_t *peg_create_context(alloc_t *alloc, nog_program_t *pg, peg_builder_t *pb, info bi, letter_t *input, int input_length)
-{
-  int i;
-  peg_context_t *cx;
-  int num_alternatives;
-  int num_productions;
-  alloc_t *salloc;
-
-  cx = alloc_malloc(alloc, sizeof(peg_context_t));
-
-  cx->cx_alloc = alloc;
-  cx->cx_table_staloc = staloc_create(alloc);
-  salloc = &cx->cx_table_staloc->s_alloc;
-
-  cx->cx_input = input;
-  cx->cx_input_length = input_length;
-
-  num_alternatives = pg->np_num_choices;
-  num_productions = pg->np_num_productions;
-
-  cx->cx_num_alternatives = num_alternatives;
-  cx->cx_num_productions = num_productions;
-
-  cx->cx_choices = alloc_malloc(salloc, sizeof(memo_block_t *) * (input_length + 1));
-
-  for(i = 0; i <= input_length; i ++) {
-    cx->cx_choices[i] = 0;
-  }
-
-  cx->cx_results = alloc_malloc(alloc, sizeof(memo_block_t *) * (input_length + 1));
-  for(i = 0; i <= input_length; i ++) {
-    cx->cx_results[i] = 0;
-  }
-
-  cx->cx_builder = pb;
-  cx->cx_builder_info = bi;
-
-  cx->cx_stack = pushdown_create(alloc);
-
-  return cx;
-}
-
-void peg_delete_context(peg_context_t *cx)
-{
-  if(cx) {
-#if CNOG_SHOW_STATS
-    statistics(cx);
-#endif
-    staloc_dispose(cx->cx_table_staloc);
-    pushdown_dispose(cx->cx_stack);
-    alloc_free(cx->cx_alloc, (cx));
   }
 }

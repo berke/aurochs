@@ -1,14 +1,12 @@
 /* peg.h
  *
- * Copyright (C)2007 Exalead
+ * Copyright (C)2007-2009 Exalead
  */
 
 #ifndef PEG_H
 #define PEG_H
 
 #include <stdio.h>
-#include <base_types.h>
-#include <alloc.h>
 #include <staloc.h>
 #include <pushdown.h>
 

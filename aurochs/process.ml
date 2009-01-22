@@ -14,7 +14,7 @@ type 'a name =
 | Unresolved of string
 
 let bootstrap fn =
-  let u = Driver.read_file fn in
+  let u = Util.read_file fn in
   let m = String.length u in
   let peg = Grammar_original.peg in
   with_file_output "internal.peg" (fun oc -> Pretty.print_grammar oc peg);
@@ -41,7 +41,6 @@ let bootstrap fn =
 
 module SM = Map.Make(String)
 
-(*** build_color_table *)
 let build_color_table ?(min_color=1) ?(max_color=7) t =
   let color = ref min_color in
   let builds_table = ref SM.empty in
@@ -58,8 +57,6 @@ let build_color_table ?(min_color=1) ?(max_color=7) t =
   Peg.iter_over_poly_tree_attributes (fun a -> add_color attributes_table a) t;
   (!builds_table, !attributes_table)
 
-(* ***)
-(*** colorize *)
 let colorize ?(default_acolor=Ansi.black) ?(default_bcolor=Ansi.white) (builds_table, attributes_table) u pt =
   let m = String.length u in
   let ac = Array.make (m + 1) default_acolor in
@@ -88,8 +85,6 @@ let colorize ?(default_acolor=Ansi.black) ?(default_bcolor=Ansi.white) (builds_t
   loop_build pt;
   (ac, bc)
 
-(* ***)
-(*** dump_colorized *)
 let dump_colorized oc (ac, bc) u =
   let m = String.length u in
   let last_fg_color = ref (-1) in
@@ -122,9 +117,7 @@ let dump_colorized oc (ac, bc) u =
   done;
   fp oc "%s%!" Ansi.none
 
-(* ***)
 
-(*** parse_file_with_nog *)
 let parse_file_with_nog pg fn =
   let with_dump_oc = 
     match !Opt.dump_colorized with
@@ -208,10 +201,8 @@ let parse_file_with_nog pg fn =
         | End_of_file -> ()
       end
   else
-    treat (Driver.read_file fn)
+    treat (Util.read_file fn)
 
-(* ***)
-(*** parse_file_with_prog *)
 let parse_file_with_prog prog fn =
   let with_dump_oc = 
     match !Opt.dump_colorized with
@@ -267,10 +258,8 @@ let parse_file_with_prog prog fn =
         | End_of_file -> ()
       end
   else
-    treat (Driver.read_file fn)
+    treat (Util.read_file fn)
 
-(* ***)
-(*** parse_file *)
 let parse_file peg fn =
   (*let peg' =
     List.map
@@ -331,10 +320,8 @@ let parse_file peg fn =
           end
       end
   else
-    treat (Driver.read_file fn)
+    treat (Util.read_file fn)
 
-(* ***)
-(*** process *)
 let process fno =
   let (v1,v2,v3) = Version.version in
   banner "Aurochs %d.%d.%d" v1 v2 v3;
@@ -346,9 +333,14 @@ let process fno =
       | Some fn ->
           let u = Aurochs.read_file fn in
           info `Normal "Grammar loaded from file %s" fn;
-          let peg = Convert_grammar.convert_grammar (Grammar.parse u) in
-          info `Minor "Grammar converted";
-          peg
+          try
+            let peg = Convert_grammar.convert_grammar (Grammar.parse u) in
+            info `Minor "Grammar converted";
+            peg
+          with
+          | Nog.Parse_error i ->
+              info `Important "PARSE ERROR IN GRAMMAR FILE %s AT CHARACTER %d" fn i;
+              exit 1
     end
   in
 
@@ -488,4 +480,3 @@ let process fno =
         )
         targets
 
-(* ***)

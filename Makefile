@@ -9,7 +9,7 @@ DISTRIB=_build/aurochs-$(VERSION)
 all: targets
 
 targets:
-	@./build.sh aurochs_lib.cma aurochs_lib.cmxa aurochs_tool.native aurochs/test_aurochs.native cnog/check
+	@./build.sh aurochs_lib.cma aurochs_lib.cmxa aurochs_tool.native aurochs/test_aurochs.native c/test/test_nog
 
 clean:
 	rm -rf _build/

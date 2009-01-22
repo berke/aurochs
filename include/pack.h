@@ -8,7 +8,6 @@
 #ifndef PACK_H
 #define PACK_H
 
-#include <base_types.h>
 #include <alloc.h>
 
 typedef size_t (*pack_resplenisher_t)(void *, u8 *, size_t);
