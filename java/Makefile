@@ -1,19 +1,19 @@
 #VERSION=1.5.0.11
-VERSION=1.6.0
 
+JAVAHOME=$(shell java-config -O)
 LIBNAME=aurochsjava
 JAVASRC=fr/aurochs/Attribute.java fr/aurochs/Node.java fr/aurochs/Parser.java fr/aurochs/Token.java fr/aurochs/Tree.java fr/aurochs/Test.java
 JAVAJNI=fr.aurochs.Parser
 JNIHEADERS=fr_aurochs_Parser.h
-OBJS=aurochs_stub.o $(addprefix ../_build/, cnog/cnog.o cpack/pack.o cnog/parse_tree.o cnog/cnog_unpack.o cutil/alloc.o cutil/staloc.o cutil/pushdown.o)
+OBJS=aurochs_stub.o $(addprefix ../_build/, c/alloc.o c/nog.o c/pack.o c/nog_unpack.o c/parse_tree.o c/peg.o c/pushdown.o c/staloc.o)
 
-JAVA=/opt/sun-jdk-$(VERSION)/bin/java
+JAVA=$(shell java-config -J)
 JAVAFLAGS=-cp .
 
-JAVAC=/opt/sun-jdk-$(VERSION)/bin/javac
-JAVAH=/opt/sun-jdk-$(VERSION)/bin/javah
+JAVAC=$(shell java-config -c)
+JAVAH=$(JAVAHOME)/bin/javah
 
-INCDIRS=/opt/sun-jdk-$(VERSION)/include /opt/sun-jdk-$(VERSION)/include/linux ../include ../cnog ../cutil ../cpack
+INCDIRS=$(JAVAHOME)/include $(JAVAHOME)/include/linux ../include
 INCLUDES=$(addprefix -I, $(INCDIRS))
 
 CC=gcc
@@ -30,7 +30,7 @@ test: all arith.nog
 	LD_LIBRARY_PATH=. $(JAVA) -classpath . fr.aurochs.Test arith.nog arith.txt
 
 %.nog: %.peg
-	../aurochs_tool.native -root-node calcRoot -target nog -generate $<
+	../aurochs_tool.native -root-node calcRoot -target nog $<
 
 build:
 	@cd .. && ./build.sh

@@ -55,6 +55,7 @@ public class Node extends Tree {
     }
   }
 
+  @SuppressWarnings("unchecked") // Comment this for Java 1.5 or earlier
   public Object instantiate(String pkg) throws Exception
   {
     Class c = Class.forName(pkg + "." + name);

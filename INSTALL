@@ -1,6 +1,59 @@
-Installation instructions
-=========================
+Aurochs, a parser generator.
 
-1) Make sure you have Objective Caml 3.10 or later
-2) Edit the installation path prefix PREFIX in Makefile
-2) make && sudo make install
+  Copyright (C)2007-2009 Exalead SA
+  Author: Berke Durak
+
+  http://aurochs.fr/
+
+Installation.
+=============
+1) You can try aurochs on-line at http://aurochs.fr/
+
+2) You need Objective Caml 3.10 or later.  See http://caml.inria.fr/
+
+   On Debian-like systems:
+     apt-get install ocaml-nox
+
+3) You also need the usual development tools (GNU Make, C compiler).
+
+4) make (or gmake)
+
+5) Typing
+     sudo make PREFIX=/usr/local install
+   will install the aurochs binary in /usr/local/bin and the Ocaml
+   libraries in the Ocaml installation directory, as determined
+   by
+     ocamlc -where.
+
+6) You can also use ./aurochs_tool.native if you do not want to install
+   aurochs.
+
+Testing
+=======
+1) There are some grammars in examples/.  You can parse them using
+   Aurochs right away:
+
+     aurochs -parse examples/test.markup examples/markup.peg
+
+   Aurochs will print an XML-like representation of the parse tree.
+   This is how you develop your grammar.
+
+2) Once your grammar is OK, you generally use Aurochs to save the resulting
+   automaton into a binary file.  The command
+
+     aurochs -target nog examples/markup.peg
+
+   will create a file markup.nog
+
+3) You can parse a file using that NOG file:
+
+     aurochs -parse examples/test.markup examples/markup.peg -load-nog markup.nog
+
+4) There is an example C program in c/test/test_nog which does the same thing.
+
+    _build/c/test/test_nog markup.nog examples/markup.peg
+
+5) There are Ocaml examples in examples/calculator and examples/cgi-bin.
+
+6) There is a Java example in java/.  Ensure you have Java 1.6 handy and type "make test" there.
+   For Java 1.5, comment out the "@SuppressWarnings" annotation in java/fr/aurochs/Node.java.
