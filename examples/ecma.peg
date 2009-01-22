@@ -3,12 +3,33 @@
 space ::=
    [ \n\r\t]
  | "<!--"
- | "//" [^\n]* '\n'
+ | "//" [^\r\n]* ([\r\n]|EOF)
  | "/*" ((~ "*/") sigma)* "*/"
 ;
 
-integer ::= value:('0' | [1-9][0-9]*);
-float ::= value:(('0' | [1-9][0-9]* )? '.' [0-9]+);
+integer ::=
+    value:(
+      '-'?
+        (
+            "0x" [0-9a-fA-F]+
+          | '0' [0-7]+
+          | [1-9][0-9]*
+          | '0'
+        )
+      )
+      &
+      sp
+  ;
+
+float ::=
+    value:(
+      '-'?
+      (([0-9]* '.' [0-9]+) | ([0-9]+ ('.' [0-9]*)?))
+      ([eE] ('+'|'-')? [0-9] [0-9]*)?
+    )
+    &
+    sp
+  ;
 
 alphanum ::= [A-Za-z_0-9$]; (* Check lexical rules for identifiers *)
 alpha ::= [A-Za-z_$];
@@ -26,8 +47,6 @@ regexp ::= (~ ("//"|"/*")) '/'body:(regexp_inner*)'/'(options:regexp_option+)? ~
 regexp_option ::= [giwm];
 regexp_escape ::= '\\' [bfnrtv/\\];
 regexp_inner ::= ((~ '/') (regexp_escape | [^/\n]));
-
-numeric ::= float | integer;
 
 sp ::= space+ | ~alpha | BOF;
 
@@ -220,6 +239,7 @@ outfixing optional_space do
 
     inner_statement ::=
       block
+    | labeled_statement
     | variable_statement
     | expression_statement
     | if_statement
@@ -228,7 +248,6 @@ outfixing optional_space do
     | break_statement
     | return_statement
     | with_statement
-    | labeled_statement
     | switch_statement
     | throw_statement
     | try_statement
@@ -263,7 +282,7 @@ outfixing optional_space do
       ;
 
     iteration_statement ::=
-        <Do> DO <Loop>statement</Loop> WHILE LPAR <Condition>expression</Condition> RPAR </Do>
+        <Do> DO <Loop>statement DOTCOM?</Loop> WHILE LPAR <Condition>expression</Condition> RPAR </Do>
       | <While> WHILE LPAR <Condition>expression</Condition> RPAR <Loop>statement</Loop> </While>
       | <ForIn>
           FOR
@@ -285,12 +304,12 @@ outfixing optional_space do
       ;
 
     continue_statement ::=
-        <Continue> CONTINUE label:IDENTIFIER </Continue>
+        CONTINUE <Continue> label:IDENTIFIER </Continue>
       | CONTINUE <Continue/>
       ;
 
     break_statement ::=
-        BREAK label:IDENTIFIER
+        BREAK <Break>label:IDENTIFIER</Break>
       | BREAK <Break/>
       ;
 
@@ -457,9 +476,9 @@ outfixing optional_space do
       ;
 
     shift_op ::=
-        <Lsl/>LL
+        <Lsr/>RRR
+      | <Lsl/>LL
       | <Asr/>RR
-      | <Lsr/>RRR
       ;
 
     relational_expression ::=

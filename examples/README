@@ -1,8 +1,29 @@
 Examples
 ========
 
-java.peg: A more-or-less complete Java 1.1 grammar with some newer extensions, based on the Pappy grammar.
-ecma.peg: A complete Javascript grammar, based on the grammar given in the ECMA language specification.
-astsaver/: A tool for parsing a set of files using an arbitrary grammar and saving the parse trees (in Ocaml binary format)
-calculator/: A very simple calculator.  The most basic example.
-url.peg: A complete URL parser validated on a large set, that also parses FORM argument encodings
+arith.peg: Simple arithmetic expressions.
+
+java.peg: A more-or-less complete Java 1.1 grammar with some newer extensions,
+          based on the Pappy grammar.
+
+ecma.peg: A complete Javascript grammar, originally based on the grammar given
+          in the ECMA language specification.  Updated version, used in
+          http://jsure.org/
+
+astsaver/: A tool for parsing a set of files using an arbitrary grammar and
+           saving the parse trees (in Ocaml binary format)
+
+calculator/: A very simple calculator.  The most basic example in Ocaml.
+
+url.peg: A complete URL parser validated on a large set, that also parses FORM
+         argument encodings
+
+tiny.peg: A very simple grammar parsing sequences of hexadecimal integers.
+
+inserting.peg: A grammar demonstrating the outfixing and appending modifiers.
+
+query.peg: A grammar for a search engine query language with boolean operators.
+
+dateorintlist.peg: Parses sequences of integers or dates in YYYY-MM-DD format.
+
+markup.peg: A toy markup language.  Can parse example.markup.
