@@ -33,8 +33,6 @@ module Spec =
                    | "c_table_nog"   -> targets += `c_table_nog
                    | "ml"            -> targets += `ml
                    | "mli"           -> targets += `mli
-                   | "ml_classic"    -> targets += `ml_classic
-                   | "c"             -> targets += `c
                    | _               -> raise (Bad "Invalid target")
                  end),
           " Type of parser to generate. (nog: Aurochs parsing automaton as a binary file; c_table_nog: nog as a C table;

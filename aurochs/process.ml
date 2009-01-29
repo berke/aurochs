@@ -458,18 +458,12 @@ let process fno =
       let fn' = !< base_name in
       List.iter
         (function
-          | `ml_classic ->
-              info `Normal "Generating classic ML parser";
-              Camelus.generate_classic fn' !Opt.start (!< peg) (!< pg)
           | `ml ->
               info `Normal "Generating ML implementation";
               Camelus.generate_implementation fn' !Opt.start (!< peg) (!< pg)
           | `mli ->
               info `Normal "Generating ML interface";
               Camelus.generate_interface fn' (!< pg) (!< peg)
-          | `c ->
-              info `Normal "Generating C parser";
-              Ritchie.generate fn' ~start:!Opt.start (!< peg_canonified)
           | `nog ->
               info `Normal "Generating NOG parser";
               Noggie.save_program (fn'^".nog") (!< pg) (!< peg)

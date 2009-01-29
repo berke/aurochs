@@ -60,6 +60,15 @@ val read_file : string -> string
 
 module Syntax :
   sig
+    val pf : ('a, out_channel, unit) format -> 'a
+    val fp : out_channel -> ('a, out_channel, unit) format -> 'a
+    val sf : ('a, unit, string) format -> 'a
+    val bf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a
+    val ef : ('a, out_channel, unit) format -> 'a
+    val kf : (out_channel -> 'a) -> out_channel -> ('b, out_channel, unit, 'a) format4 -> 'b
+    val ksf : (string -> 'a) -> ('b, unit, string, 'a) format4 -> 'b
+    val ipf : 'a -> ('b, 'a, unit) format -> 'b
+
     val (&) : ('a -> 'b) -> 'a -> 'b
     val (+=) : 'a list ref -> 'a -> unit
     val (|>) : 'a -> ('a -> 'b) -> 'b

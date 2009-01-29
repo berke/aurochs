@@ -4,52 +4,87 @@ empty_line ::= ' '* '\n';
 
 paragraph ::= <p> {empty_line} empty_line+ </p>;
 
-line ::= {[^\n]*} '\n';
+token ::= {[^\n]*};
 
-header ::= <title> line </title>;
+line ::= token '\n';
+
+header ::= <title> line </title> (attribute '\n')* ;
+
+comma ::= space? ',' space?;
+
+attribute ::=
+    <Tags> "#tags" space tag (comma tag)* </Tags>
+  | <Date> "#date" space date </Date>
+  | <Attribute> "#" name:[a-z]+ (space value:token)? </Attribute>
+  ;
+
+date ::= <Date> year:( [0-9][0-9][0-9][0-9] ) '-' month:([0-1][0-9]) '-' day:([0-3][0-9]) </Date>;
+
+tag ::= <Tag> name:[a-zA-Z0-9_]+ </Tag>;
 
 body ::= section*;
 
-section ::= h3 | h2 | h1 | list1 | paragraph | text | verbatim;
+section ::= quote | h3 | h2 | h1 | list1 | definition1 | paragraph | text | verbatim;
 
-h1 ::= "==" <h1> line </h1>;
-h2 ::= "===" <h2> line </h2>;
-h3 ::= "====" <h3> line </h3>;
+quote ::=
+  <Quote>
+    "``"
+      section*
+    "''"
+  </Quote>
+  ;
+
+h1 ::= <h1> line </h1> "===" '='*;
+h2 ::= <h2> line </h2> "---" '-'*;
+h3 ::= <h3> line </h3> "~~~" '~'*;
+
+definition1 ::= <dl> data_definition1+ </dl>;
+data_definition1 ::= space? <dt> {(~("::"|'\n') sigma)+} </dt> "::" ~':' <dd> text indented? </dd> | definition2 ;
+
+definition2 ::= <dl> data_definition2+ </dl>;
+data_definition2 ::= space? <dt> {(~(":::"|'\n') sigma)+} </dt> ":::" ~':' <dd> text indented? </dd> | definition3 ;
+
+definition3 ::= <dl> data_definition3+ </dl>;
+data_definition3 ::= space? <dt> {(~("::::"|'\n') sigma)+} </dt> "::::" <dd> text indented? </dd>;
 
 list1 ::= <ul> list_element1+ </ul>;
-list_element1 ::= ' '+ "*" ' '+ <li> text indented? </li> | list2;
+list_element1 ::= space? "-" space <li> text indented? </li> | list2;
 
 list2 ::= <ul> list_element2+ </ul>;
-list_element2 ::= ' '+ "**" ' '+ <li> text indented? </li> | list3;
+list_element2 ::= space? "--" space <li> text indented? </li> | list3;
 
 list3 ::= <ul> list_element3+ </ul>;
-list_element3 ::= ' '+ "***" ' '+ <li> text indented? </li>;
+list_element3 ::= space? "---" space <li> text indented? </li>;
 
 text ::= segment* '\n';
 
-indented ::= ~(list1 | list2 | list3) ' '+ segment* '\n';
+indented ::= ~(list1 | list2 | list3 | definition1 | definition2 | definition3) ' '+ segment* '\n';
 
 segment ::=
   link
 | tt
-| {[^%{\[\n]+}
+| em
+| {(~"http://" [^%{+\[\n])+}
 ;
 
 verbatim ::=
-  "%verbatim"
+  "%{"
 
   <pre>
-  { ([^%]+ | ~"%verbatim" "%")* }
+  { ([^%]+ | ~"%}" "%")* }
   </pre>
 
-  "%verbatim"
+  "%}"
 
   ;
 
 tt ::= <tt> '{' {[^}]*} '}' </tt>;
 
+em ::= <em> '+' {[^+]*} '+' </em>;
+
 space ::= [ \t]+;
 
 link ::=
-  <a> '[' href:[^| ]+ space? '|' space? {[^\]]+} ']' </a>
+    <a> '[' {[^\]]+} ']' '(' href:[^)]+ ')' </a>
+  | <a> href:("http://"[^ \n\t]+) </a>
 ;

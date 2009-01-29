@@ -669,6 +669,8 @@ let unsigned_int64_of_decimal u =
 
 module Syntax =
   struct
+    include Pffpsf
+
     let (&) f x = f x (* From Nicolas Pouillard *)
     let ( += ) l x = l := x :: !l
     let ( |> ) x f = f x

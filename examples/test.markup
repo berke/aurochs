@@ -1,6 +1,10 @@
 The Aurochs manual.
+#tags documentation, software, aurochs
+#date 2009-01-29
+#author Berke Durak
 
-== Introduction
+Introduction
+============
 Aurochs is a parser generator that uses the parse expression grammar (PEG) or
 "packrat" approach. It takes a grammar in a BNF-like notation (a .peg file) and
 produces bytecode (a .nog file) for a stack automaton. This bytecode is later
@@ -8,62 +12,120 @@ interpreted on the input to parse using a C library. Bindings are given for
 Ocaml, Java and Exascript. Aurochs can also directly produce C or Ocaml code
 for parsing.
 
-== Copyright and authors
+Copyright and authors
+=====================
 Aurochs has been developed at Exalead SA for our internal parsing needs.
 Its developer is Berke Durak. Some contributions to the Java binding have
 been made by Maxime Van Noppen.
 
-Its home page is at [http://aurochs.fr/ | http://aurochs.fr/].
+Its home page is at http://aurochs.fr/
+or at the [alternate site](http://aurochs.fr.mirrorz.com/).
 
-== How to use Aurochs
+A bit of code:
+%{
+  let x = 33
+%}
+
+How to use Aurochs
+==================
 Aurochs processes a parse expression grammar file, usually with a {.peg} extension.
 In contrast to traditional parser generators such as Bison or Yacc, Aurochs can be used without having to write a single
 line of program code.  You just have to write your grammar files.
 In fact, there are many different ways to use Aurochs:
-  * Use Aurochs to as a kind of grep or sed; you provide it with a grammar file {grammar.peg} and an input file {file.txt},
+  - Use Aurochs to as a kind of grep or sed; you provide it with a grammar file {grammar.peg} and an input file {file.txt},
     and it parses the given file with the given grammar, outputting the XML-ish parse tree to stdout.
-  * Use Aurochs to generate a parser automaton.  The automaton is saved in a file {grammar.nog} and can then be used with the
+  - Use Aurochs to generate a parser automaton.  The automaton is saved in a file {grammar.nog} and can then be used with the
     Aurochs libraries, from Ocaml, Java or directly from C.
-  * Use Aurochs to generate a parser in Ocaml, C or amd64 assembly code.
-  * Use Aurochs to generate a stub code for Ocaml.
+  - Use Aurochs to generate a parser in Ocaml, C or amd64 assembly code.
+  - Use Aurochs to generate a stub code for Ocaml.
 
-== Summary of options
-  * -target {c|amd64|nog|ml|mli|ml_classic}
+Summary of options
+==================
+
+Here is a picture of a cute furry animal.
+
+Most used options
+-----------------
+
+  - -target {c|amd64|nog|ml|mli|ml_classic}
   target language (default c)
-  * -start <string>            Set start symbol (default "start")
-  * -save-nog <file>           Save NOG into file
-  * -load-nog <file>           Load NOG from file
-  * -dump-grammar <file>       Dump grammar into file
-  * -dump-canonified <file>    Dump canonified form of grammar into file
-  * -dump-xml <file>           Dump XML parse tree for grammar into file
-  * -dump-colorized <file>     Dump ANSI-colorized parse tree into file
-  * -colorize-background       Colorize background in addition to foreground
-  * -no-tree                   Don't dump the syntax tree after parsing
-  * -bootstrap                 Bootstrap grammar
-  * -dump-nog <file>           Dump NOG bytecode into file
-  * -build-only                Don't generate parsing code, only building code
-  * -show-memo                 Show memo table after parsing
-  * -nog                       Parse by interpreting Nog code (default)
-  * -expi                      Parse by direct interpretation
-  * -parse <file>              Parse the given file using the grammar and dump the XML parse tree on stdout
-  * -parse-list <file>         Add a -parse <fn> option for each line in given file
-  * -trace                     Trace execution
-  * -debug                     Interactively debug execution
-  * -log-calls <file>          When running Nog code, log encountered calls and labels to given file
-  * -record <file>             When running Nog code, record execution trace to given file
-  * -profile <file>            Dump Nog profiling information to file
-  * -quick                     Execute Nog code as quickly as possible without checks
-  * -root-node <name>          ML constructor names for the root node
-  * -base <name>               Set the base for output files
-  * -function-prefix <prefix>  Prepend C and assembler function names with this string
-  * -node-prefix <prefix>      Prepend ML node constructor names with this string
-  * -attribute-prefix <prefix> Prepend ML attribute constructor names with this string
-  * -line                      Parse line-by-line instead of whole file
-  * -generate                  Generate a parser
-  * -w {all|debug|minor|time|normal|important|vital|none}  Start reporting warnings with this severity level
-  * -i {all|debug|minor|time|normal|important|vital|none}  Start reporting information with this severity level
-  * -quiet                     Suppress all text output
-  * -version                   Show Aurochs version.
-  * -help                      Display this list of options
-  * --help                     Display this list of options
-  * 
+  - -start <string>            Set start symbol (default "start")
+  - -save-nog <file>           Save NOG into file
+  - -load-nog <file>           Load NOG from file
+  - -dump-grammar <file>       Dump grammar into file
+  - -dump-canonified <file>    Dump canonified form of grammar into file
+  - -dump-xml <file>           Dump XML parse tree for grammar into file
+  - -dump-colorized <file>     Dump ANSI-colorized parse tree into file
+  - -colorize-background       Colorize background in addition to foreground
+  - -no-tree                   Don't dump the syntax tree after parsing
+
+Seldom used options
+-------------------
+  - -bootstrap                 Bootstrap grammar
+  - -dump-nog <file>           Dump NOG bytecode into file
+  - -build-only                Don't generate parsing code, only building code
+  - -show-memo                 Show memo table after parsing
+  - -nog                       Parse by interpreting Nog code (default)
+  - -expi                      Parse by direct interpretation
+  - -parse <file>              Parse the given file using the grammar and dump the XML parse tree on stdout
+  - -parse-list <file>         Add a -parse <fn> option for each line in given file
+  - -trace                     Trace execution
+  - -debug                     Interactively debug execution
+  - -log-calls <file>          When running Nog code, log encountered calls and labels to given file
+  - -record <file>             When running Nog code, record execution trace to given file
+  - -profile <file>            Dump Nog profiling information to file
+  - -quick                     Execute Nog code as quickly as possible without checks
+  - -root-node <name>          ML constructor names for the root node
+  - -base <name>               Set the base for output files
+  - -function-prefix <prefix>  Prepend C and assembler function names with this string
+  - -node-prefix <prefix>      Prepend ML node constructor names with this string
+  - -attribute-prefix <prefix> Prepend ML attribute constructor names with this string
+  - -line                      Parse line-by-line instead of whole file
+  - -generate                  Generate a parser
+  - -w {all|debug|minor|time|normal|important|vital|none}  Start reporting warnings with this severity level
+  - -i {all|debug|minor|time|normal|important|vital|none}  Start reporting information with this severity level
+  - -quiet                     Suppress all text output
+  - -version                   Show Aurochs version.
+  - -help                      Display this list of options
+  - --help                     Display this list of options
+
+Taxonomy
+========
+Most animals can be classified as follows.
+
+- Small animals
+  -- Rats
+- Medium animals
+  -- Dogs
+  -- Cats
+- Big animals
+  -- Horses
+  -- Donkeys
+- Very large animals
+  -- Whales.  These can be really, 
+  -- Elephants
+
+Now I will define a few terms.
+
+Douchebag:: A douchebag is a bag used during bathing.  Don't you believe me?
+Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+
+
+Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+
+Please, +believe me!+ Please, +believe me!+
+
+We also have:
+  De Luxe Douchebags::: Gold-line douchebags.
+  Amateur Douchebags::: Douchebags hand-crafted by amateurs. These are +really nasty+, trust me!
+  Professional Douchebags::: Douchebags produced industrially, of which:
+    Chinese professional douchabags:::: Douchebags made in China.
+    American professional douchabags:::: Douchebags made in USA.
+Jerk:: A sudden motion.
+Perp:: Perpendicular.
+LOL:: Leaning On Left.
