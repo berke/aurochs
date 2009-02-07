@@ -223,7 +223,7 @@ static nog_instruction_t *run(nog_closure_t *c, construction current, nog_instru
     assert(c->pg->np_program <= ip && ip < c->pg->np_program + c->pg->np_count);
     assert(c->bof <= c->head && c->head <= c->eof);
     /*printf("pc=%ld i=%ld c->sp=%ld c->fail=%d c->memo=%d\n", ip - c->pg->np_program, c->head - c->bof, c->sp - c->cx->cx_stack, c->fail, c->memo);*/
-    DEBUGIF(NOG_DEBUG,"%ld %ld %d\n", ip - c->pg->np_program, c->head - c->bof, c->fail);
+    DEBUGIF(NOG_DEBUG,"%ld %ld %d\n", (long) (ip - c->pg->np_program), (long) (c->head - c->bof), c->fail);
 
     ip_next = ip + 1;
 
@@ -558,7 +558,7 @@ nog_program_t *nog_unpack_program(alloc_t *alloc, packer_t *pk) {
   DEBUGIF(NOG_DEBUG,"Allocated program\n");
 
   if(!pack_read_uint64(pk, &signature)) goto finish;
-  DEBUGIF(NOG_DEBUG,"Read signature %lx\n", signature);
+  DEBUGIF(NOG_DEBUG,"Read signature %lx\n", (long) signature);
 
   if(signature != NOG_SIGNATURE) goto finish;
   DEBUGIF(NOG_DEBUG,"Signature OK\n");
@@ -640,10 +640,10 @@ nog_program_t *nog_unpack_program(alloc_t *alloc, packer_t *pk) {
 
   if(!pack_read_uint64(pk, &checksum2)) goto finish;
   if(checksum != checksum2) {
-    DEBUGIF(NOG_DEBUG, "Bad checksum, residual 0x%lx recorded 0x%lx\n", checksum, checksum2);
+    DEBUGIF(NOG_DEBUG, "Bad checksum, residual 0x%lx recorded 0x%lx\n", (long) checksum, (long) checksum2);
     goto finish;
   } else {
-    DEBUGIF(NOG_DEBUG, "Checksum OK 0x%lx\n", checksum2);
+    DEBUGIF(NOG_DEBUG, "Checksum OK 0x%lx\n", (long) checksum2);
   }
   result = pg;
 
