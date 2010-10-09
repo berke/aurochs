@@ -2,7 +2,7 @@
 
 VERSION=$(shell sed -n -e 's:^let version = (\([0-9]*\),\([0-9]*\),\([0-9]*\))*$$:\1.\2.\3:p' aurochs/version.ml)
 LIBPREFIX?=/usr/local
-BINPREFIX?=/usr/local
+BINPREFIX?=/usr/local/bin
 OCAML_DIR=$(shell ocamlc -where)
 TARGET=$(OCAML_DIR)/aurochs_lib
 DISTRIB=_build/aurochs-$(VERSION)
