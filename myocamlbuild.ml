@@ -127,9 +127,9 @@ dispatch
       begin
         Options.hygiene := true;
         Options.sanitize := true;
-        Options.ocamlopt := A"ocamlopt.opt";
-        Options.ocamlc := A"ocamlc.opt";
-        Options.ocamldep := A"ocamldep.opt";
+        Options.ocamlopt := A"ocamlopt";
+        Options.ocamlc := A"ocamlc";
+        Options.ocamldep := A"ocamldep";
         Options.ocamlyacc := A"menhir";
         Options.include_dirs :=
           ["front";
