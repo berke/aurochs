@@ -1,6 +1,6 @@
 (* Pack *)
 
-type packer = Bytes.sink;;
+type packer = Bytes_.sink;;
 
 val write_byte : packer -> int -> unit
 val write_int64 : packer -> int64 -> unit

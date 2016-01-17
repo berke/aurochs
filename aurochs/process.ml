@@ -418,7 +418,7 @@ let process fno =
         info `Normal "Loading NOG bytecode from file %s" fn;
         Aurochs.load (`File fn)
     | None ->
-        Bytes.with_buffer_sink (Noggie.put_program (!< pg) (!< peg))
+        Bytes_.with_buffer_sink (Noggie.put_program (!< pg) (!< peg))
     )
   in
 

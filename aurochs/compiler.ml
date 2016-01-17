@@ -16,6 +16,6 @@ let compile ?(start="start") ?(base="") ?(root="root") ?(check=true) u =
     end;
   let peg_canonified = Canonify.canonify_grammar ~start peg in
   let pg = Noggie.generate_code ~start ~root peg_canonified in
-  Bytes.with_buffer_sink (Noggie.put_program pg peg)
+  Bytes_.with_buffer_sink (Noggie.put_program pg peg)
 
 let _ = compiler := compile
