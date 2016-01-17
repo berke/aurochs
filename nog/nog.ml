@@ -221,7 +221,7 @@ let execute_positioned_quick program
         | BNEOF     -> if c.head < m then run pc' else run pc
         | BNBOF     -> if c.head > 0 then run pc' else run pc
         | BMB       -> if c.memo_register = Busy then run pc' else run pc
-        | BMBF      -> if c.memo_register = Busy or c.memo_register = Failure then run pc' else run pc
+        | BMBF      -> if c.memo_register = Busy || c.memo_register = Failure then run pc' else run pc
         | BBRS      -> if Stack.pop c.boolean then run pc' else run pc
         | BBRC      -> if not (Stack.pop c.boolean) then run pc' else run pc
         | BMF       -> if c.memo_register = Failure then run pc' else run pc
@@ -229,7 +229,7 @@ let execute_positioned_quick program
         | BMK       -> if c.memo_register <> Unknown then run pc' else run pc
         | JSR       -> run pc'; run pc
         | SBNS ch   ->
-            if c.head = m or u.[c.head] <> ch then
+            if c.head = m || u.[c.head] <> ch then
               run pc'
             else
               begin
@@ -252,7 +252,7 @@ let execute_positioned_quick program
                | BOR ->
                    let br1 = Stack.pop c.boolean in
                    let br2 = Stack.pop c.boolean in
-                   Stack.push (br1 or br2) c.boolean
+                   Stack.push (br1 || br2) c.boolean
                | BNOT -> Stack.push (not (Stack.pop c.boolean)) c.boolean
                | BTRUE -> Stack.push true c.boolean
                | BFALSE -> Stack.push false c.boolean
@@ -446,7 +446,7 @@ let execute_positioned program
         pf "S=[%a]\n" (print_stack print_stack_symbol) c.stack;
       in
       let iterate () =
-        if c.pc < 0 or c.pc >= n then
+        if c.pc < 0 || c.pc >= n then
           raise (Error "PC out of bounds")
         else
           begin
@@ -466,7 +466,7 @@ let execute_positioned program
                 | BNEOF     -> if c.head < m then c.pc <- pc
                 | BNBOF     -> if c.head > 0 then c.pc <- pc
                 | BMB       -> if c.memo_register = Busy then c.pc <- pc
-                | BMBF      -> if c.memo_register = Busy or c.memo_register = Failure then c.pc <- pc
+                | BMBF      -> if c.memo_register = Busy || c.memo_register = Failure then c.pc <- pc
                 | BBRS      -> if Stack.pop c.boolean then c.pc <- pc
                 | BBRC      -> if not (Stack.pop c.boolean) then c.pc <- pc
                 | BMF       -> if c.memo_register = Failure then c.pc <- pc
@@ -478,7 +478,7 @@ let execute_positioned program
                     (*log_call program.pg_start;*)
                     c.pc <- pc
                 | SBNS ch   ->
-                    if c.head = m or u.[c.head] <> ch then
+                    if c.head = m || u.[c.head] <> ch then
                       c.pc <- pc
                     else
                       c.head <- c.head + 1
@@ -494,7 +494,7 @@ let execute_positioned program
                  | BOR ->
                      let br1 = Stack.pop c.boolean in
                      let br2 = Stack.pop c.boolean in
-                     Stack.push (br1 or br2) c.boolean
+                     Stack.push (br1 || br2) c.boolean
                  | BNOT -> Stack.push (not (Stack.pop c.boolean)) c.boolean
                  | BTRUE -> Stack.push true c.boolean
                  | BFALSE -> Stack.push false c.boolean
@@ -838,7 +838,7 @@ let is_space = ("is_space", (=) ' ');;
 let is_not_space = ("is_not_space", (<>) ' ');;
 (* ***)
 (*** is_alpha *)
-let is_alpha = ("is_alpha", (fun c -> ('a' <= c && c <= 'z') or ('A' <= c && c <= 'Z')));;
+let is_alpha = ("is_alpha", (fun c -> ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')));;
 (* ***)
 (*** number *)
 let number ?root pg iterator =
