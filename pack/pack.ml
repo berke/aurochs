@@ -1,11 +1,11 @@
 (* Pack *)
 
-open Bytes;;
+open Bytes_;;
 open Int_operators;;
 
-type packer = Bytes.sink;;
+type packer = Bytes_.sink;;
 (*** write_byte *)
-let write_byte sk x = Bytes.put_byte sk x;;
+let write_byte sk x = Bytes_.put_byte sk x;;
 (* ***)
 (*** write_int64 *)
 let write_int64 sk x =
@@ -77,7 +77,7 @@ let write_int sk x = write_int64 sk (!!!! x);;
 (*** test *)
 let test fn =
   let oc = open_out_bin fn in
-  let sk = Bytes.sink_of_out_channel oc in
+  let sk = Bytes_.sink_of_out_channel oc in
   let rec loop i x =
     let y = x in
     Printf.printf ">>> 0x%08Lx %Ld\n%!" y y;

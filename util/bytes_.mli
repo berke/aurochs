@@ -1,4 +1,4 @@
-(* Bytes *)
+(* Bytes_ *)
 
 (** Module for byte sinks and sources. *)
 

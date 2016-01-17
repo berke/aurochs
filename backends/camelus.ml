@@ -210,7 +210,7 @@ let generate_implementation ?(pack=true) fn start peg (pg : (string, string) pro
       build_printer "node_name" !Opt.node_prefix node_numbers;
       build_printer "attribute_name" !Opt.attribute_prefix attribute_numbers;
 
-      let u = Bytes.with_buffer_sink (Noggie.put_program pg peg) in
+      let u = Bytes_.with_buffer_sink (Noggie.put_program pg peg) in
       fp oc "\n";
       fp oc "let binary =\n";
       Stringifier.print_ocaml_string ~indent:4 () oc u;
