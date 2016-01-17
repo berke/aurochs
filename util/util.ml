@@ -11,7 +11,7 @@ let first_line =
   fun w ->
     Buffer.clear b;
     let rec loop i =
-      if i = String.length w or w.[i] = '\n' then
+      if i = String.length w || w.[i] = '\n' then
         Buffer.contents b
       else
         begin
@@ -63,7 +63,7 @@ let split_once_at f s =
       else
         loop1 (i + 1)
   and loop2 i j =
-    if j = m or not (f s.[j]) then
+    if j = m || not (f s.[j]) then
       (i,j)
     else
       loop2 i (j + 1)
@@ -102,7 +102,7 @@ let parse_strings u =
           loop2 r (i + 1)
       | _ -> loop1 r i
   and loop1 r i =
-    if i = m or is_space u.[i] or u.[i] = '"' then
+    if i = m || is_space u.[i] || u.[i] = '"' then
       begin
         let x = Buffer.contents b in
         Buffer.clear b;
@@ -167,7 +167,7 @@ let split_at c u =
       else
         loop1 r i
   and loop1 r i =
-    if i = m or u.[i] = c then
+    if i = m || u.[i] = c then
       begin
         let x = Buffer.contents b in
         Buffer.clear b;
@@ -332,13 +332,13 @@ let word_wrap oc ?(columns=75) u =
   (* j: actual cursor column *)
   (* k: number of pending spaces *)
   and loop2 i0 i j k =
-    if i = m or u.[i] = ' ' or u.[i] = '\t' or u.[i] = '\n' then
+    if i = m || u.[i] = ' ' || u.[i] = '\t' || u.[i] = '\n' then
       let l = i - i0 in
       if j + k + l >= columns then
         begin
           f '\n';
           g u i0 l;
-          if i < m & u.[i] = '\n' then
+          if i < m && u.[i] = '\n' then
             begin
               f '\n';
               loop0 (i + 1) 0
@@ -398,7 +398,7 @@ let substitute_variables env w =
 let list_sub_rev l start length =
   let rec loop r j = function
     | [] -> r (* shall we raise an exception ? *)
-    | x::y -> loop (if j < start or j >= start + length then r else x::r) (j + 1) y
+    | x::y -> loop (if j < start || j >= start + length then r else x::r) (j + 1) y
   in
   loop [] 0 l
 
@@ -407,7 +407,7 @@ let is_prefix u v =
   and n = String.length v
   in
   m <= n &&
-    let rec loop i = i = m or u.[i] = v.[i] && loop (i + 1) in
+    let rec loop i = i = m || u.[i] = v.[i] && loop (i + 1) in
     loop 0
 
 let remove_prefix u v =
@@ -422,7 +422,7 @@ let is_suffix u v =
   and n = String.length v
   in
   m <= n &&
-    let rec loop i = i = m or u.[m - 1 - i] = v.[n - 1 - i] && loop (i + 1) in
+    let rec loop i = i = m || u.[m - 1 - i] = v.[n - 1 - i] && loop (i + 1) in
     loop 0
 
 let remove_suffix u v =
@@ -513,7 +513,7 @@ let array_mem_assoc x a =
     if i = m then false
     else
       let (y,_) = a.(i) in
-      x = y or loop (i + 1)
+      x = y || loop (i + 1)
   in
   loop 0
 

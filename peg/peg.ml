@@ -351,7 +351,7 @@ let is_factor v u i =
   in
   0 <= i && i < m && n <= m - i &&
   let rec loop j =
-    j = n or
+    j = n ||
     u.[i + j] = v.[j] && loop (j + 1)
   in
   loop 0
