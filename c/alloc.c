@@ -30,7 +30,7 @@ static void *do_malloc(void *info, size_t bytes) {
 }
 
 static void do_free(void *info, void *ptr) {
-  if(ptr) free(ptr);
+  free(ptr);
 }
 
 alloc_t alloc_stdlib = {

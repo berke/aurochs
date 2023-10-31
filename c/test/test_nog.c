@@ -33,7 +33,7 @@ static unsigned char *load_file(char *name, size_t *size)/*{{{*/
         }
         fclose(f);
       }
-      if(data) free(data);
+      free(data);
     }
   }
 
