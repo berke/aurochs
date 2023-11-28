@@ -143,7 +143,7 @@ let parse_file_with_nog pg fn =
                 end
       in
       let pt =
-        let (trace, interactive) = (!Opt.trace or !Opt.debug, !Opt.debug) in
+        let (trace, interactive) = (!Opt.trace || !Opt.debug, !Opt.debug) in
         Nog.execute_positioned
           ~quick:!Opt.quick
           ?log_calls:!Opt.log_calls
